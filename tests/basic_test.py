@@ -1,6 +1,7 @@
 import requests
 import simplejson
 import os
+from time import sleep
 from datetime import datetime, timedelta
 from dateutil.tz import tzlocal
 
@@ -13,10 +14,7 @@ data = {
     "command": "bash " + os.path.dirname(os.path.realpath(__file__)) + "/example-kala-commands/example-command.sh"
 }
 
-# Add schedule time of repeat twice, start 30 seconds from now, and run every 10 seconds.
-# Will take 50 seconds for all three commands to run.
-dt = datetime.isoformat(datetime.now(tzlocal()) + timedelta(0, 30))
-
+dt = datetime.isoformat(datetime.now(tzlocal()) + timedelta(0, 10))
 data["schedule"] = "%s/%s/%s" % ("R2", dt, "PT10S")
 
 if __name__ == "__main__":
@@ -25,4 +23,11 @@ if __name__ == "__main__":
 
     r = requests.post(API_URL, data=simplejson.dumps(data))
 
-    print r.__dict__
+    job_id = simplejson.loads(r.content)['id']
+    print "Job was created with an id of %s" % job_id
+
+    print "Waiting to delete...."
+    sleep(21)
+    n = requests.delete(API_URL + job_id)
+
+    print n.__dict__
