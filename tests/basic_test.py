@@ -23,8 +23,15 @@ if __name__ == "__main__":
 
     r = requests.post(API_URL, data=simplejson.dumps(data))
 
+    print "\n\n CREATING \n"
     job_id = simplejson.loads(r.content)['id']
     print "Job was created with an id of %s" % job_id
+
+    print "\n\n GETTING \n"
+    m = requests.get(API_URL + job_id)
+    print m.content
+
+    print "\n\n DELETING \n"
 
     print "Waiting to delete...."
     sleep(21)

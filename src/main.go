@@ -252,10 +252,8 @@ func handleJobRequest(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "DELETE" {
 		handleDeleteJob(w, r, id)
-	} else if r.Method == "PUT" {
-		//handleUpdateJob(w, r, id)
 	} else if r.Method == "GET" {
-		//handleGetJob(w, r, id)
+		handleGetJob(w, r, id)
 	}
 
 	// TODO - Method not allow
@@ -263,20 +261,27 @@ func handleJobRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDeleteJob(w http.ResponseWriter, r *http.Request, id string) {
-	// Find and delete job
-	for i, job := range AllJobs {
-		if job.Id.String() == id {
-			// Stop Job Timer
-			job.Disable()
-
-			// Remove from AllJobs
-			s := AllJobs
-			log.Info("Deleting job: %s", job.Id)
-			s = append(s[:i], s[i+1:]...)
-			AllJobs = s
-			return
-		}
-	}
+	log.Info("Deleting job: %s", id)
+	delete(AllJobs, id)
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type GetJobResponse struct {
+	Job *Job `json:"job"`
+}
+
+func handleGetJob(w http.ResponseWriter, r *http.Request, id string) {
+	j := AllJobs[id]
+
+	resp := &GetJobResponse{
+		Job: j,
+	}
+
+	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Error("Error occured when marshalling response: %s", err)
+		return
+	}
 }
