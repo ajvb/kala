@@ -113,7 +113,6 @@ func (d *Duration) HasTimePart() bool {
 }
 
 func (d *Duration) ToDuration() time.Duration {
-	// TODO - Handle months
 	day := time.Hour * 24
 	year := day * 365
 

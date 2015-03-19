@@ -33,7 +33,7 @@ type Job struct {
 
 	Schedule     string `json:"schedule"`
 	scheduleTime time.Time
-	delayDuration time.Duration
+	delayDuration *iso8601.Duration
 
 	timesToRepeat int64
 
@@ -91,13 +91,12 @@ func (j *Job) Init() error {
 	}
 	log.Debug("Schedule Time: %s", j.scheduleTime)
 
-	delayDuration, err := iso8601.FromString(splitTime[2])
+	j.delayDuration, err = iso8601.FromString(splitTime[2])
 	if err != nil {
 		log.Error("Error converting delayDuration to a time.Duration: %s", err)
 		return err
 	}
-	j.delayDuration = delayDuration.ToDuration()
-	log.Debug("Delay Duration: %s", j.delayDuration)
+	log.Debug("Delay Duration: %s", j.delayDuration.ToDuration())
 
 	j.StartWaiting()
 
@@ -108,7 +107,8 @@ func (j *Job) StartWaiting() {
 	waitDuration := time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())
 	log.Debug("Wait Duration initial: %s", waitDuration)
 	if waitDuration < 0 {
-		waitDuration = j.delayDuration
+		// Needs to be recalculated each time because of Months.
+		waitDuration = j.delayDuration.ToDuration()
 	}
 	log.Info("Job Scheduled to run in: %s", waitDuration)
 	j.jobTimer = time.AfterFunc(waitDuration, j.Run)
