@@ -19,13 +19,13 @@ import (
 )
 
 var (
-	AllJobs []*Job
+	AllJobs = make(map[string]*Job)
 	log     = logging.GetLogger("kala")
 )
 
 type Job struct {
 	Name      string     `json:"name"`
-	Id        *uuid.UUID `json:"id"`
+	Id        string	 `json:"id"`
 	Command   string     `json:"command"`
 	Owner     string     `json:"owner"`
 	Disabled  bool       `json:"disabled"`
@@ -61,7 +61,7 @@ func (j *Job) Init() error {
 		log.Error("Error occured when generating uuid: %s", err)
 		return err
 	}
-	j.Id = u4
+	j.Id = u4.String()
 
 	splitTime := strings.Split(j.Schedule, "/")
 	if len(splitTime) != 3 {
@@ -182,7 +182,7 @@ func main() {
 }
 
 type ListJobsResponse struct {
-	Jobs []*Job `json:"jobs"`
+	Jobs map[string]*Job `json:"jobs"`
 }
 
 func handleListJobs(w http.ResponseWriter, r *http.Request) {
@@ -231,10 +231,11 @@ func handleAddJob(w http.ResponseWriter, r *http.Request) {
 		log.Error("Error occured when initializing the job: %s", err)
 		return
 	}
-	AllJobs = append(AllJobs, newJob)
+	log.Info("New Job: %#v", newJob)
+	AllJobs[newJob.Id] = newJob
 
 	resp := &AddJobResponse{
-		Id: newJob.Id.String(),
+		Id: newJob.Id,
 	}
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
