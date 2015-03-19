@@ -170,7 +170,7 @@ func main() {
 	apiUrlPrefix := "/api/v1/job/"
 	// CRUD
 	r.HandleFunc(apiUrlPrefix, handleAddJob).Methods("POST")
-	r.HandleFunc(apiUrlPrefix+"{id}", handleJobRequest)
+	r.HandleFunc(apiUrlPrefix+"{id}", handleJobRequest).Methods("DELETE", "GET")
 	r.HandleFunc(apiUrlPrefix+"list", handleListJobs).Methods("GET")
 	// TODO
 	// Manually start a job
@@ -214,21 +214,20 @@ func handleAddJob(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if err := json.Unmarshal(body, newJob); err != nil {
-		// TODO return 400
-		//w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-		log.Error("Error occured when unmarshalling data: %s", err)
+		errStr := "Error occured when unmarshalling data"
+		log.Error(errStr + ": %s", err)
+		http.Error(w, errStr, 400)
 		return
 	}
 
 	// TODO
-	// 1. Verify there is a scheduled time and a command
 	// 2. Verify that "protected" fields were not touched.
 
 	err = newJob.Init()
 	if err != nil {
-		// TODO return 400
-		//w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-		log.Error("Error occured when initializing the job: %s", err)
+		errStr := "Error occured when initializing the job"
+		log.Error(errStr + ": %s", err)
+		http.Error(w, errStr, 400)
 		return
 	}
 	log.Info("New Job: %#v", newJob)
@@ -255,9 +254,6 @@ func handleJobRequest(w http.ResponseWriter, r *http.Request) {
 	} else if r.Method == "GET" {
 		handleGetJob(w, r, id)
 	}
-
-	// TODO - Method not allow
-
 }
 
 func handleDeleteJob(w http.ResponseWriter, r *http.Request, id string) {
