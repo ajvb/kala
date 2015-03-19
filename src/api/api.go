@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	log     = logging.GetLogger("kala")
+	log = logging.GetLogger("kala")
 )
 
 type ListJobsResponse struct {
@@ -50,7 +50,7 @@ func HandleAddJob(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.Unmarshal(body, newJob); err != nil {
 		errStr := "Error occured when unmarshalling data"
-		log.Error(errStr + ": %s", err)
+		log.Error(errStr+": %s", err)
 		http.Error(w, errStr, 400)
 		return
 	}
@@ -61,7 +61,7 @@ func HandleAddJob(w http.ResponseWriter, r *http.Request) {
 	err = newJob.Init()
 	if err != nil {
 		errStr := "Error occured when initializing the job"
-		log.Error(errStr + ": %s", err)
+		log.Error(errStr+": %s", err)
 		http.Error(w, errStr, 400)
 		return
 	}

@@ -1,10 +1,10 @@
 package job
 
 import (
-	"strconv"
-	"strings"
 	"fmt"
 	"os/exec"
+	"strconv"
+	"strings"
 	"time"
 
 	"../utils/iso8601"
@@ -19,15 +19,15 @@ var (
 )
 
 type Job struct {
-	Name      string     `json:"name"`
-	Id        string	 `json:"id"`
-	Command   string     `json:"command"`
-	Owner     string     `json:"owner"`
-	Disabled  bool       `json:"disabled"`
-	ChildJobs []*Job     `json:"child_jobs"`
+	Name      string `json:"name"`
+	Id        string `json:"id"`
+	Command   string `json:"command"`
+	Owner     string `json:"owner"`
+	Disabled  bool   `json:"disabled"`
+	ChildJobs []*Job `json:"child_jobs"`
 
-	Schedule     string `json:"schedule"`
-	scheduleTime time.Time
+	Schedule      string `json:"schedule"`
+	scheduleTime  time.Time
 	delayDuration *iso8601.Duration
 
 	timesToRepeat int64

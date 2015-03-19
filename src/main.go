@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	log     = logging.GetLogger("kala")
+	log = logging.GetLogger("kala")
 )
 
 func main() {
