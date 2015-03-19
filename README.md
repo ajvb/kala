@@ -8,6 +8,19 @@ is fault tolerant and distributed by design. These are two features which Kala d
 It has a simple JSON over HTTP API, so it is language agnostic. It has a Web UI, Job Stats, Configurable Retries, uses ISO 8601 Date and Interval
 notation, Dependant Jobs, and is Persistant (using BoltDB).
 
+# Getting Started
+
+TODO
+
+# Documentation
+
+TODO
+
+# License
+
+MIT
+
+
 # TODO's
 
 - [ ] Scheduler
