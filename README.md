@@ -16,6 +16,12 @@ TODO
 
 TODO
 
+# Dev Documentation
+
+These are the instructions to follow for working on Kala.
+
+Python is used for some Kala integration tests.
+
 # License
 
 MIT
