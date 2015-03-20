@@ -21,25 +21,43 @@ var (
 type Job struct {
 	Name      string `json:"name"`
 	Id        string `json:"id"`
+
+	// Command to run
+	// e.g. "bash /path/to/my/script.sh"
 	Command   string `json:"command"`
+
+	// Email of the owner of this job
+	// e.g. "admin@example.com"
 	Owner     string `json:"owner"`
+
+	// Is this job disabled?
 	Disabled  bool   `json:"disabled"`
+
+	// Jobs that are dependent upon this one.
+	// Will be run after this job runs.
 	ChildJobs []*Job `json:"child_jobs"`
 
+	// ISO 8601 String
+	// e.g. "R/2014-03-08T20:00:00.000Z/PT2H"
 	Schedule      string `json:"schedule"`
 	scheduleTime  time.Time
+	// ISO 8601 Duration struct, used for scheduling
+	// job after each run.
 	delayDuration *iso8601.Duration
 
+	// Number of times to schedule this job after the
+	// first run.
 	timesToRepeat int64
 
+	// Number of times to retry on failed attempt for each run.
 	Retries        uint `json:"retries"`
 	currentRetries uint
 
+	// Meta data about successful and failed runs.
 	SuccessCount uint      `json:"success_count"`
 	LastSuccess  time.Time `json:"last_success"`
 	ErrorCount   uint      `json:"error_count"`
 	LastError    time.Time `json:"last_error"`
-
 	LastAttemptedRun time.Time `json:"last_attempted_run"`
 
 	jobTimer *time.Timer
@@ -50,6 +68,7 @@ type Job struct {
 	// EnvironmentVariables map[string]string `json:""`
 }
 
+// Init() fills in the protected fields and parses the iso8601 notation.
 func (j *Job) Init() error {
 	u4, err := uuid.NewV4()
 	if err != nil {

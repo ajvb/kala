@@ -17,13 +17,15 @@ func main() {
 	r := mux.NewRouter()
 
 	apiUrlPrefix := "/api/v1/job/"
-	// CRUD
+	// Route for creating a job
 	r.HandleFunc(apiUrlPrefix, api.HandleAddJob).Methods("POST")
+	// Route for deleting and getting a job
 	r.HandleFunc(apiUrlPrefix+"{id}", api.HandleJobRequest).Methods("DELETE", "GET")
+	// Route for listing all jops
 	r.HandleFunc(apiUrlPrefix+"list", api.HandleListJobs).Methods("GET")
 	// TODO
-	// Manually start a job
-	// Adding a dependent job
+		// Manually start a job
+		// Adding a dependent job
 
 	log.Info("Starting server...")
 
