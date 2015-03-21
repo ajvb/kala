@@ -19,19 +19,19 @@ var (
 )
 
 type Job struct {
-	Name      string `json:"name"`
-	Id        string `json:"id"`
+	Name string `json:"name"`
+	Id   string `json:"id"`
 
 	// Command to run
 	// e.g. "bash /path/to/my/script.sh"
-	Command   string `json:"command"`
+	Command string `json:"command"`
 
 	// Email of the owner of this job
 	// e.g. "admin@example.com"
-	Owner     string `json:"owner"`
+	Owner string `json:"owner"`
 
 	// Is this job disabled?
-	Disabled  bool   `json:"disabled"`
+	Disabled bool `json:"disabled"`
 
 	// Jobs that are dependent upon this one.
 	// Will be run after this job runs.
@@ -39,8 +39,8 @@ type Job struct {
 
 	// ISO 8601 String
 	// e.g. "R/2014-03-08T20:00:00.000Z/PT2H"
-	Schedule      string `json:"schedule"`
-	scheduleTime  time.Time
+	Schedule     string `json:"schedule"`
+	scheduleTime time.Time
 	// ISO 8601 Duration struct, used for scheduling
 	// job after each run.
 	delayDuration *iso8601.Duration
@@ -54,10 +54,10 @@ type Job struct {
 	currentRetries uint
 
 	// Meta data about successful and failed runs.
-	SuccessCount uint      `json:"success_count"`
-	LastSuccess  time.Time `json:"last_success"`
-	ErrorCount   uint      `json:"error_count"`
-	LastError    time.Time `json:"last_error"`
+	SuccessCount     uint      `json:"success_count"`
+	LastSuccess      time.Time `json:"last_success"`
+	ErrorCount       uint      `json:"error_count"`
+	LastError        time.Time `json:"last_error"`
 	LastAttemptedRun time.Time `json:"last_attempted_run"`
 
 	jobTimer *time.Timer
@@ -117,6 +117,7 @@ func (j *Job) Init() error {
 	return nil
 }
 
+// StartWaiting begins a timer for when it should execute the Jobs .Run() method.
 func (j *Job) StartWaiting() {
 	waitDuration := time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())
 	log.Debug("Wait Duration initial: %s", waitDuration)
@@ -134,6 +135,8 @@ func (j *Job) Disable() {
 	j.Disabled = true
 }
 
+// Run() executes the Job's command, collects metadata around the success
+// or failure of the Job's execution, and schedules the next run.
 func (j *Job) Run() {
 	log.Info("Job %s running", j.Name)
 

@@ -20,6 +20,8 @@ type ListJobsResponse struct {
 	Jobs map[string]*job.Job `json:"jobs"`
 }
 
+// HandleListJobs responds with an array of all Jobs within the server,
+// active or disabled.
 func HandleListJobs(w http.ResponseWriter, r *http.Request) {
 	resp := &ListJobsResponse{
 		Jobs: job.AllJobs,
@@ -38,6 +40,8 @@ type AddJobResponse struct {
 	Id string `json:"id"`
 }
 
+// HandleAddJob takes a job object and unmarshals it to a Job type,
+// and then throws the job in the schedulers.
 func HandleAddJob(w http.ResponseWriter, r *http.Request) {
 	newJob := &job.Job{}
 

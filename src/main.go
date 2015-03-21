@@ -24,8 +24,8 @@ func main() {
 	// Route for listing all jops
 	r.HandleFunc(apiUrlPrefix+"list", api.HandleListJobs).Methods("GET")
 	// TODO
-		// Manually start a job
-		// Adding a dependent job
+	// Manually start a job
+	// Adding a dependent job
 
 	log.Info("Starting server...")
 
