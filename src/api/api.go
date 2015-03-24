@@ -40,22 +40,30 @@ type AddJobResponse struct {
 	Id string `json:"id"`
 }
 
-// HandleAddJob takes a job object and unmarshals it to a Job type,
-// and then throws the job in the schedulers.
-func HandleAddJob(w http.ResponseWriter, r *http.Request) {
+func unmarshalNewJob(r *http.Request) (*job.Job, error) {
 	newJob := &job.Job{}
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		log.Error("Error occured when reading r.Body: %s", err)
-		return
+		return nil, err
 	}
 	defer r.Body.Close()
 
 	if err := json.Unmarshal(body, newJob); err != nil {
-		errStr := "Error occured when unmarshalling data"
-		log.Error(errStr+": %s", err)
-		http.Error(w, errStr, 400)
+		log.Error("Error occured when unmarshalling data: %s", err)
+		return nil, err
+	}
+
+	return newJob, nil
+}
+
+// HandleAddJob takes a job object and unmarshals it to a Job type,
+// and then throws the job in the schedulers.
+func HandleAddJob(w http.ResponseWriter, r *http.Request) {
+	newJob, err := unmarshalNewJob(r)
+	if err != nil {
+		http.Error(w, err.Error(), 400)
 		return
 	}
 
@@ -69,7 +77,6 @@ func HandleAddJob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errStr, 400)
 		return
 	}
-	log.Info("New Job: %#v", newJob)
 	job.AllJobs[newJob.Id] = newJob
 
 	resp := &AddJobResponse{
