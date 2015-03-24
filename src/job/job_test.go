@@ -4,16 +4,15 @@ import (
 	"fmt"
 	"time"
 
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func getMockJob() *Job {
 	return &Job{
-		Name: "mock_job",
+		Name:    "mock_job",
 		Command: "", // TODO
-		Owner: "aj@ajvb.me",
-		Schedule: "", //TODO
+		Owner:   "aj@ajvb.me",
 		Retries: 2,
 	}
 }
@@ -42,18 +41,17 @@ func TestScheduleParsing(t *testing.T) {
 
 	genericMockJob := getMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
 
-	_ = genericMockJob.Init()
+	genericMockJob.Init()
 
 	assert.WithinDuration(
 		t, genericMockJob.scheduleTime, fiveMinutesFromNow,
 		time.Second, "The difference between parsed time and created time is to great.",
 	)
 
-
 }
 
 var delayParsingTests = []struct {
-	expected time.Duration
+	expected    time.Duration
 	intervalStr string
 }{
 	{time.Duration(
@@ -77,7 +75,7 @@ func TestDelayParsing(t *testing.T) {
 
 	for _, delayTest := range delayParsingTests {
 		genericMockJob := getMockJobWithSchedule(1, testTime, delayTest.intervalStr)
-		_ = genericMockJob.Init()
+		genericMockJob.Init()
 		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.ToDuration(), "Parsed duration was incorrect")
 	}
 }
@@ -94,7 +92,7 @@ func TestJobInit(t *testing.T) {
 
 func TestJobDisable(t *testing.T) {
 	genericMockJob := getMockJobWithGenericSchedule()
-	_ = genericMockJob.Init()
+	genericMockJob.Init()
 
 	assert.False(t, genericMockJob.Disabled, "Job should start with disbaled == false")
 
