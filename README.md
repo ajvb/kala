@@ -30,8 +30,6 @@ MIT
 # TODO's
 
 - [ ] Scheduler
-- [ ] JSON API
-- [ ] Dependent Jobs
 - [ ] Web UI
 - [ ] Configurable Retries
 - [ ] ISO 8601 Interval Notation

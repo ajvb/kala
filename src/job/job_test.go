@@ -108,5 +108,9 @@ func TestJobRun(t *testing.T) {
 }
 
 // TODO
+func TestDependentJobs(t *testing.T) {
+}
+
+// TODO
 func TestMetaData(t *testing.T) {
 }

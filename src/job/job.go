@@ -35,7 +35,8 @@ type Job struct {
 
 	// Jobs that are dependent upon this one.
 	// Will be run after this job runs.
-	ChildJobs []*Job `json:"child_jobs"`
+	DependentJobs []string `json:"dependent_jobs"`
+	ParentJobs []string `json:"parent_jobs"`
 
 	// ISO 8601 String
 	// e.g. "R/2014-03-08T20:00:00.000Z/PT2H"
@@ -76,6 +77,14 @@ func (j *Job) Init() error {
 		return err
 	}
 	j.Id = u4.String()
+
+	if len(j.ParentJobs) != 0 {
+		// Add new job to parent jobs
+		for _, p := range j.ParentJobs {
+			AllJobs[p].DependentJobs = append(AllJobs[p].DependentJobs, j.Id)
+		}
+		return nil
+	}
 
 	splitTime := strings.Split(j.Schedule, "/")
 	if len(splitTime) != 3 {
@@ -173,10 +182,10 @@ func (j *Job) Run() {
 	j.SuccessCount += 1
 	j.LastSuccess = time.Now()
 
-	// Run Child Jobs
-	if len(j.ChildJobs) != 0 {
-		for _, job := range j.ChildJobs {
-			go job.Run()
+	// Run Dependent Jobs
+	if len(j.DependentJobs) != 0 {
+		for _, id := range j.DependentJobs {
+			go AllJobs[id].Run()
 		}
 	}
 }
