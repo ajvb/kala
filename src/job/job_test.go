@@ -48,6 +48,8 @@ func TestScheduleParsing(t *testing.T) {
 		time.Second, "The difference between parsed time and created time is to great.",
 	)
 
+	// TODO - Test error handling if schedule is incorrect.
+
 }
 
 var delayParsingTests = []struct {
@@ -78,6 +80,8 @@ func TestDelayParsing(t *testing.T) {
 		genericMockJob.Init()
 		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.ToDuration(), "Parsed duration was incorrect")
 	}
+
+	// TODO - Test error handling if interval is incorrect.
 }
 
 func TestJobInit(t *testing.T) {

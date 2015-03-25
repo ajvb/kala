@@ -36,7 +36,7 @@ type Job struct {
 	// Jobs that are dependent upon this one.
 	// Will be run after this job runs.
 	DependentJobs []string `json:"dependent_jobs"`
-	ParentJobs []string `json:"parent_jobs"`
+	ParentJobs    []string `json:"parent_jobs"`
 
 	// ISO 8601 String
 	// e.g. "R/2014-03-08T20:00:00.000Z/PT2H"
@@ -145,6 +145,7 @@ func (j *Job) StartWaiting() {
 }
 
 func (j *Job) Disable() {
+	// TODO - revisit error handling
 	//hasBeenStopped := j.jobTimer.Stop()
 	_ = j.jobTimer.Stop()
 	j.Disabled = true
