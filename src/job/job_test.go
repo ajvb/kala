@@ -11,7 +11,7 @@ import (
 func getMockJob() *Job {
 	return &Job{
 		Name:    "mock_job",
-		Command: "", // TODO
+		Command: "bash -c 'date'",
 		Owner:   "aj@ajvb.me",
 		Retries: 2,
 	}
@@ -103,6 +103,26 @@ func TestJobDisable(t *testing.T) {
 
 // TODO
 func TestJobRun(t *testing.T) {
+}
+
+func TestOneOffJobs(t *testing.T) {
+	j := getMockJob()
+
+	assert.Equal(t, j.SuccessCount, uint(0))
+	assert.Equal(t, j.ErrorCount, uint(0))
+	assert.Equal(t, j.LastSuccess, time.Time{})
+	assert.Equal(t, j.LastError, time.Time{})
+	assert.Equal(t, j.LastAttemptedRun, time.Time{})
+
+	j.Init()
+	time.Sleep(time.Second)
+	now := time.Now()
+
+	assert.Equal(t, j.SuccessCount, uint(1))
+	assert.WithinDuration(t, j.LastSuccess, now, 2*time.Second)
+	assert.WithinDuration(t, j.LastAttemptedRun, now, 2*time.Second)
+	assert.Equal(t, j.scheduleTime, time.Time{})
+	assert.Nil(t, j.jobTimer)
 }
 
 // TODO

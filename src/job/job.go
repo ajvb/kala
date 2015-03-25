@@ -86,6 +86,12 @@ func (j *Job) Init() error {
 		return nil
 	}
 
+	if j.Schedule == "" {
+		// If schedule is empty, its a one-off job.
+		go j.Run()
+		return nil
+	}
+
 	splitTime := strings.Split(j.Schedule, "/")
 	if len(splitTime) != 3 {
 		return fmt.Errorf("Schedule not formatted correctly. Should look like: R/2014-03-08T20:00:00Z/PT2H")
@@ -179,6 +185,7 @@ func (j *Job) Run() {
 		return
 	}
 
+	log.Info("%s was successful!", j.Name)
 	j.SuccessCount += 1
 	j.LastSuccess = time.Now()
 
