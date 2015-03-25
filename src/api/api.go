@@ -109,14 +109,33 @@ func handleDeleteJob(w http.ResponseWriter, r *http.Request, id string) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-type GetJobResponse struct {
+type JobResponse struct {
 	Job *job.Job `json:"job"`
 }
 
 func handleGetJob(w http.ResponseWriter, r *http.Request, id string) {
 	j := job.AllJobs[id]
 
-	resp := &GetJobResponse{
+	resp := &JobResponse{
+		Job: j,
+	}
+
+	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Error("Error occured when marshalling response: %s", err)
+		return
+	}
+}
+
+func HandleStartJobRequest(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	j := job.AllJobs[id]
+
+	j.Run()
+
+	resp := &JobResponse{
 		Job: j,
 	}
 

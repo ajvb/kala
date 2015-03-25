@@ -23,8 +23,8 @@ func main() {
 	r.HandleFunc(apiUrlPrefix+"{id}", api.HandleJobRequest).Methods("DELETE", "GET")
 	// Route for listing all jops
 	r.HandleFunc(apiUrlPrefix+"list", api.HandleListJobs).Methods("GET")
-	// TODO
-	// Manually start a job
+	// Route for manually start a job
+	r.HandleFunc(apiUrlPrefix+"start/{id}", api.HandleStartJobRequest).Methods("POST")
 
 	log.Info("Starting server...")
 
