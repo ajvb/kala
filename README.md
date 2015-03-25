@@ -29,6 +29,7 @@ MIT
 
 # TODO's
 
+### Features
 - [ ] Web UI
 - [ ] Configurable Retries
 - [ ] Persistant (BoltDB)
@@ -36,3 +37,20 @@ MIT
 - [ ] Go Client Library
 - [ ] Disaster Recovery
 - [ ] Error Reporting
+- [ ] RunAsUser
+- [ ] Retries obey Epsilon
+- [ ] Ability to pass in environment vars
+
+### For User
+- [ ] Users Documentation
+- [ ] Getting Started Guide
+- [ ] Single command to run docker image
+- [ ] More Example Scripts
+- [ ] Python Client Library
+- [ ] Node Client Library
+- [ ] CLI
+
+### For Contributors
+- [ ] Contributors Documentation
+- [ ] Continious Integration
+
