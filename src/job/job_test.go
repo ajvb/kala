@@ -119,6 +119,7 @@ func TestOneOffJobs(t *testing.T) {
 	assert.Equal(t, j.LastAttemptedRun, time.Time{})
 
 	j.Init()
+	// Find a better way to test a goroutine
 	time.Sleep(time.Second)
 	now := time.Now()
 
