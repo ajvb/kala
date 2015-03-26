@@ -31,15 +31,16 @@ MIT
 
 ### Features
 - [ ] Web UI
-- [ ] Configurable Retries
 - [ ] Persistant (BoltDB)
 - [ ] Job Stats (e.g. 50th, 75th, 95th and 99th percentile timing, failure/success)
 - [ ] Go Client Library
 - [ ] Disaster Recovery
 - [ ] Error Reporting
 - [ ] RunAsUser
-- [x] Retries obey Epsilon
 - [ ] Ability to pass in environment vars
+
+#### Performance
+- [ ] Swap AllJobs map out with a really caching backend
 
 ### For User
 - [ ] Users Documentation

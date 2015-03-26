@@ -105,11 +105,8 @@ func HandleJobRequest(w http.ResponseWriter, r *http.Request) {
 func handleDeleteJob(w http.ResponseWriter, r *http.Request, id string) {
 	log.Info("Deleting job: %s", id)
 
-	// Stop Job
-	job.AllJobs[id].Disable()
-
-	// Delete Job
-	delete(job.AllJobs, id)
+	j := job.AllJobs[id]
+	j.Delete()
 
 	w.WriteHeader(http.StatusNoContent)
 }
