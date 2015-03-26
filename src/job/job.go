@@ -124,7 +124,7 @@ func (j *Job) Init() error {
 
 	j.delayDuration, err = iso8601.FromString(splitTime[2])
 	if err != nil {
-		log.Error("Error converting delayDuration to a time.Duration: %s", err)
+		log.Error("Error converting delayDuration to a iso8601.Duration: %s", err)
 		return err
 	}
 	log.Debug("Delay Duration: %s", j.delayDuration.ToDuration())
