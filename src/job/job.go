@@ -208,7 +208,7 @@ type Job struct {
 	LastAttemptedRun time.Time `json:"last_attempted_run"`
 
 	jobTimer  *time.Timer
-	nextRunAt time.Time
+	NextRunAt time.Time `json:"next_run_at"`
 
 	// TODO
 	// RunAsUser string `json:""`
@@ -295,7 +295,7 @@ func (j *Job) StartWaiting() {
 		waitDuration = j.delayDuration.ToDuration()
 	}
 	log.Info("Job Scheduled to run in: %s", waitDuration)
-	j.nextRunAt = time.Now().Add(waitDuration)
+	j.NextRunAt = time.Now().Add(waitDuration)
 	j.jobTimer = time.AfterFunc(waitDuration, j.Run)
 }
 
@@ -336,7 +336,7 @@ func (j *Job) Run() {
 		// Handle retrying
 		if j.currentRetries != 0 {
 			if j.epsilonDuration.ToDuration() == 0 {
-				timeLeftToRetry := time.Duration(j.epsilonDuration.ToDuration()) - time.Duration(time.Now().UnixNano()-j.nextRunAt.UnixNano())
+				timeLeftToRetry := time.Duration(j.epsilonDuration.ToDuration()) - time.Duration(time.Now().UnixNano()-j.NextRunAt.UnixNano())
 				if timeLeftToRetry < 0 {
 					// TODO - Make thread safe
 					// Reset retries and exit.

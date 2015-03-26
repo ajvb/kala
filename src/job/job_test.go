@@ -155,7 +155,7 @@ func TestSaveAndGetJob(t *testing.T) {
 	assert.Equal(t, j.Owner, genericMockJob.Owner)
 	assert.Equal(t, j.SuccessCount, genericMockJob.SuccessCount)
 	// TODO - Should be no difference....
-	assert.WithinDuration(t, j.nextRunAt, genericMockJob.nextRunAt, 30*time.Microsecond)
+	assert.WithinDuration(t, j.NextRunAt, genericMockJob.NextRunAt, 30*time.Microsecond)
 }
 
 func TestDeleteJob(t *testing.T) {

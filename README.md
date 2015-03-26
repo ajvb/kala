@@ -31,7 +31,6 @@ MIT
 
 ### Features
 - [ ] Web UI
-- [ ] Persistant (BoltDB)
 - [ ] Job Stats (e.g. 50th, 75th, 95th and 99th percentile timing, failure/success)
 - [ ] Go Client Library
 - [ ] Disaster Recovery
