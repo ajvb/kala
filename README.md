@@ -38,7 +38,7 @@ MIT
 - [ ] Disaster Recovery
 - [ ] Error Reporting
 - [ ] RunAsUser
-- [ ] Retries obey Epsilon
+- [x] Retries obey Epsilon
 - [ ] Ability to pass in environment vars
 
 ### For User

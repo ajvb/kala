@@ -51,8 +51,10 @@ type Job struct {
 	timesToRepeat int64
 
 	// Number of times to retry on failed attempt for each run.
-	Retries        uint `json:"retries"`
-	currentRetries uint
+	Retries         uint `json:"retries"`
+	currentRetries  uint
+	Epsilon         string `json:"epsilon"`
+	epsilonDuration *iso8601.Duration
 
 	// Meta data about successful and failed runs.
 	SuccessCount     uint      `json:"success_count"`
@@ -61,10 +63,10 @@ type Job struct {
 	LastError        time.Time `json:"last_error"`
 	LastAttemptedRun time.Time `json:"last_attempted_run"`
 
-	jobTimer *time.Timer
+	jobTimer  *time.Timer
+	nextRunAt time.Time
 
 	// TODO
-	// Epilson time.Duration `json:""`
 	// RunAsUser string `json:""`
 	// EnvironmentVariables map[string]string `json:""`
 }
@@ -127,6 +129,14 @@ func (j *Job) Init() error {
 	}
 	log.Debug("Delay Duration: %s", j.delayDuration.ToDuration())
 
+	if j.Epsilon != "" {
+		j.epsilonDuration, err = iso8601.FromString(j.Epsilon)
+		if err != nil {
+			log.Error("Error converting j.Epsilon to iso8601.Duration: %s", err)
+			return err
+		}
+	}
+
 	j.StartWaiting()
 
 	return nil
@@ -141,6 +151,7 @@ func (j *Job) StartWaiting() {
 		waitDuration = j.delayDuration.ToDuration()
 	}
 	log.Info("Job Scheduled to run in: %s", waitDuration)
+	j.nextRunAt = time.Now().Add(waitDuration)
 	j.jobTimer = time.AfterFunc(waitDuration, j.Run)
 }
 
@@ -180,6 +191,15 @@ func (j *Job) Run() {
 		j.LastError = time.Now()
 		// Handle retrying
 		if j.currentRetries != 0 {
+			if j.epsilonDuration.ToDuration() == 0 {
+				timeLeftToRetry := time.Duration(j.epsilonDuration.ToDuration()) - time.Duration(time.Now().UnixNano()-j.nextRunAt.UnixNano())
+				if timeLeftToRetry < 0 {
+					// TODO - Make thread safe
+					// Reset retries and exit.
+					j.currentRetries = 0
+					return
+				}
+			}
 			j.currentRetries -= 0
 			j.Run()
 		}
