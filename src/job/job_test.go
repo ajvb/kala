@@ -131,7 +131,36 @@ func TestOneOffJobs(t *testing.T) {
 }
 
 // TODO
+func TestRetrying(t *testing.T) {
+}
+
 func TestDependentJobs(t *testing.T) {
+	mockJob := getMockJobWithGenericSchedule()
+	mockJob.Init()
+	AllJobs[mockJob.Id] = mockJob
+
+	mockChildJob := getMockJob()
+	mockChildJob.ParentJobs = []string{
+		mockJob.Id,
+	}
+	mockChildJob.Init()
+	AllJobs[mockChildJob.Id] = mockChildJob
+
+	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
+	assert.True(t, len(mockJob.DependentJobs) == 1)
+
+	mockJob.Save()
+
+	j, _ := GetJob(mockJob.Id)
+
+	assert.Equal(t, j.DependentJobs[0], mockChildJob.Id)
+
+	j.Run()
+	time.Sleep(time.Second * 2)
+	n := time.Now()
+
+	assert.WithinDuration(t, mockChildJob.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJob.LastSuccess, n, 4*time.Second)
 }
 
 // TODO
