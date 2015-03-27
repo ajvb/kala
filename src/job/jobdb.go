@@ -91,7 +91,7 @@ func GetJob(id string) (*Job, error) {
 
 func (j *Job) Delete() {
 	j.Disable()
-	delete(AllJobs, j.Id)
+	AllJobs.Delete(j.Id)
 	db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(jobBucket)
 		bucket.Delete([]byte(j.Id))
@@ -122,8 +122,11 @@ func (j *Job) Save() error {
 	return err
 }
 
-func SaveAllJobs() error {
-	for _, v := range AllJobs {
+func (c *JobCache) Persist() error {
+	c.rwLock.Lock()
+	defer c.rwLock.Unlock()
+
+	for _, v := range c.Jobs {
 		err := v.Save()
 		if err != nil {
 			return err
@@ -132,9 +135,9 @@ func SaveAllJobs() error {
 	return nil
 }
 
-func SaveAllJobsEvery(waitTime time.Duration) {
+func (c *JobCache) PersistEvery(waitTime time.Duration) {
 	for {
 		time.Sleep(waitTime)
-		go SaveAllJobs()
+		go c.Persist()
 	}
 }

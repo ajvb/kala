@@ -2,10 +2,13 @@ package job
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	//"os/user"
+	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	//"syscall"
 	"time"
 
@@ -16,7 +19,10 @@ import (
 )
 
 var (
-	AllJobs = make(map[string]*Job)
+	AllJobs = &JobCache{
+		Jobs:   make(map[string]*Job),
+		rwLock: sync.Mutex{},
+	}
 
 	log = logging.GetLogger("kala")
 )
@@ -28,10 +34,57 @@ func init() {
 		log.Fatal(err)
 	}
 	for _, v := range allJobs {
-		AllJobs[v.Id] = v
+		AllJobs.Set(v)
 	}
 	// Occasionally, save items in cache to db.
-	go SaveAllJobsEvery(SaveAllJobsWaitTime)
+	go AllJobs.PersistEvery(SaveAllJobsWaitTime)
+
+	// Process-level defer for shutting down the db.
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	go func() {
+		s := <-c
+		log.Info("Process got signal: %s", s)
+		log.Info("Shutting down....")
+
+		// Persist all jobs to database
+		AllJobs.Persist()
+
+		// Close the database
+		db.Close()
+	}()
+
+}
+
+type JobCache struct {
+	Jobs   map[string]*Job
+	rwLock sync.Mutex
+}
+
+func (c *JobCache) Get(id string) *Job {
+	c.rwLock.Lock()
+	defer c.rwLock.Unlock()
+
+	return c.Jobs[id]
+}
+
+func (c *JobCache) Set(j *Job) {
+	c.rwLock.Lock()
+	defer c.rwLock.Unlock()
+
+	if j == nil {
+		return
+	}
+
+	c.Jobs[j.Id] = j
+	return
+}
+
+func (c *JobCache) Delete(id string) {
+	c.rwLock.Lock()
+	defer c.rwLock.Unlock()
+
+	delete(c.Jobs, id)
 }
 
 type JobStat struct {
@@ -110,7 +163,7 @@ func (j *Job) Init() error {
 	if len(j.ParentJobs) != 0 {
 		// Add new job to parent jobs
 		for _, p := range j.ParentJobs {
-			AllJobs[p].DependentJobs = append(AllJobs[p].DependentJobs, j.Id)
+			AllJobs.Get(p).DependentJobs = append(AllJobs.Get(p).DependentJobs, j.Id)
 		}
 		return nil
 	}
@@ -273,7 +326,7 @@ func (j *Job) Run() {
 	// Run Dependent Jobs
 	if len(j.DependentJobs) != 0 {
 		for _, id := range j.DependentJobs {
-			go AllJobs[id].Run()
+			go AllJobs.Get(id).Run()
 		}
 	}
 }

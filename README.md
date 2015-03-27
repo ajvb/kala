@@ -38,9 +38,6 @@ MIT
 - [ ] RunAsUser
 - [ ] Ability to pass in environment vars
 
-#### Performance
-- [ ] Swap AllJobs map out with a really caching backend
-
 ### For User
 - [ ] Users Documentation
 - [ ] Getting Started Guide

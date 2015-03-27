@@ -24,7 +24,7 @@ type ListJobsResponse struct {
 // active or disabled.
 func HandleListJobs(w http.ResponseWriter, r *http.Request) {
 	resp := &ListJobsResponse{
-		Jobs: job.AllJobs,
+		Jobs: job.AllJobs.Jobs,
 	}
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
@@ -77,7 +77,7 @@ func HandleAddJob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errStr, 400)
 		return
 	}
-	job.AllJobs[newJob.Id] = newJob
+	job.AllJobs.Set(newJob)
 
 	resp := &AddJobResponse{
 		Id: newJob.Id,
@@ -105,7 +105,7 @@ func HandleJobRequest(w http.ResponseWriter, r *http.Request) {
 func handleDeleteJob(w http.ResponseWriter, r *http.Request, id string) {
 	log.Info("Deleting job: %s", id)
 
-	j := job.AllJobs[id]
+	j := job.AllJobs.Get(id)
 	j.Delete()
 
 	w.WriteHeader(http.StatusNoContent)
@@ -116,7 +116,7 @@ type JobResponse struct {
 }
 
 func handleGetJob(w http.ResponseWriter, r *http.Request, id string) {
-	j := job.AllJobs[id]
+	j := job.AllJobs.Get(id)
 
 	resp := &JobResponse{
 		Job: j,
@@ -133,7 +133,7 @@ func handleGetJob(w http.ResponseWriter, r *http.Request, id string) {
 func HandleStartJobRequest(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	j := job.AllJobs[id]
+	j := job.AllJobs.Get(id)
 
 	j.Run()
 

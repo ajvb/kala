@@ -138,14 +138,14 @@ func TestRetrying(t *testing.T) {
 func TestDependentJobs(t *testing.T) {
 	mockJob := getMockJobWithGenericSchedule()
 	mockJob.Init()
-	AllJobs[mockJob.Id] = mockJob
+	AllJobs.Set(mockJob)
 
 	mockChildJob := getMockJob()
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
 	mockChildJob.Init()
-	AllJobs[mockChildJob.Id] = mockChildJob
+	AllJobs.Set(mockChildJob)
 
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
 	assert.True(t, len(mockJob.DependentJobs) == 1)
@@ -210,13 +210,13 @@ func TestDeleteJob(t *testing.T) {
 	genericMockJob := getMockJobWithGenericSchedule()
 	genericMockJob.Init()
 	genericMockJob.Save()
-	AllJobs[genericMockJob.Id] = genericMockJob
+	AllJobs.Set(genericMockJob)
 
 	// Make sure its there
 	j, err := GetJob(genericMockJob.Id)
 	assert.Nil(t, err)
 	assert.Equal(t, j.Name, genericMockJob.Name)
-	assert.NotNil(t, AllJobs[genericMockJob.Id])
+	assert.NotNil(t, AllJobs.Get(genericMockJob.Id))
 
 	// Delete it
 	genericMockJob.Delete()
@@ -224,7 +224,7 @@ func TestDeleteJob(t *testing.T) {
 	k, err := GetJob(genericMockJob.Id)
 	assert.Error(t, err)
 	assert.Nil(t, k)
-	assert.Nil(t, AllJobs[genericMockJob.Id])
+	assert.Nil(t, AllJobs.Get(genericMockJob.Id))
 }
 
 //TODO
