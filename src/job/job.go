@@ -5,8 +5,10 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os/exec"
+	//"os/user"
 	"strconv"
 	"strings"
+	//"syscall"
 	"time"
 
 	"../utils/iso8601"
@@ -169,6 +171,10 @@ type Job struct {
 	// Command to run
 	// e.g. "bash /path/to/my/script.sh"
 	Command string `json:"command"`
+	// Run command as a different user?
+	//TODO
+	//RunAsUser string `json:""`
+	//user *user.User
 
 	// Email of the owner of this job
 	// e.g. "admin@example.com"
@@ -211,7 +217,6 @@ type Job struct {
 	NextRunAt time.Time `json:"next_run_at"`
 
 	// TODO
-	// RunAsUser string `json:""`
 	// EnvironmentVariables map[string]string `json:""`
 }
 
@@ -281,6 +286,17 @@ func (j *Job) Init() error {
 		}
 	}
 
+	//TODO
+	/*
+		if j.RunAsUser != "" {
+			j.user, err = user.Lookup(j.RunAsUser)
+			if err != nil {
+				log.Error("Error looking up user %s", j.RunAsUser)
+				return err
+			}
+		}
+	*/
+
 	j.StartWaiting()
 
 	return nil
@@ -328,6 +344,26 @@ func (j *Job) Run() {
 	// Execute command
 	args := strings.Split(j.Command, " ")
 	cmd := exec.Command(args[0], args[1:]...)
+
+	//TODO
+	/*
+		if j.RunAsUser != "" {
+			uid, err := strconv.Atoi(j.user.Uid)
+			if err != nil {
+				//TODO
+				//return err
+				return
+			}
+			gid, err := strconv.Atoi(j.user.Gid)
+			if err != nil {
+				//TODO
+				//return err
+				return
+			}
+			cmd.SysProcAttr = &syscall.SysProcAttr{}
+			cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
+		}
+	*/
 	err := cmd.Run()
 	if err != nil {
 		log.Error("Run Command got an Error: %s", err)
