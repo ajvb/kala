@@ -34,6 +34,12 @@ func init() {
 	go SaveAllJobsEvery(SaveAllJobsWaitTime)
 }
 
+type JobStat struct {
+	JobId             string
+	RanAt             time.Time
+	NumberOfRetries   uint
+	Success           bool
+	ExecutionDuration time.Duration
 }
 
 type Job struct {
