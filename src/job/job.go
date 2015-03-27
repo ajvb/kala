@@ -371,13 +371,15 @@ func (j *Job) Run() {
 		j.LastError = time.Now()
 		// Handle retrying
 		if j.currentRetries != 0 {
-			if j.epsilonDuration.ToDuration() == 0 {
-				timeLeftToRetry := time.Duration(j.epsilonDuration.ToDuration()) - time.Duration(time.Now().UnixNano()-j.NextRunAt.UnixNano())
-				if timeLeftToRetry < 0 {
-					// TODO - Make thread safe
-					// Reset retries and exit.
-					j.currentRetries = 0
-					return
+			if j.Epsilon != "" {
+				if j.epsilonDuration.ToDuration() == 0 {
+					timeLeftToRetry := time.Duration(j.epsilonDuration.ToDuration()) - time.Duration(time.Now().UnixNano()-j.NextRunAt.UnixNano())
+					if timeLeftToRetry < 0 {
+						// TODO - Make thread safe
+						// Reset retries and exit.
+						j.currentRetries = 0
+						return
+					}
 				}
 			}
 			j.currentRetries -= 0
