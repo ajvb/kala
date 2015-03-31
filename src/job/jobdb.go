@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	SaveAllJobsWaitTime = time.Duration(5 * time.Second)
+	SaveAllJobsWaitTime = 5 * time.Second
 
 	db = getDB()
 
@@ -39,7 +39,7 @@ func StartWatchingAllJobs() error {
 }
 
 func GetAllJobs() ([]*Job, error) {
-	allJobs := make([]*Job, 0)
+	allJobs := []*Job{}
 
 	err := db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(jobBucket)
@@ -53,9 +53,13 @@ func GetAllJobs() ([]*Job, error) {
 			j := new(Job)
 			err := dec.Decode(j)
 
+			if err != nil {
+				return err
+			}
+
 			allJobs = append(allJobs, j)
 
-			return err
+			return nil
 		})
 
 		return err
@@ -86,7 +90,7 @@ func GetJob(id string) (*Job, error) {
 
 	j.Init()
 	j.Id = id
-	return j, err
+	return j, nil
 }
 
 func (j *Job) Delete() {

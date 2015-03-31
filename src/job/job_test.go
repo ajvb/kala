@@ -57,24 +57,14 @@ var delayParsingTests = []struct {
 	expected    time.Duration
 	intervalStr string
 }{
-	{time.Duration(
-		(time.Hour * 24) + (time.Second * 10) + (time.Minute * 10),
-	), "P1DT10M10S"},
-	{time.Duration(
-		(time.Second * 10) + (time.Minute * 10),
-	), "PT10M10S"},
-	{time.Duration(
-		(time.Hour * 24) + (time.Second * 10),
-	), "P1DT10S"},
-	{time.Duration(
-		(time.Hour * 24 * 365) + (time.Hour * 24),
-	), "P1Y1DT"},
+	{time.Hour*24 + time.Second*10 + time.Minute*10, "P1DT10M10S"},
+	{time.Second*10 + time.Minute*10, "PT10M10S"},
+	{time.Hour*24 + time.Second*10, "P1DT10S"},
+	{time.Hour*24*365 + time.Hour*24, "P1Y1DT"},
 }
 
 func TestDelayParsing(t *testing.T) {
-	testTime := time.Now().Add(
-		time.Duration(time.Minute * 1),
-	)
+	testTime := time.Now().Add(time.Minute * 1)
 
 	for _, delayTest := range delayParsingTests {
 		genericMockJob := getMockJobWithSchedule(1, testTime, delayTest.intervalStr)
@@ -99,7 +89,7 @@ func TestJobDisable(t *testing.T) {
 	genericMockJob := getMockJobWithGenericSchedule()
 	genericMockJob.Init()
 
-	assert.False(t, genericMockJob.Disabled, "Job should start with disbaled == false")
+	assert.False(t, genericMockJob.Disabled, "Job should start with disabled == false")
 
 	genericMockJob.Disable()
 	assert.True(t, genericMockJob.Disabled, "Job.Disable() should set Job.Disabled to true")
