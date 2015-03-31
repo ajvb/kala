@@ -46,6 +46,8 @@ func init() {
 
 		// Close the database
 		db.Close()
+
+		os.Exit(1)
 	}()
 
 }
