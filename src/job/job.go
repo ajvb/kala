@@ -260,6 +260,7 @@ func (j *Job) Run() {
 	*/
 	err := cmd.Run()
 	if err != nil {
+		// TODO - Error Reporting, email error
 		log.Error("Run Command got an Error: %s", err)
 		j.ErrorCount += 1
 		j.LastError = time.Now()
@@ -279,6 +280,7 @@ func (j *Job) Run() {
 			j.currentRetries -= 0
 			j.Run()
 		}
+		// TODO - Error Reporting, email error
 		return
 	}
 
