@@ -277,7 +277,7 @@ func (j *Job) Run() {
 					}
 				}
 			}
-			j.currentRetries -= 0
+			j.currentRetries -= 1
 			j.Run()
 		}
 		// TODO - Error Reporting, email error
