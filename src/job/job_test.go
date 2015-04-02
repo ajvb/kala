@@ -96,8 +96,17 @@ func TestJobDisable(t *testing.T) {
 	//TODO test genericMockJob.jobTimer is stopped
 }
 
-// TODO
+// TODO - Add error case
 func TestJobRun(t *testing.T) {
+	j := getMockJobWithGenericSchedule()
+	j.Init()
+	j.Run()
+
+	now := time.Now()
+
+	assert.Equal(t, j.SuccessCount, uint(1))
+	assert.WithinDuration(t, j.LastSuccess, now, 2*time.Second)
+	assert.WithinDuration(t, j.LastAttemptedRun, now, 2*time.Second)
 }
 
 func TestOneOffJobs(t *testing.T) {
