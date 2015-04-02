@@ -31,21 +31,17 @@ MIT
 
 ### Features
 - [ ] Web UI
-- [ ] Job Stats (e.g. 50th, 75th, 95th and 99th percentile timing, failure/success)
-- [ ] Go Client Library
-- [ ] Disaster Recovery
-- [ ] Error Reporting
-- [ ] RunAsUser
 - [ ] Ability to pass in environment vars
+- [ ] Config file and/or CL flags
+    - Port & Host
 
 ### For User
 - [ ] Users Documentation
-- [ ] Getting Started Guide
 - [ ] Single command to run docker image
-- [ ] More Example Scripts
 - [ ] Python Client Library
 - [ ] Node Client Library
 - [ ] CLI
+- [ ] Create single release binary
 
 ### For Contributors
 - [ ] Contributors Documentation
