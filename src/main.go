@@ -22,7 +22,7 @@ func main() {
 	// Route for deleting and getting a job
 	r.HandleFunc(apiUrlPrefix+"{id}", api.HandleJobRequest).Methods("DELETE", "GET")
 	// Route for listing all jops
-	r.HandleFunc(apiUrlPrefix+"list", api.HandleListJobs).Methods("GET")
+	r.HandleFunc(apiUrlPrefix, api.HandleListJobs).Methods("GET")
 	// Route for manually start a job
 	r.HandleFunc(apiUrlPrefix+"start/{id}", api.HandleStartJobRequest).Methods("POST")
 
