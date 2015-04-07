@@ -29,6 +29,5 @@ func main() {
 	r.HandleFunc("/api/v1/stats/", api.HandleKalaStats).Methods("GET")
 
 	log.Info("Starting server...")
-
-	log.Fatal(http.ListenAndServe(":8000", r))
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
