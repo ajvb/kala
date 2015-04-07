@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	//"syscall"
+	"sync"
 	"time"
 
 	"../utils/iso8601"
@@ -103,6 +104,11 @@ type Job struct {
 
 	jobTimer  *time.Timer
 	NextRunAt time.Time `json:"next_run_at"`
+
+	currentStat *JobStat
+	Stats       []*JobStat `json:"-"`
+
+	lock sync.Mutex
 
 	// TODO
 	// EnvironmentVariables map[string]string `json:""`
@@ -215,20 +221,57 @@ func (j *Job) Disable() {
 func (j *Job) Run() {
 	log.Info("Job %s running", j.Name)
 
-	// Schedule next run
-	if j.timesToRepeat != 0 {
-		j.timesToRepeat -= 1
-		go j.StartWaiting()
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	j.runSetup()
+
+	for {
+		err := j.runCmd()
+		if err != nil {
+			// Log Error in Metadata
+			// TODO - Error Reporting, email error
+			log.Error("Run Command got an Error: %s", err)
+
+			// Handle retrying
+			if j.shouldRetry() {
+				j.currentRetries -= 1
+				continue
+			}
+
+			j.ErrorCount += 1
+			j.LastError = time.Now()
+
+			// If it doesn't retry, cleanup and exit.
+			j.runCleanup()
+			return
+		}
+		break
 	}
 
-	j.LastAttemptedRun = time.Now()
+	log.Info("%s was successful!", j.Name)
+	j.SuccessCount += 1
+	j.LastSuccess = time.Now()
 
-	// TODO - Make thread safe
-	// Init retries
-	if j.currentRetries == 0 && j.Retries != 0 {
-		j.currentRetries = j.Retries
+	// Get Execution Duration
+	j.currentStat.ExecutionDuration = time.Duration(
+		j.currentStat.RanAt.UnixNano() - j.LastSuccess.UnixNano(),
+	)
+	j.currentStat.Success = true
+	j.currentStat.NumberOfRetries = j.Retries - j.currentRetries
+
+	// Run Dependent Jobs
+	if len(j.DependentJobs) != 0 {
+		for _, id := range j.DependentJobs {
+			go AllJobs.Get(id).Run()
+		}
 	}
 
+	j.runCleanup()
+	return
+}
+
+func (j *Job) runCmd() error {
 	// Execute command
 	args := strings.Split(j.Command, " ")
 	cmd := exec.Command(args[0], args[1:]...)
@@ -238,54 +281,57 @@ func (j *Job) Run() {
 		if j.RunAsUser != "" {
 			uid, err := strconv.Atoi(j.user.Uid)
 			if err != nil {
-				//TODO
-				//return err
-				return
+				return err
 			}
 			gid, err := strconv.Atoi(j.user.Gid)
 			if err != nil {
-				//TODO
-				//return err
-				return
+				return err
 			}
 			cmd.SysProcAttr = &syscall.SysProcAttr{}
 			cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
 		}
 	*/
-	err := cmd.Run()
-	if err != nil {
-		// TODO - Error Reporting, email error
-		log.Error("Run Command got an Error: %s", err)
-		j.ErrorCount += 1
-		j.LastError = time.Now()
-		// Handle retrying
-		if j.currentRetries != 0 {
-			if j.Epsilon != "" {
-				if j.epsilonDuration.ToDuration() == 0 {
-					timeLeftToRetry := time.Duration(j.epsilonDuration.ToDuration()) - time.Duration(time.Now().UnixNano()-j.NextRunAt.UnixNano())
-					if timeLeftToRetry < 0 {
-						// TODO - Make thread safe
-						// Reset retries and exit.
-						j.currentRetries = 0
-						return
-					}
-				}
+	return cmd.Run()
+}
+
+func (j *Job) shouldRetry() bool {
+	// Check number of retries left
+	if j.currentRetries == 0 {
+		return false
+	}
+
+	// Check Epsilon
+	if j.Epsilon != "" {
+		if j.epsilonDuration.ToDuration() == 0 {
+			// TODO - cleanup
+			timeLeftToRetry := time.Duration(j.epsilonDuration.ToDuration()) - time.Duration(time.Now().UnixNano()-j.NextRunAt.UnixNano())
+			if timeLeftToRetry < 0 {
+				return false
 			}
-			j.currentRetries -= 1
-			j.Run()
-		}
-		// TODO - Error Reporting, email error
-		return
-	}
-
-	log.Info("%s was successful!", j.Name)
-	j.SuccessCount += 1
-	j.LastSuccess = time.Now()
-
-	// Run Dependent Jobs
-	if len(j.DependentJobs) != 0 {
-		for _, id := range j.DependentJobs {
-			go AllJobs.Get(id).Run()
 		}
 	}
+
+	return true
+}
+
+func (j *Job) runSetup() {
+	// Setup Job Stat
+	j.currentStat = NewJobStat(j.Id)
+
+	// Schedule next run
+	if j.timesToRepeat != 0 {
+		j.timesToRepeat -= 1
+		go j.StartWaiting()
+	}
+
+	j.LastAttemptedRun = time.Now()
+
+	// Init retries
+	j.currentRetries = j.Retries
+}
+
+func (j *Job) runCleanup() {
+	j.Stats = append(j.Stats, j.currentStat)
+	j.currentStat = nil
+	j.currentRetries = 0
 }
