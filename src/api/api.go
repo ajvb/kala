@@ -13,8 +13,26 @@ import (
 )
 
 var (
-	log = logging.GetLogger("kala")
+	log = logging.GetLogger("api")
 )
+
+type KalaStatsResponse struct {
+	Stats *job.KalaStats
+}
+
+func HandleKalaStats(w http.ResponseWriter, r *http.Request) {
+	resp := &KalaStatsResponse{
+		Stats: job.NewKalaStats(),
+	}
+
+	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Error("Error occured when marshalling response: %s", err)
+		return
+	}
+
+}
 
 type ListJobsResponse struct {
 	Jobs map[string]*job.Job `json:"jobs"`

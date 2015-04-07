@@ -12,7 +12,8 @@ type KalaStats struct {
 	ErrorCount   uint
 	SuccessCount uint
 
-	NextJobRunAt time.Time
+	NextRunAt        time.Time
+	LastAttemptedRun time.Time
 
 	CreatedAt time.Time
 }
@@ -29,22 +30,33 @@ func NewKalaStats() *KalaStats {
 	}
 
 	nextRun := time.Time{}
+	lastRun := time.Time{}
 	for _, job := range jobs {
 		if job.Disabled {
 			ks.DisabledJobs += 1
 		} else {
 			ks.ActiveJobs += 1
 		}
+
 		if nextRun.IsZero() {
 			nextRun = job.NextRunAt
 		} else if (nextRun.UnixNano() - job.NextRunAt.UnixNano()) > 0 {
 			nextRun = job.NextRunAt
 		}
 
+		if lastRun.IsZero() {
+			if !job.LastAttemptedRun.IsZero() {
+				lastRun = job.LastAttemptedRun
+			}
+		} else if (lastRun.UnixNano() - job.LastAttemptedRun.UnixNano()) > 0 {
+			lastRun = job.LastAttemptedRun
+		}
+
 		ks.ErrorCount += job.ErrorCount
 		ks.SuccessCount += job.SuccessCount
 	}
-	ks.NextJobRunAt = nextRun
+	ks.NextRunAt = nextRun
+	ks.LastAttemptedRun = lastRun
 
 	return ks
 }
