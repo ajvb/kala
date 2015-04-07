@@ -25,6 +25,8 @@ func main() {
 	r.HandleFunc(apiUrlPrefix, api.HandleListJobs).Methods("GET")
 	// Route for manually start a job
 	r.HandleFunc(apiUrlPrefix+"start/{id}", api.HandleStartJobRequest).Methods("POST")
+	// Route for getting app-level metrics
+	r.HandleFunc("/api/v1/stats/", api.HandleKalaStats).Methods("GET")
 
 	log.Info("Starting server...")
 
