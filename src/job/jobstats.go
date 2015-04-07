@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// KalaStats is the struct for storing app-level metrics
 type KalaStats struct {
 	ActiveJobs   int
 	DisabledJobs int
@@ -18,6 +19,7 @@ type KalaStats struct {
 	CreatedAt time.Time
 }
 
+// NewKalaStats is used to easily generate a current app-level metrics report.
 func NewKalaStats() *KalaStats {
 	ks := &KalaStats{
 		CreatedAt: time.Now(),
@@ -61,6 +63,7 @@ func NewKalaStats() *KalaStats {
 	return ks
 }
 
+// JobStat is used to store metrics about a specific Job .Run()
 type JobStat struct {
 	JobId             string
 	RanAt             time.Time

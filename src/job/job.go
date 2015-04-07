@@ -72,10 +72,11 @@ type Job struct {
 	// Is this job disabled?
 	Disabled bool `json:"disabled"`
 
-	// Jobs that are dependent upon this one.
-	// Will be run after this job runs.
+	// Jobs that are dependent upon this one will be run after this job runs.
 	DependentJobs []string `json:"dependent_jobs"`
-	ParentJobs    []string `json:"parent_jobs"`
+
+	// List of ids of jobs that this job is dependent upon.
+	ParentJobs []string `json:"parent_jobs"`
 
 	// ISO 8601 String
 	// e.g. "R/2014-03-08T20:00:00.000Z/PT2H"
@@ -90,8 +91,10 @@ type Job struct {
 	timesToRepeat int64
 
 	// Number of times to retry on failed attempt for each run.
-	Retries         uint `json:"retries"`
-	currentRetries  uint
+	Retries        uint `json:"retries"`
+	currentRetries uint
+
+	// Duration in which it is safe to retry the Job.
 	Epsilon         string `json:"epsilon"`
 	epsilonDuration *iso8601.Duration
 
@@ -114,7 +117,7 @@ type Job struct {
 	// EnvironmentVariables map[string]string `json:""`
 }
 
-// Init() fills in the protected fields and parses the iso8601 notation.
+// Init fills in the protected fields and parses the iso8601 notation.
 func (j *Job) Init() error {
 	u4, err := uuid.NewV4()
 	if err != nil {
@@ -211,6 +214,8 @@ func (j *Job) StartWaiting() {
 	j.jobTimer = time.AfterFunc(waitDuration, j.Run)
 }
 
+// Disable stops the job from running by stopping its jobTimer. It also sets Job.Disabled to true,
+// which is reflected in the UI.
 func (j *Job) Disable() {
 	// TODO - revisit error handling
 	//hasBeenStopped := j.jobTimer.Stop()
@@ -218,7 +223,7 @@ func (j *Job) Disable() {
 	j.Disabled = true
 }
 
-// Run() executes the Job's command, collects metadata around the success
+// Run executes the Job's command, collects metadata around the success
 // or failure of the Job's execution, and schedules the next run.
 func (j *Job) Run() {
 	log.Info("Job %s running", j.Name)
@@ -237,11 +242,11 @@ func (j *Job) Run() {
 
 			// Handle retrying
 			if j.shouldRetry() {
-				j.currentRetries -= 1
+				j.currentRetries--
 				continue
 			}
 
-			j.ErrorCount += 1
+			j.ErrorCount++
 			j.LastError = time.Now()
 
 			// If it doesn't retry, cleanup and exit.
@@ -252,7 +257,7 @@ func (j *Job) Run() {
 	}
 
 	log.Info("%s was successful!", j.Name)
-	j.SuccessCount += 1
+	j.SuccessCount++
 	j.LastSuccess = time.Now()
 
 	// Get Execution Duration
@@ -322,7 +327,7 @@ func (j *Job) runSetup() {
 
 	// Schedule next run
 	if j.timesToRepeat != 0 {
-		j.timesToRepeat -= 1
+		j.timesToRepeat--
 		go j.StartWaiting()
 	}
 
