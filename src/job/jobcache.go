@@ -23,6 +23,13 @@ func (c *JobCache) Get(id string) *Job {
 	return c.Jobs[id]
 }
 
+func (c *JobCache) GetAll() map[string]*Job {
+	c.rwLock.Lock()
+	defer c.rwLock.Unlock()
+
+	return c.Jobs
+}
+
 func (c *JobCache) Set(j *Job) {
 	c.rwLock.Lock()
 	defer c.rwLock.Unlock()

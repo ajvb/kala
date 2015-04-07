@@ -42,7 +42,7 @@ type ListJobsResponse struct {
 // active or disabled.
 func HandleListJobs(w http.ResponseWriter, r *http.Request) {
 	resp := &ListJobsResponse{
-		Jobs: job.AllJobs.Jobs,
+		Jobs: job.AllJobs.GetAll(),
 	}
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
