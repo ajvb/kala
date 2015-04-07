@@ -139,7 +139,9 @@ func (j *Job) Init() error {
 
 	splitTime := strings.Split(j.Schedule, "/")
 	if len(splitTime) != 3 {
-		return fmt.Errorf("Schedule not formatted correctly. Should look like: R/2014-03-08T20:00:00Z/PT2H")
+		return fmt.Errorf(
+			"Schedule not formatted correctly. Should look like: R/2014-03-08T20:00:00Z/PT2H",
+		)
 	}
 
 	// Handle Repeat Amount
