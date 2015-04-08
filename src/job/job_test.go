@@ -48,9 +48,16 @@ func TestScheduleParsing(t *testing.T) {
 		t, genericMockJob.scheduleTime, fiveMinutesFromNow,
 		time.Second, "The difference between parsed time and created time is to great.",
 	)
+}
 
-	// TODO - Test error handling if schedule is incorrect.
+func TestBrokenSchedule(t *testing.T) {
+	mockJob := getMockJobWithGenericSchedule()
+	mockJob.Schedule = "hfhgasyuweu123"
 
+	err := mockJob.Init()
+
+	assert.Error(t, err)
+	assert.Nil(t, mockJob.jobTimer)
 }
 
 var delayParsingTests = []struct {
@@ -71,8 +78,23 @@ func TestDelayParsing(t *testing.T) {
 		genericMockJob.Init()
 		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.ToDuration(), "Parsed duration was incorrect")
 	}
+}
 
-	// TODO - Test error handling if interval is incorrect.
+func TestBrokenDelayHandling(t *testing.T) {
+	testTime := time.Now().Add(time.Minute * 1)
+	brokenIntervals := []string{
+		"DTT",
+		"000D",
+		"ASDASD",
+	}
+
+	for _, intervalTest := range brokenIntervals {
+		genericMockJob := getMockJobWithSchedule(1, testTime, intervalTest)
+		err := genericMockJob.Init()
+
+		assert.Error(t, err)
+		assert.Nil(t, genericMockJob.jobTimer)
+	}
 }
 
 func TestJobInit(t *testing.T) {
@@ -93,7 +115,7 @@ func TestJobDisable(t *testing.T) {
 
 	genericMockJob.Disable()
 	assert.True(t, genericMockJob.Disabled, "Job.Disable() should set Job.Disabled to true")
-	//TODO test genericMockJob.jobTimer is stopped
+	assert.False(t, genericMockJob.jobTimer.Stop())
 }
 
 // TODO - Add error case
@@ -195,14 +217,14 @@ func TestSaveAndGetJob(t *testing.T) {
 	j, err := GetJob(genericMockJob.Id)
 	assert.Nil(t, err)
 
+	// TODO - Should be no difference....
+	assert.WithinDuration(t, j.NextRunAt, genericMockJob.NextRunAt, 30*time.Microsecond)
 	assert.Equal(t, j.Name, genericMockJob.Name)
 	assert.Equal(t, j.Id, genericMockJob.Id)
 	assert.Equal(t, j.Command, genericMockJob.Command)
 	assert.Equal(t, j.Schedule, genericMockJob.Schedule)
 	assert.Equal(t, j.Owner, genericMockJob.Owner)
 	assert.Equal(t, j.SuccessCount, genericMockJob.SuccessCount)
-	// TODO - Should be no difference....
-	assert.WithinDuration(t, j.NextRunAt, genericMockJob.NextRunAt, 30*time.Microsecond)
 }
 
 func TestDeleteJob(t *testing.T) {
