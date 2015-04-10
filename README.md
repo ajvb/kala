@@ -21,7 +21,7 @@ TODO
 |Deleting a Job | DELETE | /api/v1/jobs/{id} |
 |Getting a list of all Jobs | GET | /api/v1/jobs |
 |Starting a Job manually | POST | /api/v1/jobs/start/{id} |
-|Getting app|level metrics | GET | /api/v1/stats |
+|Getting app-level metrics | GET | /api/v1/stats |
 
 
 # Documentation
