@@ -12,6 +12,18 @@ notation, Dependant Jobs, and is Persistant (using BoltDB).
 
 TODO
 
+# API
+
+| Task | Method | Route |
+| --- | --- | --- |
+|Creating a Job | POST | /api/v1/jobs |
+|Getting a Job | GET | /api/v1/jobs/{id} |
+|Deleting a Job | DELETE | /api/v1/jobs/{id} |
+|Getting a list of all Jobs | GET | /api/v1/jobs |
+|Starting a Job manually | POST | /api/v1/jobs/start/{id} |
+|Getting app|level metrics | GET | /api/v1/stats |
+
+
 # Documentation
 
 TODO
