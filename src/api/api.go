@@ -20,9 +20,31 @@ type KalaStatsResponse struct {
 	Stats *job.KalaStats
 }
 
-func HandleKalaStats(w http.ResponseWriter, r *http.Request) {
+func HandleKalaStatsRequest(w http.ResponseWriter, r *http.Request) {
 	resp := &KalaStatsResponse{
 		Stats: job.NewKalaStats(),
+	}
+
+	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Error("Error occured when marshalling response: %s", err)
+		return
+	}
+
+}
+
+type ListJobStatsResponse struct {
+	JobStats []*job.JobStat `json:"job_stats"`
+}
+
+func HandleListJobStatsRequest(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	j := job.AllJobs.Get(id)
+
+	resp := &ListJobStatsResponse{
+		JobStats: j.Stats,
 	}
 
 	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
@@ -40,7 +62,7 @@ type ListJobsResponse struct {
 
 // HandleListJobs responds with an array of all Jobs within the server,
 // active or disabled.
-func HandleListJobs(w http.ResponseWriter, r *http.Request) {
+func HandleListJobsRequest(w http.ResponseWriter, r *http.Request) {
 	resp := &ListJobsResponse{
 		Jobs: job.AllJobs.GetAll(),
 	}
