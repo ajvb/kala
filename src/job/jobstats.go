@@ -42,7 +42,7 @@ func NewKalaStats() *KalaStats {
 
 		if nextRun.IsZero() {
 			nextRun = job.NextRunAt
-		} else if (nextRun.UnixNano() - job.NextRunAt.UnixNano()) > 0 {
+		} else if (nextRun.UnixNano() - job.NextRunAt.UnixNano()) < 0 {
 			nextRun = job.NextRunAt
 		}
 
@@ -50,7 +50,7 @@ func NewKalaStats() *KalaStats {
 			if !job.LastAttemptedRun.IsZero() {
 				lastRun = job.LastAttemptedRun
 			}
-		} else if (lastRun.UnixNano() - job.LastAttemptedRun.UnixNano()) > 0 {
+		} else if (lastRun.UnixNano() - job.LastAttemptedRun.UnixNano()) < 0 {
 			lastRun = job.LastAttemptedRun
 		}
 
