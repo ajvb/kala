@@ -29,7 +29,7 @@ func main() {
 	// Route for manually start a job
 	r.HandleFunc(apiUrlPrefix+"start/{id}", api.HandleStartJobRequest).Methods("POST")
 	// Route for getting app-level metrics
-	r.HandleFunc("/api/v1/stats/", api.HandleKalaStats).Methods("GET")
+	r.HandleFunc("/api/v1/stats", api.HandleKalaStats).Methods("GET")
 
 	// UI
 	r.HandleFunc("/", ui.HandleDashboard).Methods("GET")
