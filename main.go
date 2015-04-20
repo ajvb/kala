@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"./api"
-	"./ui"
+	//"./ui"
 
 	"github.com/222Labs/common/go/logging"
 	"github.com/gorilla/mux"
@@ -19,24 +19,12 @@ func main() {
 	r := mux.NewRouter()
 
 	// API
-	apiUrlPrefix := "/api/v1/job/"
-	// Route for creating a job
-	r.HandleFunc(apiUrlPrefix, api.HandleAddJob).Methods("POST")
-	// Route for deleting and getting a job
-	r.HandleFunc(apiUrlPrefix+"{id}", api.HandleJobRequest).Methods("DELETE", "GET")
-	// Route for getting job stats
-	r.HandleFunc(apiUrlPrefix+"{id}/stats", api.HandleListJobStatsRequest).Methods("POST")
-	// Route for listing all jops
-	r.HandleFunc(apiUrlPrefix, api.HandleListJobsRequest).Methods("GET")
-	// Route for manually start a job
-	r.HandleFunc(apiUrlPrefix+"start/{id}", api.HandleStartJobRequest).Methods("POST")
-	// Route for getting app-level metrics
-	r.HandleFunc("/api/v1/stats", api.HandleKalaStatsRequest).Methods("GET")
+	api.SetupApiRoutes(r)
 
 	// UI
-	r.HandleFunc("/", ui.HandleDashboard).Methods("GET")
-	fileServer := http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir)))
-	r.PathPrefix("/").Handler(fileServer)
+	//r.HandleFunc("/", ui.HandleDashboard).Methods("GET")
+	//fileServer := http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir)))
+	//r.PathPrefix("/").Handler(fileServer)
 
 	log.Info("Starting server...")
 	log.Fatal(http.ListenAndServe(":8080", r))

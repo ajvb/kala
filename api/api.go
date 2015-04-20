@@ -12,6 +12,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const (
+	ApiUrlPrefix = "/api/v1/"
+	JobPath      = "job/"
+	ApiJobPath   = ApiUrlPrefix + JobPath
+)
+
 var (
 	log = logging.GetLogger("api")
 )
@@ -177,14 +183,20 @@ func HandleStartJobRequest(w http.ResponseWriter, r *http.Request) {
 
 	j.Run()
 
-	resp := &JobResponse{
-		Job: j,
-	}
+	w.WriteHeader(http.StatusNoContent)
+}
 
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		log.Error("Error occured when marshalling response: %s", err)
-		return
-	}
+func SetupApiRoutes(r *mux.Router) {
+	// Route for creating a job
+	r.HandleFunc(ApiJobPath, HandleAddJob).Methods("POST")
+	// Route for deleting and getting a job
+	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest).Methods("DELETE", "GET")
+	// Route for getting job stats
+	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest).Methods("POST")
+	// Route for listing all jops
+	r.HandleFunc(ApiJobPath, HandleListJobsRequest).Methods("GET")
+	// Route for manually start a job
+	r.HandleFunc(ApiJobPath+"start/{id}", HandleStartJobRequest).Methods("POST")
+	// Route for getting app-level metrics
+	r.HandleFunc(ApiUrlPrefix+"/stats", HandleKalaStatsRequest).Methods("GET")
 }
