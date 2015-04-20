@@ -29,7 +29,6 @@ func NewKalaClient(apiEndpoint string) *KalaClient {
 
 func (kc *KalaClient) CreateJob(body map[string]string) (string, error) {
 	id := &api.AddJobResponse{}
-	fmt.Println("%#v", kc.requester)
 	_, err := kc.requester.New().Post(api.JobPath).JsonBody(body).Receive(id)
 	if err != nil {
 		return "", err

@@ -37,37 +37,41 @@ func generateNewJobMap() map[string]string {
 	}
 }
 
-func TestCreateAndGetJob(t *testing.T) {
+func TestCreateGetDeleteJob(t *testing.T) {
 	ts := getNewTestServer()
+	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
 	j := generateNewJobMap()
 
 	id, err := kc.CreateJob(j)
-
 	assert.NoError(t, err)
 	assert.NotEqual(t, id, "")
 
 	respJob, err := kc.GetJob(id)
-
 	assert.NoError(t, err)
 	assert.Equal(t, j["schedule"], respJob.Schedule)
 	assert.Equal(t, j["name"], respJob.Name)
 	assert.Equal(t, j["command"], respJob.Command)
 	assert.Equal(t, j["owner"], respJob.Owner)
+
+	ok, err := kc.DeleteJob(id)
+	assert.NoError(t, err)
+	assert.True(t, ok)
 }
 
 func TestGetAllJobs(t *testing.T) {
 	ts := getNewTestServer()
+	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
-
 	j := generateNewJobMap()
 
 	id, err := kc.CreateJob(j)
 	assert.NoError(t, err)
 
 	jobs, err := kc.GetAllJobs()
-
 	assert.NoError(t, err)
+	fmt.Println("%#v", jobs)
+	assert.Equal(t, 1, len(jobs))
 	assert.Equal(t, j["schedule"], jobs[id].Schedule)
 	assert.Equal(t, j["name"], jobs[id].Name)
 	assert.Equal(t, j["command"], jobs[id].Command)
@@ -75,7 +79,22 @@ func TestGetAllJobs(t *testing.T) {
 }
 
 func TestDeleteJob(t *testing.T) {
+	ts := getNewTestServer()
+	defer ts.Close()
+	kc := NewKalaClient(ts.URL)
+	j := generateNewJobMap()
+
+	id, err := kc.CreateJob(j)
+	assert.NoError(t, err)
+
+	ok, err := kc.DeleteJob(id)
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	respJob, err := kc.GetJob(id)
+	assert.Nil(t, respJob)
 }
+
 func TestGetJobStats(t *testing.T) {
 }
 func TestStartJob(t *testing.T) {
