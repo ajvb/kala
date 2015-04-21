@@ -29,9 +29,7 @@ func getMockJobWithSchedule(repeat int, scheduleTime time.Time, delay string) *J
 }
 
 func getMockJobWithGenericSchedule() *Job {
-	fiveMinutesFromNow := time.Now().Add(
-		time.Duration(time.Minute * 5),
-	)
+	fiveMinutesFromNow := time.Now().Add(time.Minute * 5)
 	return getMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
 }
 
