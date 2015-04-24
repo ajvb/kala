@@ -149,10 +149,6 @@ func TestOneOffJobs(t *testing.T) {
 	assert.Nil(t, j.jobTimer)
 }
 
-// TODO
-func TestRetrying(t *testing.T) {
-}
-
 func TestDependentJobs(t *testing.T) {
 	mockJob := getMockJobWithGenericSchedule()
 	mockJob.Init()
