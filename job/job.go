@@ -60,10 +60,6 @@ type Job struct {
 	// Command to run
 	// e.g. "bash /path/to/my/script.sh"
 	Command string `json:"command"`
-	// Run command as a different user?
-	//TODO
-	//RunAsUser string `json:""`
-	//user *user.User
 
 	// Email of the owner of this job
 	// e.g. "admin@example.com"
@@ -112,9 +108,6 @@ type Job struct {
 	Stats       []*JobStat `json:"-"`
 
 	lock sync.Mutex
-
-	// TODO
-	// EnvironmentVariables map[string]string `json:""`
 }
 
 // Init fills in the protected fields and parses the iso8601 notation.
@@ -185,17 +178,6 @@ func (j *Job) Init() error {
 		}
 	}
 
-	//TODO
-	/*
-		if j.RunAsUser != "" {
-			j.user, err = user.Lookup(j.RunAsUser)
-			if err != nil {
-				log.Error("Error looking up user %s", j.RunAsUser)
-				return err
-			}
-		}
-	*/
-
 	j.StartWaiting()
 
 	return nil
@@ -217,8 +199,6 @@ func (j *Job) StartWaiting() {
 // Disable stops the job from running by stopping its jobTimer. It also sets Job.Disabled to true,
 // which is reflected in the UI.
 func (j *Job) Disable() {
-	// TODO - revisit error handling
-	//hasBeenStopped := j.jobTimer.Stop()
 	_ = j.jobTimer.Stop()
 	j.Disabled = true
 }
@@ -282,22 +262,6 @@ func (j *Job) runCmd() error {
 	// Execute command
 	args := strings.Split(j.Command, " ")
 	cmd := exec.Command(args[0], args[1:]...)
-
-	//TODO
-	/*
-		if j.RunAsUser != "" {
-			uid, err := strconv.Atoi(j.user.Uid)
-			if err != nil {
-				return err
-			}
-			gid, err := strconv.Atoi(j.user.Gid)
-			if err != nil {
-				return err
-			}
-			cmd.SysProcAttr = &syscall.SysProcAttr{}
-			cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)}
-		}
-	*/
 	return cmd.Run()
 }
 

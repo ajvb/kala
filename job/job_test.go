@@ -177,25 +177,3 @@ func TestDependentJobs(t *testing.T) {
 	assert.WithinDuration(t, mockChildJob.LastAttemptedRun, n, 4*time.Second)
 	assert.WithinDuration(t, mockChildJob.LastSuccess, n, 4*time.Second)
 }
-
-/*
-func TestRunAsUser(t *testing.T) {
-	currentUser, err := user.Current()
-	assert.Nil(t, err)
-	username := currentUser.Username
-
-	j := getMockJobWithGenericSchedule()
-	j.RunAsUser = username
-	j.Init()
-	j.Save()
-
-	j.Run()
-
-	time.Sleep(time.Second)
-	now := time.Now()
-
-	assert.Equal(t, j.SuccessCount, uint(1))
-	assert.WithinDuration(t, j.LastSuccess, now, 2*time.Second)
-	assert.WithinDuration(t, j.LastAttemptedRun, now, 2*time.Second)
-}
-*/
