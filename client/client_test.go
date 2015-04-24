@@ -97,7 +97,31 @@ func TestDeleteJob(t *testing.T) {
 
 func TestGetJobStats(t *testing.T) {
 }
+
 func TestStartJob(t *testing.T) {
+	ts := getNewTestServer()
+	defer ts.Close()
+	kc := NewKalaClient(ts.URL)
+	j := generateNewJobMap()
+
+	id, err := kc.CreateJob(j)
+	assert.NoError(t, err)
+	assert.NotEqual(t, id, "")
+
+	now := time.Now()
+	ok, err := kc.StartJob(id)
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	// Wait let the job run
+	time.Sleep(time.Second * 1)
+
+	respJob, err := kc.GetJob(id)
+	assert.NoError(t, err)
+	assert.Equal(t, uint(1), respJob.SuccessCount)
+	assert.WithinDuration(t, now, respJob.LastSuccess, time.Second*2)
+	assert.WithinDuration(t, now, respJob.LastAttemptedRun, time.Second*2)
 }
+
 func TestGetKalaStats(t *testing.T) {
 }
