@@ -16,6 +16,9 @@ const (
 	ApiUrlPrefix = "/api/v1/"
 	JobPath      = "job/"
 	ApiJobPath   = ApiUrlPrefix + JobPath
+
+	contentType     = "Content-Type"
+	jsonContentType = "application/json;charset=UTF-8"
 )
 
 var (
@@ -31,7 +34,7 @@ func HandleKalaStatsRequest(w http.ResponseWriter, r *http.Request) {
 		Stats: job.NewKalaStats(),
 	}
 
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.Header().Set(contentType, jsonContentType)
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.Error("Error occured when marshalling response: %s", err)
@@ -53,7 +56,7 @@ func HandleListJobStatsRequest(w http.ResponseWriter, r *http.Request) {
 		JobStats: j.Stats,
 	}
 
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.Header().Set(contentType, jsonContentType)
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.Error("Error occured when marshalling response: %s", err)
@@ -73,7 +76,7 @@ func HandleListJobsRequest(w http.ResponseWriter, r *http.Request) {
 		Jobs: job.AllJobs.GetAll(),
 	}
 
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.Header().Set(contentType, jsonContentType)
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.Error("Error occured when marshalling response: %s", err)
@@ -129,7 +132,7 @@ func HandleAddJob(w http.ResponseWriter, r *http.Request) {
 		Id: newJob.Id,
 	}
 
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.Header().Set(contentType, jsonContentType)
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.Error("Error occured when marshalling response: %s", err)
@@ -149,9 +152,13 @@ func HandleJobRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDeleteJob(w http.ResponseWriter, r *http.Request, id string) {
-	log.Info("Deleting job: %s", id)
+	log.Debug("Deleting job: %s", id)
 
 	j := job.AllJobs.Get(id)
+	if j == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 	j.Delete()
 
 	w.WriteHeader(http.StatusNoContent)
@@ -163,12 +170,16 @@ type JobResponse struct {
 
 func handleGetJob(w http.ResponseWriter, r *http.Request, id string) {
 	j := job.AllJobs.Get(id)
+	if j == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
 	resp := &JobResponse{
 		Job: j,
 	}
 
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.Header().Set(contentType, jsonContentType)
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.Error("Error occured when marshalling response: %s", err)
@@ -192,11 +203,11 @@ func SetupApiRoutes(r *mux.Router) {
 	// Route for deleting and getting a job
 	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest).Methods("DELETE", "GET")
 	// Route for getting job stats
-	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest).Methods("POST")
+	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest).Methods("GET")
 	// Route for listing all jops
 	r.HandleFunc(ApiJobPath, HandleListJobsRequest).Methods("GET")
 	// Route for manually start a job
 	r.HandleFunc(ApiJobPath+"start/{id}", HandleStartJobRequest).Methods("POST")
 	// Route for getting app-level metrics
-	r.HandleFunc(ApiUrlPrefix+"/stats", HandleKalaStatsRequest).Methods("GET")
+	r.HandleFunc(ApiUrlPrefix+"stats", HandleKalaStatsRequest).Methods("GET")
 }
