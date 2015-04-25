@@ -88,7 +88,7 @@ func (kc *KalaClient) StartJob(id string) (bool, error) {
 
 func (kc *KalaClient) GetKalaStats() (*job.KalaStats, error) {
 	ks := &api.KalaStatsResponse{}
-	_, err := kc.requester.New().Get("/stats").Receive(ks)
+	_, err := kc.requester.New().Get("stats").Receive(ks)
 	if err != nil {
 		return nil, err
 	}
