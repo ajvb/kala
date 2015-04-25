@@ -274,8 +274,8 @@ func (j *Job) shouldRetry() bool {
 	// Check Epsilon
 	if j.Epsilon != "" {
 		if j.epsilonDuration.ToDuration() == 0 {
-			// TODO - cleanup
-			timeLeftToRetry := time.Duration(j.epsilonDuration.ToDuration()) - time.Duration(time.Now().UnixNano()-j.NextRunAt.UnixNano())
+			timeSinceStart := time.Duration(time.Now().UnixNano() - j.NextRunAt.UnixNano())
+			timeLeftToRetry := j.epsilonDuration.ToDuration() - timeSinceStart
 			if timeLeftToRetry < 0 {
 				return false
 			}
