@@ -122,8 +122,10 @@ func (j *Job) Init() error {
 	if len(j.ParentJobs) != 0 {
 		// Add new job to parent jobs
 		for _, p := range j.ParentJobs {
-			AllJobs.Get(p).DependentJobs = append(AllJobs.Get(p).DependentJobs, j.Id)
+			parentJob := AllJobs.Get(p)
+			parentJob.DependentJobs = append(parentJob.DependentJobs, j.Id)
 		}
+
 		return nil
 	}
 

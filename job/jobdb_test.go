@@ -15,7 +15,7 @@ func TestSaveAndGetJob(t *testing.T) {
 	j, err := GetJob(genericMockJob.Id)
 	assert.Nil(t, err)
 
-	assert.WithinDuration(t, j.NextRunAt, genericMockJob.NextRunAt, 30*time.Microsecond)
+	assert.WithinDuration(t, j.NextRunAt, genericMockJob.NextRunAt, 100*time.Microsecond)
 	assert.Equal(t, j.Name, genericMockJob.Name)
 	assert.Equal(t, j.Id, genericMockJob.Id)
 	assert.Equal(t, j.Command, genericMockJob.Command)
@@ -45,4 +45,8 @@ func TestDeleteJob(t *testing.T) {
 	assert.Nil(t, AllJobs.Get(genericMockJob.Id))
 
 	genericMockJob.Delete()
+}
+
+// TODO
+func TestDontPersist(t *testing.T) {
 }
