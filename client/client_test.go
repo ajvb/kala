@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"../api"
+	"../job"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -84,6 +85,8 @@ func TestGetAllJobs(t *testing.T) {
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
 	j := generateNewJobMap()
+	// TODO - remove when there is a "Dont Persist" mode
+	job.AllJobs.Jobs = make(map[string]*job.Job, 0)
 
 	id, err := kc.CreateJob(j)
 	assert.NoError(t, err)
@@ -125,6 +128,7 @@ func TestGetJobStats(t *testing.T) {
 	assert.NoError(t, err)
 	// Start the job
 	ok, err := kc.StartJob(id)
+	now := time.Now()
 	assert.NoError(t, err)
 	assert.True(t, ok)
 	// Wait let the job run
@@ -134,6 +138,8 @@ func TestGetJobStats(t *testing.T) {
 	assert.Equal(t, id, stats[0].JobId)
 	assert.Equal(t, uint(0), stats[0].NumberOfRetries)
 	assert.True(t, stats[0].Success)
+	assert.True(t, stats[0].ExecutionDuration != time.Duration(0))
+	assert.WithinDuration(t, now, stats[0].RanAt, time.Second)
 }
 
 func TestStartJob(t *testing.T) {
@@ -165,6 +171,8 @@ func TestGetKalaStats(t *testing.T) {
 	ts := getNewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
+	// TODO - remove when there is a "Dont Persist" mode
+	job.AllJobs.Jobs = make(map[string]*job.Job, 0)
 
 	for i := 0; i < 5; i++ {
 		// Generate new job
