@@ -15,11 +15,14 @@ import (
 	"../utils/iso8601"
 
 	"github.com/222Labs/common/go/logging"
+	"github.com/mattn/go-shellwords"
 	"github.com/nu7hatch/gouuid"
 )
 
 var (
 	log = logging.GetLogger("kala")
+
+	shParser = shellwords.NewParser()
 )
 
 func init() {
@@ -51,6 +54,8 @@ func init() {
 		os.Exit(1)
 	}()
 
+	shParser.ParseEnv = true
+	shParser.ParseBacktick = true
 }
 
 type Job struct {
@@ -244,7 +249,7 @@ func (j *Job) Run() {
 
 	// Get Execution Duration
 	j.currentStat.ExecutionDuration = time.Duration(
-		j.currentStat.RanAt.UnixNano() - j.LastSuccess.UnixNano(),
+		j.LastSuccess.UnixNano() - j.currentStat.RanAt.UnixNano(),
 	)
 	j.currentStat.Success = true
 	j.currentStat.NumberOfRetries = j.Retries - j.currentRetries
@@ -262,7 +267,10 @@ func (j *Job) Run() {
 
 func (j *Job) runCmd() error {
 	// Execute command
-	args := strings.Split(j.Command, " ")
+	args, err := shParser.Parse(j.Command)
+	if err != nil {
+		return err
+	}
 	cmd := exec.Command(args[0], args[1:]...)
 	return cmd.Run()
 }
