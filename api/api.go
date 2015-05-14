@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"../job"
+	"../utils/logging"
 
-	"github.com/222Labs/common/go/logging"
 	"github.com/gorilla/mux"
 )
 

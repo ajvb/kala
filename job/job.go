@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"../utils/iso8601"
+	"../utils/logging"
 
-	"github.com/222Labs/common/go/logging"
 	"github.com/mattn/go-shellwords"
 	"github.com/nu7hatch/gouuid"
 )
