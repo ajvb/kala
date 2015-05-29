@@ -116,9 +116,6 @@ func HandleAddJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO
-	// 2. Verify that "protected" fields were not touched.
-
 	err = newJob.Init()
 	if err != nil {
 		errStr := "Error occured when initializing the job"
