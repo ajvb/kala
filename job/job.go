@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	//"os/user"
 	"os/signal"
 	"strconv"
 	"strings"
-	//"syscall"
 	"sync"
 	"time"
 
@@ -284,7 +282,7 @@ func (j *Job) shouldRetry() bool {
 	// Check Epsilon
 	if j.Epsilon != "" {
 		if j.epsilonDuration.ToDuration() == 0 {
-			timeSinceStart := time.Duration(time.Now().UnixNano() - j.NextRunAt.UnixNano())
+			timeSinceStart := time.Now().Sub(j.NextRunAt)
 			timeLeftToRetry := j.epsilonDuration.ToDuration() - timeSinceStart
 			if timeLeftToRetry < 0 {
 				return false

@@ -46,7 +46,3 @@ func TestDeleteJob(t *testing.T) {
 
 	genericMockJob.Delete()
 }
-
-// TODO
-func TestDontPersist(t *testing.T) {
-}
