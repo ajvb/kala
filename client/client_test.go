@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"net/http/httptest"
+	"os"
 	"time"
 
 	"../api"
@@ -28,7 +29,8 @@ func cleanUp() {
 		return
 	}
 	if err != nil {
-		fmt.Printf("wtf")
+		fmt.Printf("Problem running clean up (can't get all jobs from the server)")
+		os.Exit(1)
 	}
 	for _, job := range jobs {
 		kc.DeleteJob(job.Id)
