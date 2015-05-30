@@ -43,9 +43,10 @@ MIT
 
 ### Features
 - [ ] Web UI
-- [ ] Ability to pass in environment vars
 - [ ] Config file and/or CL flags
     - Port & Host
+    - Verbose/Debug logging
+    - Default owner
 
 ### For User
 - [ ] Users Documentation
