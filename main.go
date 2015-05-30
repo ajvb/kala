@@ -50,10 +50,6 @@ func main() {
 					Name:  "debug, d",
 					Usage: "debug logging",
 				},
-				cli.BoolFlag{
-					Name:  "dont-persist",
-					Usage: "turn off job persistance",
-				},
 			},
 			Action: func(c *cli.Context) {
 				var parsedPort string
@@ -66,10 +62,6 @@ func main() {
 
 				// TODO set log level
 				if c.Bool("debug") {
-				}
-
-				// TODO
-				if c.Bool("dont-persist") {
 				}
 
 				r := initServer()
