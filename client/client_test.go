@@ -2,26 +2,18 @@ package client
 
 import (
 	"fmt"
-	"net/http/httptest"
 	"os"
 	"time"
 
 	"../api"
 	"../job"
 
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func getNewTestServer() *httptest.Server {
-	r := mux.NewRouter()
-	api.SetupApiRoutes(r)
-	return httptest.NewServer(r)
-}
-
 func cleanUp() {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
 	jobs, err := kc.GetAllJobs()
@@ -37,7 +29,7 @@ func cleanUp() {
 	}
 }
 
-func generateNewJobMap() map[string]string {
+func NewJobMap() map[string]string {
 	scheduleTime := time.Now().Add(time.Minute * 5)
 	repeat := 1
 	delay := "P1DT10M10S"
@@ -53,10 +45,10 @@ func generateNewJobMap() map[string]string {
 }
 
 func TestCreateGetDeleteJob(t *testing.T) {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
-	j := generateNewJobMap()
+	j := NewJobMap()
 
 	id, err := kc.CreateJob(j)
 	assert.NoError(t, err)
@@ -77,10 +69,10 @@ func TestCreateGetDeleteJob(t *testing.T) {
 }
 
 func TestCreateJobError(t *testing.T) {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
-	j := generateNewJobMap()
+	j := NewJobMap()
 
 	j["schedule"] = "bbbbbbbbbbbbbbb"
 
@@ -92,7 +84,7 @@ func TestCreateJobError(t *testing.T) {
 }
 
 func TestGetJobError(t *testing.T) {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
 
@@ -104,7 +96,7 @@ func TestGetJobError(t *testing.T) {
 }
 
 func TestDeleteJobError(t *testing.T) {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
 
@@ -116,10 +108,10 @@ func TestDeleteJobError(t *testing.T) {
 }
 
 func TestGetAllJobs(t *testing.T) {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
-	j := generateNewJobMap()
+	j := NewJobMap()
 	job.AllJobs.Jobs = make(map[string]*job.Job, 0)
 
 	id, err := kc.CreateJob(j)
@@ -137,7 +129,7 @@ func TestGetAllJobs(t *testing.T) {
 }
 
 func TestGetAllJobsNoJobsExist(t *testing.T) {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
 
@@ -150,10 +142,10 @@ func TestGetAllJobsNoJobsExist(t *testing.T) {
 }
 
 func TestDeleteJob(t *testing.T) {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
-	j := generateNewJobMap()
+	j := NewJobMap()
 
 	id, err := kc.CreateJob(j)
 	assert.NoError(t, err)
@@ -169,10 +161,10 @@ func TestDeleteJob(t *testing.T) {
 }
 
 func TestGetJobStats(t *testing.T) {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
-	j := generateNewJobMap()
+	j := NewJobMap()
 
 	// Create the job
 	id, err := kc.CreateJob(j)
@@ -197,7 +189,7 @@ func TestGetJobStats(t *testing.T) {
 }
 
 func TestGetJobStatsError(t *testing.T) {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
 
@@ -207,10 +199,10 @@ func TestGetJobStatsError(t *testing.T) {
 }
 
 func TestStartJob(t *testing.T) {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
-	j := generateNewJobMap()
+	j := NewJobMap()
 
 	id, err := kc.CreateJob(j)
 	assert.NoError(t, err)
@@ -234,7 +226,7 @@ func TestStartJob(t *testing.T) {
 }
 
 func TestStartJobError(t *testing.T) {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
 
@@ -244,14 +236,14 @@ func TestStartJobError(t *testing.T) {
 }
 
 func TestGetKalaStats(t *testing.T) {
-	ts := getNewTestServer()
+	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := NewKalaClient(ts.URL)
 	job.AllJobs.Jobs = make(map[string]*job.Job, 0)
 
 	for i := 0; i < 5; i++ {
 		// Generate new job
-		j := generateNewJobMap()
+		j := NewJobMap()
 
 		id, err := kc.CreateJob(j)
 		assert.NoError(t, err)
