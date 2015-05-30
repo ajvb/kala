@@ -13,7 +13,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/222Labs/common/go/logging"
+	"../logging"
 )
 
 var (
