@@ -18,6 +18,8 @@ type KalaClient struct {
 }
 
 // New is used to create a new KalaClient based off of the apiEndpoint
+// Example:
+// 		c := New("http://127.0.0.1:8000")
 func New(apiEndpoint string) *KalaClient {
 	if strings.HasPrefix(apiEndpoint, "/") {
 		apiEndpoint = apiEndpoint[:len(apiEndpoint)-1]
@@ -29,6 +31,16 @@ func New(apiEndpoint string) *KalaClient {
 	}
 }
 
+// CreateJob is used for creating a new job within Kala. It uses a map of
+// strings to strings.
+// Example:
+// 		c := New("http://127.0.0.1:8000")
+// 		body := map[string]string{
+//			"schedule": "R2/2015-06-04T19:25:16.828696-07:00/PT10S",
+//			"name":		"test_job",
+//			"command": 	"bash -c 'date'",
+//		}
+//		id, err := c.CreateJob(body)
 func (kc *KalaClient) CreateJob(body map[string]string) (string, error) {
 	id := &api.AddJobResponse{}
 	_, err := kc.requester.New().Post(api.JobPath).JsonBody(body).Receive(id)
@@ -38,6 +50,11 @@ func (kc *KalaClient) CreateJob(body map[string]string) (string, error) {
 	return id.Id, nil
 }
 
+// GetJob is used to retrieve a Job from Kala by its ID.
+// Example:
+// 		c := New("http://127.0.0.1:8000")
+//		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
+//		job, err := c.GetJob(id)
 func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 	j := &api.JobResponse{}
 	_, err := kc.requester.New().Get(api.JobPath + id).Receive(j)
@@ -47,6 +64,11 @@ func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 	return j.Job, nil
 }
 
+// GetAllJobs returns a map of string (ID's) to job.Job's which contains
+// all Jobs currently within Kala.
+// Example:
+// 		c := New("http://127.0.0.1:8000")
+//		jobs, err := c.GetAllJobs()
 func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 	jobs := &api.ListJobsResponse{}
 	_, err := kc.requester.New().Get(api.JobPath).Receive(jobs)
@@ -56,6 +78,11 @@ func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 	return jobs.Jobs, nil
 }
 
+// DeleteJob is used to delete a Job from Kala by its ID.
+// Example:
+// 		c := New("http://127.0.0.1:8000")
+//		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
+//		ok, err := c.DeleteJob(id)
 func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 	// nil is completely safe to use, as it is simply ignored in the sling library.
 	resp, err := kc.requester.New().Delete(api.JobPath + id).Receive(nil)
@@ -68,6 +95,11 @@ func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 	return true, nil
 }
 
+// GetJobStats is used to retrieve stats about a Job from Kala by its ID.
+// Example:
+// 		c := New("http://127.0.0.1:8000")
+//		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
+//		stats, err := c.GetJobStats(id)
 func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 	js := &api.ListJobStatsResponse{}
 	_, err := kc.requester.New().Get(api.JobPath + "stats/" + id).Receive(js)
@@ -77,6 +109,11 @@ func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 	return js.JobStats, nil
 }
 
+// StartJob is used to manually start a Job by its ID.
+// Example:
+// 		c := New("http://127.0.0.1:8000")
+//		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
+//		ok, err := c.StartJob(id)
 func (kc *KalaClient) StartJob(id string) (bool, error) {
 	resp, err := kc.requester.New().Post(api.JobPath + "start/" + id).Receive(nil)
 	if err != nil {
@@ -88,6 +125,10 @@ func (kc *KalaClient) StartJob(id string) (bool, error) {
 	return true, nil
 }
 
+// GetKalaStats retrieves system-level metrics about Kala
+// Example:
+// 		c := New("http://127.0.0.1:8000")
+//		stats, err := c.GetKalaStats()
 func (kc *KalaClient) GetKalaStats() (*job.KalaStats, error) {
 	ks := &api.KalaStatsResponse{}
 	_, err := kc.requester.New().Get("stats").Receive(ks)

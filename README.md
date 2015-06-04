@@ -29,7 +29,7 @@ All routes have a prefix of `/api/v1`
 ## Client Libraries
 
 #### Official:
-* [client](https://github.com/ajvb/kala/tree/master/client) - go
+* Go - [client](https://github.com/ajvb/kala/tree/master/client) - Docs: http://godoc.org/github.com/ajvb/kala/client
 
 ## Overview of routes
 
