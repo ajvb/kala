@@ -1,5 +1,7 @@
 #Kala
 
+[![Circle CI](https://circleci.com/gh/ajvb/kala.svg?style=svg)](https://circleci.com/gh/ajvb/kala)
+
 ### Currently in Alpha stage. Do not use in production enviorments.
 
 Kala is a simplistic, modern, and performant job scheduler written in Go. It lives in a single binary and does not have any dependencies.
