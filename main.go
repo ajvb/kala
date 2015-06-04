@@ -61,7 +61,7 @@ func main() {
 
 				r := initServer()
 
-				log.Info("Starting server...")
+				log.Info("Starting server on port %s...", parsedPort)
 				log.Fatal(http.ListenAndServe(parsedPort, r))
 			},
 		},
