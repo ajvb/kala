@@ -13,9 +13,11 @@ import (
 )
 
 const (
+	// Base API v1 Path
 	ApiUrlPrefix = "/api/v1/"
-	JobPath      = "job/"
-	ApiJobPath   = ApiUrlPrefix + JobPath
+
+	JobPath    = "job/"
+	ApiJobPath = ApiUrlPrefix + JobPath
 
 	contentType     = "Content-Type"
 	jsonContentType = "application/json;charset=UTF-8"
@@ -29,6 +31,8 @@ type KalaStatsResponse struct {
 	Stats *job.KalaStats
 }
 
+// HandleKalaStatsRequest is the hanlder for getting system-level metrics
+// /api/v1/stats
 func HandleKalaStatsRequest(w http.ResponseWriter, r *http.Request) {
 	resp := &KalaStatsResponse{
 		Stats: job.NewKalaStats(),
@@ -47,6 +51,8 @@ type ListJobStatsResponse struct {
 	JobStats []*job.JobStat `json:"job_stats"`
 }
 
+// HandleListJobStatsRequest is the handler for getting job-specific stats
+// /api/v1/job/stats/{id}
 func HandleListJobStatsRequest(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -137,6 +143,8 @@ func HandleAddJob(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// HandleJobRequest routes requests to /api/v1/job/{id} to either
+// handleDeleteJob if its a DELETE or handleGetJob if its a GET request.
 func HandleJobRequest(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -184,6 +192,8 @@ func handleGetJob(w http.ResponseWriter, r *http.Request, id string) {
 	}
 }
 
+// HandleStartJobRequest is the handler for manually starting jobs
+// /api/v1/job/start/{id}
 func HandleStartJobRequest(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -194,6 +204,7 @@ func HandleStartJobRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// SetupApiRoutes is used within main to initialize all of the routes
 func SetupApiRoutes(r *mux.Router) {
 	// Route for creating a job
 	r.HandleFunc(ApiJobPath, HandleAddJob).Methods("POST")
