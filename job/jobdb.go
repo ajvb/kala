@@ -44,7 +44,7 @@ func GetAllJobs() ([]*Job, error) {
 				return err
 			}
 
-			err = j.InitDelayDuration()
+			err = j.InitDelayDuration(false)
 
 			if err != nil {
 				return err

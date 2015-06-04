@@ -140,7 +140,7 @@ func (j *Job) Init() error {
 		return nil
 	}
 
-	err = j.InitDelayDuration()
+	err = j.InitDelayDuration(true)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,9 @@ func (j *Job) Init() error {
 	return nil
 }
 
-func (j *Job) InitDelayDuration() error {
+// InitDelayDuration is used to parsed the iso8601 Schedule notation into its relevent fields in the Job struct.
+// If checkTime is true, then it will return an error if the Scheduled time has passed.
+func (j *Job) InitDelayDuration(checkTime bool) error {
 	splitTime := strings.Split(j.Schedule, "/")
 	if len(splitTime) != 3 {
 		return fmt.Errorf(
@@ -178,8 +180,10 @@ func (j *Job) InitDelayDuration() error {
 		log.Error("Error converting scheduleTime to a time.Time: %s", err)
 		return err
 	}
-	if (time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())) < 0 {
-		return fmt.Errorf("Schedule time has passed.")
+	if checkTime {
+		if (time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())) < 0 {
+			return fmt.Errorf("Schedule time has passed on Job with id of %s", j.Id)
+		}
 	}
 	log.Debug("Schedule Time: %s", j.scheduleTime)
 
