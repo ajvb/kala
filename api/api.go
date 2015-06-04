@@ -197,14 +197,20 @@ func HandleStartJobRequest(w http.ResponseWriter, r *http.Request) {
 func SetupApiRoutes(r *mux.Router) {
 	// Route for creating a job
 	r.HandleFunc(ApiJobPath, HandleAddJob).Methods("POST")
+	r.HandleFunc(ApiUrlPrefix+"job", HandleAddJob).Methods("POST")
 	// Route for deleting and getting a job
 	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest).Methods("DELETE", "GET")
+	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest).Methods("DELETE", "GET")
 	// Route for getting job stats
 	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest).Methods("GET")
+	r.HandleFunc(ApiJobPath+"stats/{id}/", HandleListJobStatsRequest).Methods("GET")
 	// Route for listing all jops
 	r.HandleFunc(ApiJobPath, HandleListJobsRequest).Methods("GET")
+	r.HandleFunc(ApiUrlPrefix+"job", HandleListJobsRequest).Methods("GET")
 	// Route for manually start a job
 	r.HandleFunc(ApiJobPath+"start/{id}", HandleStartJobRequest).Methods("POST")
+	r.HandleFunc(ApiJobPath+"start/{id}/", HandleStartJobRequest).Methods("POST")
 	// Route for getting app-level metrics
 	r.HandleFunc(ApiUrlPrefix+"stats", HandleKalaStatsRequest).Methods("GET")
+	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest).Methods("GET")
 }

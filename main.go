@@ -19,7 +19,6 @@ var (
 func initServer() *mux.Router {
 	r := mux.NewRouter()
 	api.SetupApiRoutes(r)
-
 	return r
 }
 
