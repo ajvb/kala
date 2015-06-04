@@ -15,7 +15,7 @@ import (
 func cleanUp() {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 	jobs, err := kc.GetAllJobs()
 	if len(jobs) == 0 {
 		return
@@ -47,7 +47,7 @@ func NewJobMap() map[string]string {
 func TestCreateGetDeleteJob(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 	j := NewJobMap()
 
 	id, err := kc.CreateJob(j)
@@ -71,7 +71,7 @@ func TestCreateGetDeleteJob(t *testing.T) {
 func TestCreateJobError(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 	j := NewJobMap()
 
 	j["schedule"] = "bbbbbbbbbbbbbbb"
@@ -86,7 +86,7 @@ func TestCreateJobError(t *testing.T) {
 func TestGetJobError(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 
 	respJob, err := kc.GetJob("id-that-doesnt-exist")
 	assert.Error(t, err)
@@ -98,7 +98,7 @@ func TestGetJobError(t *testing.T) {
 func TestDeleteJobError(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 
 	ok, err := kc.DeleteJob("id-that-doesnt-exist")
 	assert.Error(t, err)
@@ -110,7 +110,7 @@ func TestDeleteJobError(t *testing.T) {
 func TestGetAllJobs(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 	j := NewJobMap()
 	job.AllJobs.Jobs = make(map[string]*job.Job, 0)
 
@@ -131,7 +131,7 @@ func TestGetAllJobs(t *testing.T) {
 func TestGetAllJobsNoJobsExist(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 
 	jobs, err := kc.GetAllJobs()
 	fmt.Printf("JOBS: %#v", jobs)
@@ -144,7 +144,7 @@ func TestGetAllJobsNoJobsExist(t *testing.T) {
 func TestDeleteJob(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 	j := NewJobMap()
 
 	id, err := kc.CreateJob(j)
@@ -163,7 +163,7 @@ func TestDeleteJob(t *testing.T) {
 func TestGetJobStats(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 	j := NewJobMap()
 
 	// Create the job
@@ -191,7 +191,7 @@ func TestGetJobStats(t *testing.T) {
 func TestGetJobStatsError(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 
 	stats, err := kc.GetJobStats("not-an-actual-id")
 	assert.Error(t, err)
@@ -201,7 +201,7 @@ func TestGetJobStatsError(t *testing.T) {
 func TestStartJob(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 	j := NewJobMap()
 
 	id, err := kc.CreateJob(j)
@@ -228,7 +228,7 @@ func TestStartJob(t *testing.T) {
 func TestStartJobError(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 
 	ok, err := kc.StartJob("not-an-actual-id")
 	assert.Error(t, err)
@@ -238,7 +238,7 @@ func TestStartJobError(t *testing.T) {
 func TestGetKalaStats(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
-	kc := NewKalaClient(ts.URL)
+	kc := New(ts.URL)
 	job.AllJobs.Jobs = make(map[string]*job.Job, 0)
 
 	for i := 0; i < 5; i++ {

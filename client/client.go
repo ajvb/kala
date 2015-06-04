@@ -11,12 +11,14 @@ import (
 	"github.com/dghubble/sling"
 )
 
+// KalaClient is the base struct for this package.
 type KalaClient struct {
 	apiEndpoint string
 	requester   *sling.Sling
 }
 
-func NewKalaClient(apiEndpoint string) *KalaClient {
+// New is used to create a new KalaClient based off of the apiEndpoint
+func New(apiEndpoint string) *KalaClient {
 	if strings.HasPrefix(apiEndpoint, "/") {
 		apiEndpoint = apiEndpoint[:len(apiEndpoint)-1]
 	}
