@@ -8,6 +8,10 @@ is fault tolerant and distributed by design. These are two features which Kala d
 It has a simple JSON over HTTP API, so it is language agnostic. It has a Web UI, Job Stats, Configurable Retries, uses ISO 8601 Date and Interval
 notation, Dependant Jobs, and is Persistant (using BoltDB).
 
+### I need [fault tolerance, distributed-features, this to work at scale]
+
+I recommend checking out [Chronos](https://github.com/airbnb/chronos). This is designed to be the Chronos for start-ups.
+
 # Getting Started
 
 TODO
@@ -28,15 +32,11 @@ TODO
 
 TODO
 
-# Dev Documentation
+# Contributing
 
 These are the instructions to follow for working on Kala.
 
 Python is used for some Kala integration tests.
-
-# License
-
-MIT
 
 
 # TODO's
@@ -44,7 +44,7 @@ MIT
 ### Features
 - [ ] Web UI
 - [ ] Config file and/or CL flags
-    - Port & Host
+    - Port & Host (needs improvement)
     - Verbose/Debug logging
     - Default owner
 
@@ -59,4 +59,3 @@ MIT
 ### For Contributors
 - [ ] Contributors Documentation
 - [ ] Continious Integration
-
