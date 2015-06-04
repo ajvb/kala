@@ -30,8 +30,10 @@ func init() {
 		log.Fatal(err)
 	}
 	for _, v := range allJobs {
+		v.StartWaiting()
 		AllJobs.Set(v)
 	}
+
 	// Occasionally, save items in cache to db.
 	go AllJobs.PersistEvery(SaveAllJobsWaitTime)
 
@@ -138,12 +140,25 @@ func (j *Job) Init() error {
 		return nil
 	}
 
+	err = j.InitDelayDuration()
+	if err != nil {
+		return err
+	}
+
+	j.StartWaiting()
+
+	return nil
+}
+
+func (j *Job) InitDelayDuration() error {
 	splitTime := strings.Split(j.Schedule, "/")
 	if len(splitTime) != 3 {
 		return fmt.Errorf(
 			"Schedule not formatted correctly. Should look like: R/2014-03-08T20:00:00Z/PT2H",
 		)
 	}
+
+	var err error
 
 	// Handle Repeat Amount
 	if splitTime[0] == "R" {
@@ -182,8 +197,6 @@ func (j *Job) Init() error {
 			return err
 		}
 	}
-
-	j.StartWaiting()
 
 	return nil
 }

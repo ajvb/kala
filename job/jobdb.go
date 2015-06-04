@@ -25,19 +25,6 @@ func getDB() *bolt.DB {
 	return database
 }
 
-func StartWatchingAllJobs() error {
-	allJobs, err := GetAllJobs()
-	if err != nil {
-		return err
-	}
-
-	for _, v := range allJobs {
-		go v.StartWaiting()
-	}
-
-	return nil
-}
-
 func GetAllJobs() ([]*Job, error) {
 	allJobs := []*Job{}
 
@@ -52,6 +39,12 @@ func GetAllJobs() ([]*Job, error) {
 			dec := gob.NewDecoder(buffer)
 			j := new(Job)
 			err := dec.Decode(j)
+
+			if err != nil {
+				return err
+			}
+
+			err = j.InitDelayDuration()
 
 			if err != nil {
 				return err
