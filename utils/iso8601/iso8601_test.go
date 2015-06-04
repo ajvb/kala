@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"../iso8601"
+	"github.com/ajvb/kala/utils/iso8601"
 
 	"github.com/stretchr/testify/assert"
 )
