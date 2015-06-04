@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"../api"
-	"../job"
+	"github.com/ajvb/kala/api"
+	"github.com/ajvb/kala/job"
 
 	"github.com/stretchr/testify/assert"
 	"testing"

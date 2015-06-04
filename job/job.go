@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"../utils/iso8601"
-	"../utils/logging"
+	"github.com/ajvb/kala/utils/iso8601"
+	"github.com/ajvb/kala/utils/logging"
 
 	"github.com/mattn/go-shellwords"
 	"github.com/nu7hatch/gouuid"

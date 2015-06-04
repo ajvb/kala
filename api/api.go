@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"../job"
-	"../utils/logging"
+	"github.com/ajvb/kala/job"
+	"github.com/ajvb/kala/utils/logging"
 
 	"github.com/gorilla/mux"
 )

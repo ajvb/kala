@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 
-	"./api"
-	"./ui"
+	"github.com/ajvb/kala/api"
+	"github.com/ajvb/kala/ui"
 
 	"github.com/222Labs/common/go/logging"
 	"github.com/codegangsta/cli"

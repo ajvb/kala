@@ -13,7 +13,7 @@ import (
 	"text/template"
 	"time"
 
-	"../logging"
+	"github.com/ajvb/kala/utils/logging"
 )
 
 var (
