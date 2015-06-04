@@ -1,3 +1,9 @@
+machine:
+    timezone:
+        America/Los_Angeles
+    environment:
+        GOPATH: "${HOME}/gopath"
+
 dependencies:
     override:
         - go get -t -d -v ./...
