@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/ajvb/kala/api"
-	"github.com/ajvb/kala/ui"
 
 	"github.com/222Labs/common/go/logging"
 	"github.com/codegangsta/cli"
@@ -23,10 +22,6 @@ func initServer() *mux.Router {
 	r := mux.NewRouter()
 	// API
 	api.SetupApiRoutes(r)
-	// UI
-	r.HandleFunc("/", ui.HandleDashboard).Methods("GET")
-	fileServer := http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir)))
-	r.PathPrefix("/").Handler(fileServer)
 
 	return r
 }
