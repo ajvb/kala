@@ -149,21 +149,20 @@ func HandleJobRequest(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	if r.Method == "DELETE" {
-		handleDeleteJob(w, r, id)
-	} else if r.Method == "GET" {
-		handleGetJob(w, r, id)
-	}
-}
-
-func handleDeleteJob(w http.ResponseWriter, r *http.Request, id string) {
-	log.Debug("Deleting job: %s", id)
-
 	j := job.AllJobs.Get(id)
 	if j == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
+
+	if r.Method == "DELETE" {
+		handleDeleteJob(w, r, j)
+	} else if r.Method == "GET" {
+		handleGetJob(w, r, j)
+	}
+}
+
+func handleDeleteJob(w http.ResponseWriter, r *http.Request, j *job.Job) {
 	j.Delete()
 
 	w.WriteHeader(http.StatusNoContent)
@@ -173,13 +172,7 @@ type JobResponse struct {
 	Job *job.Job `json:"job"`
 }
 
-func handleGetJob(w http.ResponseWriter, r *http.Request, id string) {
-	j := job.AllJobs.Get(id)
-	if j == nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
+func handleGetJob(w http.ResponseWriter, r *http.Request, j *job.Job) {
 	resp := &JobResponse{
 		Job: j,
 	}
