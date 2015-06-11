@@ -39,7 +39,7 @@ func HandleKalaStatsRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set(contentType, jsonContentType)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.Error("Error occured when marshalling response: %s", err)
 		return
@@ -63,7 +63,7 @@ func HandleListJobStatsRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set(contentType, jsonContentType)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.Error("Error occured when marshalling response: %s", err)
 		return
@@ -83,7 +83,7 @@ func HandleListJobsRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set(contentType, jsonContentType)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.Error("Error occured when marshalling response: %s", err)
 		return
@@ -178,7 +178,7 @@ func handleGetJob(w http.ResponseWriter, r *http.Request, j *job.Job) {
 	}
 
 	w.Header().Set(contentType, jsonContentType)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.Error("Error occured when marshalling response: %s", err)
 		return

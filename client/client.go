@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,6 +10,13 @@ import (
 	"github.com/ajvb/kala/job"
 
 	"github.com/dghubble/sling"
+)
+
+var (
+	JobNotFound      = errors.New("Job not found")
+	JobCreationError = errors.New("Error creating job")
+
+	GenericError = errors.New("An error occured performing your request")
 )
 
 // KalaClient is the base struct for this package.
@@ -43,9 +51,12 @@ func New(apiEndpoint string) *KalaClient {
 //		id, err := c.CreateJob(body)
 func (kc *KalaClient) CreateJob(body map[string]string) (string, error) {
 	id := &api.AddJobResponse{}
-	_, err := kc.requester.New().Post(api.JobPath).BodyJSON(body).Receive(id, nil)
+	resp, err := kc.requester.New().Post(api.JobPath).BodyJSON(body).ReceiveSuccess(id)
 	if err != nil {
 		return "", err
+	}
+	if resp.StatusCode != http.StatusCreated {
+		return "", JobCreationError
 	}
 	return id.Id, nil
 }
@@ -57,9 +68,12 @@ func (kc *KalaClient) CreateJob(body map[string]string) (string, error) {
 //		job, err := c.GetJob(id)
 func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 	j := &api.JobResponse{}
-	_, err := kc.requester.New().Get(api.JobPath+id).Receive(j, nil)
+	resp, err := kc.requester.New().Get(api.JobPath + id).ReceiveSuccess(j)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, JobNotFound
 	}
 	return j.Job, nil
 }
@@ -71,9 +85,12 @@ func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 //		jobs, err := c.GetAllJobs()
 func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 	jobs := &api.ListJobsResponse{}
-	_, err := kc.requester.New().Get(api.JobPath).Receive(jobs, nil)
+	resp, err := kc.requester.New().Get(api.JobPath).ReceiveSuccess(jobs)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, GenericError
 	}
 	return jobs.Jobs, nil
 }
@@ -85,7 +102,7 @@ func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 //		ok, err := c.DeleteJob(id)
 func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 	// nil is completely safe to use, as it is simply ignored in the sling library.
-	resp, err := kc.requester.New().Delete(api.JobPath+id).Receive(nil, nil)
+	resp, err := kc.requester.New().Delete(api.JobPath + id).ReceiveSuccess(nil)
 	if err != nil {
 		return false, err
 	}
@@ -102,9 +119,12 @@ func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 //		stats, err := c.GetJobStats(id)
 func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 	js := &api.ListJobStatsResponse{}
-	_, err := kc.requester.New().Get(api.JobPath+"stats/"+id).Receive(js, nil)
+	resp, err := kc.requester.New().Get(api.JobPath+"stats/"+id).Receive(js, nil)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, GenericError
 	}
 	return js.JobStats, nil
 }
@@ -131,9 +151,12 @@ func (kc *KalaClient) StartJob(id string) (bool, error) {
 //		stats, err := c.GetKalaStats()
 func (kc *KalaClient) GetKalaStats() (*job.KalaStats, error) {
 	ks := &api.KalaStatsResponse{}
-	_, err := kc.requester.New().Get("stats").Receive(ks, nil)
+	resp, err := kc.requester.New().Get("stats").Receive(ks, nil)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, GenericError
 	}
 	return ks.Stats, nil
 }
