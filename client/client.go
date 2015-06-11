@@ -43,7 +43,7 @@ func New(apiEndpoint string) *KalaClient {
 //		id, err := c.CreateJob(body)
 func (kc *KalaClient) CreateJob(body map[string]string) (string, error) {
 	id := &api.AddJobResponse{}
-	_, err := kc.requester.New().Post(api.JobPath).JsonBody(body).Receive(id)
+	_, err := kc.requester.New().Post(api.JobPath).BodyJSON(body).Receive(id, nil)
 	if err != nil {
 		return "", err
 	}
@@ -57,7 +57,7 @@ func (kc *KalaClient) CreateJob(body map[string]string) (string, error) {
 //		job, err := c.GetJob(id)
 func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 	j := &api.JobResponse{}
-	_, err := kc.requester.New().Get(api.JobPath + id).Receive(j)
+	_, err := kc.requester.New().Get(api.JobPath+id).Receive(j, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 //		jobs, err := c.GetAllJobs()
 func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 	jobs := &api.ListJobsResponse{}
-	_, err := kc.requester.New().Get(api.JobPath).Receive(jobs)
+	_, err := kc.requester.New().Get(api.JobPath).Receive(jobs, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 //		ok, err := c.DeleteJob(id)
 func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 	// nil is completely safe to use, as it is simply ignored in the sling library.
-	resp, err := kc.requester.New().Delete(api.JobPath + id).Receive(nil)
+	resp, err := kc.requester.New().Delete(api.JobPath+id).Receive(nil, nil)
 	if err != nil {
 		return false, err
 	}
@@ -102,7 +102,7 @@ func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 //		stats, err := c.GetJobStats(id)
 func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 	js := &api.ListJobStatsResponse{}
-	_, err := kc.requester.New().Get(api.JobPath + "stats/" + id).Receive(js)
+	_, err := kc.requester.New().Get(api.JobPath+"stats/"+id).Receive(js, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 //		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
 //		ok, err := c.StartJob(id)
 func (kc *KalaClient) StartJob(id string) (bool, error) {
-	resp, err := kc.requester.New().Post(api.JobPath + "start/" + id).Receive(nil)
+	resp, err := kc.requester.New().Post(api.JobPath+"start/"+id).Receive(nil, nil)
 	if err != nil {
 		return false, err
 	}
@@ -131,7 +131,7 @@ func (kc *KalaClient) StartJob(id string) (bool, error) {
 //		stats, err := c.GetKalaStats()
 func (kc *KalaClient) GetKalaStats() (*job.KalaStats, error) {
 	ks := &api.KalaStatsResponse{}
-	_, err := kc.requester.New().Get("stats").Receive(ks)
+	_, err := kc.requester.New().Get("stats").Receive(ks, nil)
 	if err != nil {
 		return nil, err
 	}
