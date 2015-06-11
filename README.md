@@ -245,4 +245,4 @@ TODO
 
 ### For Contributors
 - [ ] Contributors Documentation
-- [ ] Continious Integration
+- [ ] Continuous Integration
