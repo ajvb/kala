@@ -105,6 +105,33 @@ All routes have a prefix of `/api/v1`
 #### Official:
 * Go - [client](https://github.com/ajvb/kala/tree/master/client) - Docs: http://godoc.org/github.com/ajvb/kala/client
 
+## Job Data Struct
+
+[Docs can be found here](http://godoc.org/github.com/ajvb/kala/job#Job)
+
+## Job JSON Example
+
+```
+{
+        "name":"test_job",
+        "id":"93b65499-b211-49ce-57e0-19e735cc5abd",
+        "command":"bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh",
+        "owner":"",
+        "disabled":false,
+        "dependent_jobs":null,
+        "parent_jobs":null,
+        "schedule":"R2/2015-06-04T19:25:16.828696-07:00/PT10S",
+        "retries":0,
+        "epsilon":"PT5S",
+        "success_count":0,
+        "last_success":"0001-01-01T00:00:00Z",
+        "error_count":0,
+        "last_error":"0001-01-01T00:00:00Z",
+        "last_attempted_run":"0001-01-01T00:00:00Z",
+        "next_run_at":"2015-06-04T19:25:16.828794572-07:00"
+}
+```
+
 ## Overview of routes
 
 | Task | Method | Route |
@@ -129,7 +156,28 @@ ajvb$ curl http://127.0.0.1:8000/api/v1/job/
 ajvb$ curl http://127.0.0.1:8000/api/v1/job/ -d '{"epsilon": "PT5S", "command": "bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh", "name": "test_job", "schedule": "R2/2015-06-04T19:25:16.828696-07:00/PT10S"}'
 {"id":"93b65499-b211-49ce-57e0-19e735cc5abd"}
 ajvb$ curl http://127.0.0.1:8000/api/v1/job/
-{"jobs":{"93b65499-b211-49ce-57e0-19e735cc5abd":{"name":"test_job","id":"93b65499-b211-49ce-57e0-19e735cc5abd","command":"bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh","owner":"","disabled":false,"dependent_jobs":null,"parent_jobs":null,"schedule":"R2/2015-06-04T19:25:16.828696-07:00/PT10S","retries":0,"epsilon":"PT5S","success_count":0,"last_success":"0001-01-01T00:00:00Z","error_count":0,"last_error":"0001-01-01T00:00:00Z","last_attempted_run":"0001-01-01T00:00:00Z","next_run_at":"2015-06-04T19:25:16.828794572-07:00"}}}
+{
+    "jobs":{
+        "93b65499-b211-49ce-57e0-19e735cc5abd":{
+            "name":"test_job",
+            "id":"93b65499-b211-49ce-57e0-19e735cc5abd",
+            "command":"bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh",
+            "owner":"",
+            "disabled":false,
+            "dependent_jobs":null,
+            "parent_jobs":null,
+            "schedule":"R2/2015-06-04T19:25:16.828696-07:00/PT10S",
+            "retries":0,
+            "epsilon":"PT5S",
+            "success_count":0,
+            "last_success":"0001-01-01T00:00:00Z",
+            "error_count":0,
+            "last_error":"0001-01-01T00:00:00Z",
+            "last_attempted_run":"0001-01-01T00:00:00Z",
+            "next_run_at":"2015-06-04T19:25:16.828794572-07:00"
+        }
+    }
+}
 ```
 
 ## /job/{id}
@@ -170,7 +218,7 @@ ajvb$ curl http://127.0.0.1:8000/api/v1/stats/
 
 # Documentation
 
-TODO
+[Can be found here](http://godoc.org/github.com/ajvb/kala)
 
 # Contributing
 
