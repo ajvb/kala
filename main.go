@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 
 	"github.com/ajvb/kala/api"
+	"github.com/ajvb/kala/api/middleware"
 	"github.com/ajvb/kala/utils/logging"
 
 	"github.com/codegangsta/cli"
+	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
 )
 
@@ -16,13 +19,17 @@ var (
 	log = logging.GetLogger("kala")
 )
 
-func initServer() *mux.Router {
+func initServer() *negroni.Negroni {
 	r := mux.NewRouter()
 	api.SetupApiRoutes(r)
-	return r
+	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log})
+	n.UseHandler(r)
+	return n
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	app := cli.NewApp()
 	app.Name = "Kala"
 	app.Usage = "Modern job scheduler"

@@ -112,6 +112,8 @@ TODO
     - Port & Host (needs improvement)
     - Verbose/Debug logging
     - Default owner
+- [ ] Error Reporting on job failure
+- [ ] Remove dependance on external http library in client.
 
 ### For User
 - [ ] Users Documentation
