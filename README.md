@@ -9,8 +9,8 @@ Kala is a simplistic, modern, and performant job scheduler written in Go. It liv
 Kala was inspired by [Chronos](https://github.com/airbnb/chronos), developed by Airbnb, but the need for a Chronos for the rest of us. Chronos is built on top of Mesos, and
 is fault tolerant and distributed by design. These are two features which Kala does not have, as it was built for smaller deployments.
 
-It has a simple JSON over HTTP API, so it is language agnostic. It has a Web UI, Job Stats, Configurable Retries, uses ISO 8601 Date and Interval
-notation, Dependant Jobs, and is Persistant (using BoltDB).
+It has a simple JSON over HTTP API, so it is language agnostic. It has Job Stats, Configurable Retries, uses ISO 8601 Date and Interval
+notation, Dependant Jobs, and is Persistent (using BoltDB). Eventually it will support Redis as a Backend and have a Web UI.
 
 #### Have any feedback or bugs to report?
 
