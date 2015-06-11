@@ -2,7 +2,7 @@
 
 [![Circle CI](https://circleci.com/gh/ajvb/kala.svg?style=svg)](https://circleci.com/gh/ajvb/kala)
 
-### Currently in Alpha stage. Do not use in production enviorments.
+#### Currently in Alpha stage. Do not use in production enviorments.
 
 Kala is a simplistic, modern, and performant job scheduler written in Go. It lives in a single binary and does not have any dependencies.
 
@@ -11,6 +11,10 @@ is fault tolerant and distributed by design. These are two features which Kala d
 
 It has a simple JSON over HTTP API, so it is language agnostic. It has a Web UI, Job Stats, Configurable Retries, uses ISO 8601 Date and Interval
 notation, Dependant Jobs, and is Persistant (using BoltDB).
+
+#### Have any feedback or bugs to report?
+
+Please create an issue within Github, or also feel free to email me at aj <at> ajvb.em
 
 #### I need [fault tolerance, distributed-features, this to work at scale]
 
