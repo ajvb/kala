@@ -49,7 +49,7 @@ mv kala /usr/local/bin/
 One liner:
 ```
 git clone https://github.com/ajvb/kala.git && cd kala && go get ./... && go build && mv kala /usr/local/bin/
-``
+```
 
 
 # Getting Started
