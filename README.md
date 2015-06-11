@@ -16,13 +16,73 @@ notation, Dependant Jobs, and is Persistant (using BoltDB).
 
 I recommend checking out [Chronos](https://github.com/airbnb/chronos). This is designed to be the Chronos for start-ups.
 
+# Installing Kala
+
+## Source
+
+0. Requires Go 1.0+ and git
+
+1. Clone this repo
+
+```
+git clone https://github.com/ajvb/kala.git
+```
+
+2. Install Dependencies
+
+```
+cd kala && go get ./...
+```
+
+3. Build the Kala binary
+
+```
+go build
+```
+
+4. Move to somewhere in your $PATH
+
+```
+mv kala /usr/local/bin/
+```
+
+One liner:
+```
+git clone https://github.com/ajvb/kala.git && cd kala && go get ./... && go build && mv kala /usr/local/bin/
+``
+
+
 # Getting Started
 
-TODO
+Once you have installed Kala onto the machine you would like to use, you can follow the below steps to start using it.
+
+To Run Kala:
+```bash
+ajvb$ kala run
+2015/06/10 18:31:31 main.go:59:func·001 :: INFO 002 Starting server on port :8000...
+
+ajvb$ kala run -p 2222
+2015/06/10 18:31:31 main.go:59:func·001 :: INFO 002 Starting server on port :2222...
+```
+
+Kala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.
+
+```bash
+ajvb$ curl http://127.0.0.1:8000/api/v1/stats/
+{"Stats":{"ActiveJobs":2,"DisabledJobs":0,"Jobs":2,"ErrorCount":0,"SuccessCount":0,"NextRunAt":"2015-06-04T19:25:16.82873873-07:00","LastAttemptedRun":"0001-01-01T00:00:00Z","CreatedAt":"2015-06-03T19:58:21.433668791-07:00"}}
+```
+
+Once its up in running, you can utilize curl or the official go client to interact with Kala. Also check out the examples directory.
 
 ### Examples of Usage
 
 There are more examples in the examples directory within this repo. Currently its pretty messy. Feel free to submit a new example if you have one.
+
+# Deployment
+
+### Supervisord
+
+TODO
 
 # API v1 Docs
 
