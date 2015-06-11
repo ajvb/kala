@@ -82,7 +82,15 @@ There are more examples in the examples directory within this repo. Currently it
 
 ### Supervisord
 
-TODO
+After installing supervisord, open its config file (`/etc/supervisor/supervisord.conf` is the default usually) and add something like:
+
+```
+[program:kala]
+command=kala run
+autorestart=true
+stdout_logfile=/var/log/kala.stdout.log
+stderr_logfile=/var/log/kala.stderr.log
+```
 
 # API v1 Docs
 
