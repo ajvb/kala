@@ -20,27 +20,27 @@ I recommend checking out [Chronos](https://github.com/airbnb/chronos). This is d
 
 ## Source
 
-0. Requires Go 1.0+ and git
+Step 0: Requires Go 1.0+ and git
 
-1. Clone this repo
+Step 1: Clone this repo
 
 ```
 git clone https://github.com/ajvb/kala.git
 ```
 
-2. Install Dependencies
+Step 2: Install Dependencies
 
 ```
 cd kala && go get ./...
 ```
 
-3. Build the Kala binary
+Step 3: Build the Kala binary
 
 ```
 go build
 ```
 
-4. Move to somewhere in your $PATH
+Step 4: Move to somewhere in your $PATH
 
 ```
 mv kala /usr/local/bin/
