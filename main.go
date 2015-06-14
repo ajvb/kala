@@ -44,6 +44,11 @@ func main() {
 					Value: 8000,
 					Usage: "port for Kala to run on",
 				},
+				cli.StringFlag{
+					Name:  "interface, i",
+					Value: "",
+					Usage: "Interface to listen on, default is all",
+				},
 			},
 			Action: func(c *cli.Context) {
 				var parsedPort string
@@ -54,10 +59,16 @@ func main() {
 					parsedPort = ":8000"
 				}
 
+				var connectionString string
+				if c.String("interface") != "" {
+					connectionString = c.String("interface") + parsedPort
+				} else {
+					connectionString = parsedPort
+				}
 				r := initServer()
 
-				log.Info("Starting server on port %s...", parsedPort)
-				log.Fatal(http.ListenAndServe(parsedPort, r))
+				log.Info("Starting server on port %s...", connectionString)
+				log.Fatal(http.ListenAndServe(connectionString, r))
 			},
 		},
 	}
