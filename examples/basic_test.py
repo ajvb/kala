@@ -5,8 +5,6 @@ from time import sleep
 from datetime import datetime, timedelta
 from dateutil.tz import tzlocal
 
-
-
 API_URL = "http://127.0.0.1:8000/api/v1/job/"
 
 data = {
