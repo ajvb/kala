@@ -29,7 +29,7 @@ type KalaClient struct {
 // Example:
 // 		c := New("http://127.0.0.1:8000")
 func New(apiEndpoint string) *KalaClient {
-	if strings.HasPrefix(apiEndpoint, "/") {
+	if strings.HasSuffix(apiEndpoint, "/") {
 		apiEndpoint = apiEndpoint[:len(apiEndpoint)-1]
 	}
 
