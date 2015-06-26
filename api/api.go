@@ -54,8 +54,7 @@ type ListJobStatsResponse struct {
 // HandleListJobStatsRequest is the handler for getting job-specific stats
 // /api/v1/job/stats/{id}
 func HandleListJobStatsRequest(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := mux.Vars(r)["id"]
 	j := job.AllJobs.Get(id)
 
 	resp := &ListJobStatsResponse{
@@ -146,8 +145,7 @@ func HandleAddJob(w http.ResponseWriter, r *http.Request) {
 // HandleJobRequest routes requests to /api/v1/job/{id} to either
 // handleDeleteJob if its a DELETE or handleGetJob if its a GET request.
 func HandleJobRequest(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := mux.Vars(r)["id"]
 
 	j := job.AllJobs.Get(id)
 	if j == nil {
@@ -188,8 +186,7 @@ func handleGetJob(w http.ResponseWriter, r *http.Request, j *job.Job) {
 // HandleStartJobRequest is the handler for manually starting jobs
 // /api/v1/job/start/{id}
 func HandleStartJobRequest(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
+	id := mux.Vars(r)["id"]
 	j := job.AllJobs.Get(id)
 
 	j.Run()
