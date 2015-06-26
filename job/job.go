@@ -221,7 +221,9 @@ func (j *Job) StartWaiting() {
 // Disable stops the job from running by stopping its jobTimer. It also sets Job.Disabled to true,
 // which is reflected in the UI.
 func (j *Job) Disable() {
-	_ = j.jobTimer.Stop()
+	if j.jobTimer != nil {
+		j.jobTimer.Stop()
+	}
 	j.Disabled = true
 }
 
