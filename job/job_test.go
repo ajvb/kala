@@ -166,7 +166,7 @@ func TestOneOffJobs(t *testing.T) {
 }
 
 func TestDependentJobs(t *testing.T) {
-	db := GetDB(testDbPath)
+	db := GetBoltDB(testDbPath)
 	cache := NewMemoryJobCache(db, time.Second*5)
 
 	mockJob := getMockJobWithGenericSchedule()

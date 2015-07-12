@@ -121,14 +121,13 @@ func (j *Job) Init(cache JobCache) error {
 // InitDelayDuration is used to parsed the iso8601 Schedule notation into its relevent fields in the Job struct.
 // If checkTime is true, then it will return an error if the Scheduled time has passed.
 func (j *Job) InitDelayDuration(checkTime bool) error {
+	var err error
 	splitTime := strings.Split(j.Schedule, "/")
 	if len(splitTime) != 3 {
 		return fmt.Errorf(
 			"Schedule not formatted correctly. Should look like: R/2014-03-08T20:00:00Z/PT2H",
 		)
 	}
-
-	var err error
 
 	// Handle Repeat Amount
 	if splitTime[0] == "R" {

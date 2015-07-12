@@ -66,7 +66,7 @@ func main() {
 				if c.String("dbpath") != "" {
 					dbPath = fmt.Sprintf("%q", c.String("dbpath"))
 				}
-				db := job.GetDB(dbPath)
+				db := job.GetBoltDB(dbPath)
 
 				// Create cache
 				cache := job.NewMemoryJobCache(db, 5*time.Second)

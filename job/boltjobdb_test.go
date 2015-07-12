@@ -8,7 +8,7 @@ import (
 )
 
 func TestSaveAndGetJob(t *testing.T) {
-	db := GetDB(testDbPath)
+	db := GetBoltDB(testDbPath)
 	cache := NewMemoryJobCache(db, time.Second*60)
 	defer db.Close()
 
@@ -31,7 +31,7 @@ func TestSaveAndGetJob(t *testing.T) {
 }
 
 func TestDeleteJob(t *testing.T) {
-	db := GetDB(testDbPath)
+	db := GetBoltDB(testDbPath)
 	cache := NewMemoryJobCache(db, time.Second*60)
 	defer db.Close()
 
