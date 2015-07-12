@@ -9,7 +9,8 @@ import (
 
 func TestSaveAndGetJob(t *testing.T) {
 	db := GetDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*5)
+	cache := NewMemoryJobCache(db, time.Second*60)
+	defer db.Close()
 
 	genericMockJob := getMockJobWithGenericSchedule()
 	genericMockJob.Init(cache)
@@ -25,11 +26,14 @@ func TestSaveAndGetJob(t *testing.T) {
 	assert.Equal(t, j.Schedule, genericMockJob.Schedule)
 	assert.Equal(t, j.Owner, genericMockJob.Owner)
 	assert.Equal(t, j.SuccessCount, genericMockJob.SuccessCount)
+
+	cache.jobDB = nil
 }
 
 func TestDeleteJob(t *testing.T) {
 	db := GetDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*5)
+	cache := NewMemoryJobCache(db, time.Second*60)
+	defer db.Close()
 
 	genericMockJob := getMockJobWithGenericSchedule()
 	genericMockJob.Init(cache)
@@ -51,4 +55,6 @@ func TestDeleteJob(t *testing.T) {
 	assert.Nil(t, cache.Get(genericMockJob.Id))
 
 	genericMockJob.Delete(cache, db)
+
+	cache.jobDB = nil
 }

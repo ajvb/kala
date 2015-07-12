@@ -8,8 +8,7 @@ import (
 )
 
 func TestJobStats(t *testing.T) {
-	db := GetDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*5)
+	cache := NewMockCache()
 
 	j := getMockJobWithGenericSchedule()
 	j.Init(cache)
@@ -26,8 +25,7 @@ func TestJobStats(t *testing.T) {
 }
 
 func TestKalaStats(t *testing.T) {
-	db := GetDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*5)
+	cache := NewMockCache()
 
 	for i := 0; i < 5; i++ {
 		j := getMockJobWithGenericSchedule()

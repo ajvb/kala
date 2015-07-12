@@ -8,13 +8,11 @@ import (
 )
 
 type JobCache interface {
-	Init()
 	Get(id string) *Job
 	GetAll() map[string]*Job
 	Set(j *Job)
 	Delete(id string)
 	Persist() error
-	PersistEvery(waitTime time.Duration)
 }
 
 type MemoryJobCache struct {

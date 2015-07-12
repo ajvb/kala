@@ -2,7 +2,6 @@ package job
 
 import (
 	"fmt"
-	//"os/user"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -36,8 +35,7 @@ func getMockJobWithGenericSchedule() *Job {
 }
 
 func TestScheduleParsing(t *testing.T) {
-	db := GetDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*5)
+	cache := NewMockCache()
 
 	fiveMinutesFromNow := time.Now().Add(
 		time.Duration(time.Minute * 5),
@@ -51,13 +49,10 @@ func TestScheduleParsing(t *testing.T) {
 		t, genericMockJob.scheduleTime, fiveMinutesFromNow,
 		time.Second, "The difference between parsed time and created time is to great.",
 	)
-
-	db.Close()
 }
 
 func TestBrokenSchedule(t *testing.T) {
-	db := GetDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*5)
+	cache := NewMockCache()
 
 	mockJob := getMockJobWithGenericSchedule()
 	mockJob.Schedule = "hfhgasyuweu123"
@@ -66,7 +61,6 @@ func TestBrokenSchedule(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, mockJob.jobTimer)
-	db.Close()
 }
 
 var delayParsingTests = []struct {
@@ -83,8 +77,7 @@ func TestDelayParsing(t *testing.T) {
 	testTime := time.Now().Add(time.Minute * 1)
 
 	for _, delayTest := range delayParsingTests {
-		db := GetDB(testDbPath)
-		cache := NewMemoryJobCache(db, time.Second*5)
+		cache := NewMockCache()
 		genericMockJob := getMockJobWithSchedule(1, testTime, delayTest.intervalStr)
 		genericMockJob.Init(cache)
 		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.ToDuration(), "Parsed duration was incorrect")
@@ -100,21 +93,18 @@ func TestBrokenDelayHandling(t *testing.T) {
 	}
 
 	for _, intervalTest := range brokenIntervals {
-		db := GetDB(testDbPath)
-		cache := NewMemoryJobCache(db, time.Second*5)
+		cache := NewMockCache()
 
 		genericMockJob := getMockJobWithSchedule(1, testTime, intervalTest)
 		err := genericMockJob.Init(cache)
 
 		assert.Error(t, err)
 		assert.Nil(t, genericMockJob.jobTimer)
-		db.Close()
 	}
 }
 
 func TestJobInit(t *testing.T) {
-	db := GetDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*5)
+	cache := NewMockCache()
 
 	genericMockJob := getMockJobWithGenericSchedule()
 
@@ -123,12 +113,10 @@ func TestJobInit(t *testing.T) {
 
 	assert.NotEmpty(t, genericMockJob.Id, "Job.Id should not be empty")
 	assert.NotEmpty(t, genericMockJob.jobTimer, "Job.jobTimer should not be empty")
-	db.Close()
 }
 
 func TestJobDisable(t *testing.T) {
-	db := GetDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*5)
+	cache := NewMockCache()
 
 	genericMockJob := getMockJobWithGenericSchedule()
 	genericMockJob.Init(cache)
@@ -138,12 +126,10 @@ func TestJobDisable(t *testing.T) {
 	genericMockJob.Disable()
 	assert.True(t, genericMockJob.Disabled, "Job.Disable() should set Job.Disabled to true")
 	assert.False(t, genericMockJob.jobTimer.Stop())
-	db.Close()
 }
 
 func TestJobRun(t *testing.T) {
-	db := GetDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*5)
+	cache := NewMockCache()
 
 	j := getMockJobWithGenericSchedule()
 	j.Init(cache)
@@ -154,12 +140,10 @@ func TestJobRun(t *testing.T) {
 	assert.Equal(t, j.SuccessCount, uint(1))
 	assert.WithinDuration(t, j.LastSuccess, now, 2*time.Second)
 	assert.WithinDuration(t, j.LastAttemptedRun, now, 2*time.Second)
-	db.Close()
 }
 
 func TestOneOffJobs(t *testing.T) {
-	db := GetDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*5)
+	cache := NewMockCache()
 
 	j := getMockJob()
 
@@ -179,7 +163,6 @@ func TestOneOffJobs(t *testing.T) {
 	assert.WithinDuration(t, j.LastAttemptedRun, now, 2*time.Second)
 	assert.Equal(t, j.scheduleTime, time.Time{})
 	assert.Nil(t, j.jobTimer)
-	db.Close()
 }
 
 func TestDependentJobs(t *testing.T) {

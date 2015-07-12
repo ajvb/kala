@@ -70,6 +70,7 @@ func main() {
 
 				// Create cache
 				cache := job.NewMemoryJobCache(db, 5*time.Second)
+				cache.Init()
 
 				log.Info("Starting server on port %s...", connectionString)
 				log.Fatal(api.StartServer(connectionString, cache, db))
