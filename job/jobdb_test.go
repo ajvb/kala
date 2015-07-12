@@ -8,11 +8,14 @@ import (
 )
 
 func TestSaveAndGetJob(t *testing.T) {
-	genericMockJob := getMockJobWithGenericSchedule()
-	genericMockJob.Init()
-	genericMockJob.Save()
+	db := GetDB(testDbPath)
+	cache := NewMemoryJobCache(db, time.Second*5)
 
-	j, err := GetJob(genericMockJob.Id)
+	genericMockJob := getMockJobWithGenericSchedule()
+	genericMockJob.Init(cache)
+	genericMockJob.Save(db)
+
+	j, err := db.Get(genericMockJob.Id)
 	assert.Nil(t, err)
 
 	assert.WithinDuration(t, j.NextRunAt, genericMockJob.NextRunAt, 100*time.Microsecond)
@@ -25,24 +28,27 @@ func TestSaveAndGetJob(t *testing.T) {
 }
 
 func TestDeleteJob(t *testing.T) {
+	db := GetDB(testDbPath)
+	cache := NewMemoryJobCache(db, time.Second*5)
+
 	genericMockJob := getMockJobWithGenericSchedule()
-	genericMockJob.Init()
-	genericMockJob.Save()
-	AllJobs.Set(genericMockJob)
+	genericMockJob.Init(cache)
+	genericMockJob.Save(db)
+	cache.Set(genericMockJob)
 
 	// Make sure its there
-	j, err := GetJob(genericMockJob.Id)
+	j, err := db.Get(genericMockJob.Id)
 	assert.Nil(t, err)
 	assert.Equal(t, j.Name, genericMockJob.Name)
-	assert.NotNil(t, AllJobs.Get(genericMockJob.Id))
+	assert.NotNil(t, cache.Get(genericMockJob.Id))
 
 	// Delete it
-	genericMockJob.Delete()
+	genericMockJob.Delete(cache, db)
 
-	k, err := GetJob(genericMockJob.Id)
+	k, err := db.Get(genericMockJob.Id)
 	assert.Error(t, err)
 	assert.Nil(t, k)
-	assert.Nil(t, AllJobs.Get(genericMockJob.Id))
+	assert.Nil(t, cache.Get(genericMockJob.Id))
 
-	genericMockJob.Delete()
+	genericMockJob.Delete(cache, db)
 }

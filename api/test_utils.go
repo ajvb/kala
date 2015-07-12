@@ -8,6 +8,6 @@ import (
 
 func NewTestServer() *httptest.Server {
 	r := mux.NewRouter()
-	SetupApiRoutes(r)
+	//SetupApiRoutes(r)
 	return httptest.NewServer(r)
 }

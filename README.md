@@ -237,12 +237,16 @@ TODO
 
 ### For User
 - [ ] Users Documentation
-- [ ] Single command to run docker image
 - [ ] Python Client Library
 - [ ] Node Client Library
-- [ ] CLI
 - [ ] Create single release binary
 
 ### For Contributors
 - [ ] Contributors Documentation
 - [ ] Continuous Integration
+
+### Testing
+- [ ] Add race detector to circleci
+- [ ] Add API Test Suite
+- [ ] Add edge case tests for job scheduling and job dependency
+

@@ -9,6 +9,8 @@ import (
 	"testing"
 )
 
+var testDbPath = ""
+
 func getMockJob() *Job {
 	return &Job{
 		Name:    "mock_job",
@@ -34,28 +36,37 @@ func getMockJobWithGenericSchedule() *Job {
 }
 
 func TestScheduleParsing(t *testing.T) {
+	db := GetDB(testDbPath)
+	cache := NewMemoryJobCache(db, time.Second*5)
+
 	fiveMinutesFromNow := time.Now().Add(
 		time.Duration(time.Minute * 5),
 	)
 
 	genericMockJob := getMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
 
-	genericMockJob.Init()
+	genericMockJob.Init(cache)
 
 	assert.WithinDuration(
 		t, genericMockJob.scheduleTime, fiveMinutesFromNow,
 		time.Second, "The difference between parsed time and created time is to great.",
 	)
+
+	db.Close()
 }
 
 func TestBrokenSchedule(t *testing.T) {
+	db := GetDB(testDbPath)
+	cache := NewMemoryJobCache(db, time.Second*5)
+
 	mockJob := getMockJobWithGenericSchedule()
 	mockJob.Schedule = "hfhgasyuweu123"
 
-	err := mockJob.Init()
+	err := mockJob.Init(cache)
 
 	assert.Error(t, err)
 	assert.Nil(t, mockJob.jobTimer)
+	db.Close()
 }
 
 var delayParsingTests = []struct {
@@ -72,8 +83,10 @@ func TestDelayParsing(t *testing.T) {
 	testTime := time.Now().Add(time.Minute * 1)
 
 	for _, delayTest := range delayParsingTests {
+		db := GetDB(testDbPath)
+		cache := NewMemoryJobCache(db, time.Second*5)
 		genericMockJob := getMockJobWithSchedule(1, testTime, delayTest.intervalStr)
-		genericMockJob.Init()
+		genericMockJob.Init(cache)
 		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.ToDuration(), "Parsed duration was incorrect")
 	}
 }
@@ -87,48 +100,67 @@ func TestBrokenDelayHandling(t *testing.T) {
 	}
 
 	for _, intervalTest := range brokenIntervals {
+		db := GetDB(testDbPath)
+		cache := NewMemoryJobCache(db, time.Second*5)
+
 		genericMockJob := getMockJobWithSchedule(1, testTime, intervalTest)
-		err := genericMockJob.Init()
+		err := genericMockJob.Init(cache)
 
 		assert.Error(t, err)
 		assert.Nil(t, genericMockJob.jobTimer)
+		db.Close()
 	}
 }
 
 func TestJobInit(t *testing.T) {
+	db := GetDB(testDbPath)
+	cache := NewMemoryJobCache(db, time.Second*5)
+
 	genericMockJob := getMockJobWithGenericSchedule()
 
-	err := genericMockJob.Init()
+	err := genericMockJob.Init(cache)
 	assert.Nil(t, err, "err should be nil")
 
 	assert.NotEmpty(t, genericMockJob.Id, "Job.Id should not be empty")
 	assert.NotEmpty(t, genericMockJob.jobTimer, "Job.jobTimer should not be empty")
+	db.Close()
 }
 
 func TestJobDisable(t *testing.T) {
+	db := GetDB(testDbPath)
+	cache := NewMemoryJobCache(db, time.Second*5)
+
 	genericMockJob := getMockJobWithGenericSchedule()
-	genericMockJob.Init()
+	genericMockJob.Init(cache)
 
 	assert.False(t, genericMockJob.Disabled, "Job should start with disabled == false")
 
 	genericMockJob.Disable()
 	assert.True(t, genericMockJob.Disabled, "Job.Disable() should set Job.Disabled to true")
 	assert.False(t, genericMockJob.jobTimer.Stop())
+	db.Close()
 }
 
 func TestJobRun(t *testing.T) {
+	db := GetDB(testDbPath)
+	cache := NewMemoryJobCache(db, time.Second*5)
+
 	j := getMockJobWithGenericSchedule()
-	j.Init()
-	j.Run()
+	j.Init(cache)
+	j.Run(cache)
 
 	now := time.Now()
 
 	assert.Equal(t, j.SuccessCount, uint(1))
 	assert.WithinDuration(t, j.LastSuccess, now, 2*time.Second)
 	assert.WithinDuration(t, j.LastAttemptedRun, now, 2*time.Second)
+	db.Close()
 }
 
 func TestOneOffJobs(t *testing.T) {
+	db := GetDB(testDbPath)
+	cache := NewMemoryJobCache(db, time.Second*5)
+
 	j := getMockJob()
 
 	assert.Equal(t, j.SuccessCount, uint(0))
@@ -137,7 +169,7 @@ func TestOneOffJobs(t *testing.T) {
 	assert.Equal(t, j.LastError, time.Time{})
 	assert.Equal(t, j.LastAttemptedRun, time.Time{})
 
-	j.Init()
+	j.Init(cache)
 	// Find a better way to test a goroutine
 	time.Sleep(time.Second)
 	now := time.Now()
@@ -147,33 +179,38 @@ func TestOneOffJobs(t *testing.T) {
 	assert.WithinDuration(t, j.LastAttemptedRun, now, 2*time.Second)
 	assert.Equal(t, j.scheduleTime, time.Time{})
 	assert.Nil(t, j.jobTimer)
+	db.Close()
 }
 
 func TestDependentJobs(t *testing.T) {
+	db := GetDB(testDbPath)
+	cache := NewMemoryJobCache(db, time.Second*5)
+
 	mockJob := getMockJobWithGenericSchedule()
-	mockJob.Init()
-	AllJobs.Set(mockJob)
+	mockJob.Init(cache)
+	cache.Set(mockJob)
 
 	mockChildJob := getMockJob()
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJob.Init()
-	AllJobs.Set(mockChildJob)
+	mockChildJob.Init(cache)
+	cache.Set(mockChildJob)
 
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
 	assert.True(t, len(mockJob.DependentJobs) == 1)
 
-	mockJob.Save()
+	mockJob.Save(db)
 
-	j, _ := GetJob(mockJob.Id)
+	j, _ := db.Get(mockJob.Id)
 
 	assert.Equal(t, j.DependentJobs[0], mockChildJob.Id)
 
-	j.Run()
+	j.Run(cache)
 	time.Sleep(time.Second * 2)
 	n := time.Now()
 
 	assert.WithinDuration(t, mockChildJob.LastAttemptedRun, n, 4*time.Second)
 	assert.WithinDuration(t, mockChildJob.LastSuccess, n, 4*time.Second)
+	db.Close()
 }

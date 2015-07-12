@@ -20,11 +20,11 @@ type KalaStats struct {
 }
 
 // NewKalaStats is used to easily generate a current app-level metrics report.
-func NewKalaStats() *KalaStats {
+func NewKalaStats(cache JobCache) *KalaStats {
 	ks := &KalaStats{
 		CreatedAt: time.Now(),
 	}
-	jobs := AllJobs.GetAll()
+	jobs := cache.GetAll()
 
 	ks.Jobs = len(jobs)
 	if len(jobs) == 0 {

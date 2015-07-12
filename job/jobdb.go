@@ -4,31 +4,52 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/boltdb/bolt"
 )
 
 var (
-	SaveAllJobsWaitTime = 5 * time.Second
-
-	db = getDB()
-
 	jobBucket = []byte("jobs")
 )
 
-func getDB() *bolt.DB {
-	database, err := bolt.Open("jobdb.db", 0600, nil)
+func GetDB(path string) *BoltJobDB {
+	if path != "" && !strings.HasSuffix(path, "/") {
+		path += "/"
+	}
+	path += "jobdb.db"
+	database, err := bolt.Open(path, 0600, &bolt.Options{Timeout: time.Second * 10})
 	if err != nil {
 		log.Fatal(err)
 	}
-	return database
+	return &BoltJobDB{
+		path:   path,
+		dbConn: database,
+	}
 }
 
-func GetAllJobs() ([]*Job, error) {
+type JobDB interface {
+	GetAll() ([]*Job, error)
+	Get(id string) (*Job, error)
+	Delete(id string)
+	Save(job *Job) error
+	Close()
+}
+
+type BoltJobDB struct {
+	dbConn *bolt.DB
+	path   string
+}
+
+func (db *BoltJobDB) Close() {
+	db.dbConn.Close()
+}
+
+func (db *BoltJobDB) GetAll() ([]*Job, error) {
 	allJobs := []*Job{}
 
-	err := db.Update(func(tx *bolt.Tx) error {
+	err := db.dbConn.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(jobBucket)
 		if err != nil {
 			return err
@@ -61,9 +82,10 @@ func GetAllJobs() ([]*Job, error) {
 	return allJobs, err
 }
 
-func GetJob(id string) (*Job, error) {
+func (db *BoltJobDB) Get(id string) (*Job, error) {
 	j := new(Job)
-	err := db.View(func(tx *bolt.Tx) error {
+
+	err := db.dbConn.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(jobBucket)
 
 		v := b.Get([]byte(id))
@@ -81,23 +103,26 @@ func GetJob(id string) (*Job, error) {
 		return nil, err
 	}
 
-	j.Init()
 	j.Id = id
 	return j, nil
 }
 
-func (j *Job) Delete() {
-	j.Disable()
-	AllJobs.Delete(j.Id)
-	db.Update(func(tx *bolt.Tx) error {
+func (db *BoltJobDB) Delete(id string) {
+	db.dbConn.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(jobBucket)
-		bucket.Delete([]byte(j.Id))
+		bucket.Delete([]byte(id))
 		return nil
 	})
 }
 
-func (j *Job) Save() error {
-	err := db.Update(func(tx *bolt.Tx) error {
+func (j *Job) Delete(cache JobCache, db JobDB) {
+	j.Disable()
+	cache.Delete(j.Id)
+	db.Delete(j.Id)
+}
+
+func (db *BoltJobDB) Save(j *Job) error {
+	err := db.dbConn.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(jobBucket)
 		if err != nil {
 			return err
@@ -119,22 +144,6 @@ func (j *Job) Save() error {
 	return err
 }
 
-func (c *JobCache) Persist() error {
-	c.rwLock.Lock()
-	defer c.rwLock.Unlock()
-
-	for _, v := range c.Jobs {
-		err := v.Save()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *JobCache) PersistEvery(waitTime time.Duration) {
-	for {
-		time.Sleep(waitTime)
-		go c.Persist()
-	}
+func (j *Job) Save(db JobDB) error {
+	return db.Save(j)
 }
