@@ -250,7 +250,9 @@ TODO
 - [ ] Add API Test Suite
 - [ ] Add edge case tests for job scheduling and job dependency
 
-# Contributors and Contact
+# Original Contributors and Contact
 
-Original Author: AJ Bahnken / [@ajvbahnken](http://twitter.com/ajvbahnken)
-Origianl Reviewer: Sam Dolan / [@samdolan](https://github.com/samdolan/)
+Original Author and Core Maintainer: AJ Bahnken / [@ajvbahnken](http://twitter.com/ajvbahnken) / aj@ajvb.me
+Origianl Reviewers:
+Sam Dolan / [@samdolan](https://github.com/samdolan/)
+Steve Phillips / [@elimisteve](http://twitter.com/elimisteve)
