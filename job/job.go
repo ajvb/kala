@@ -178,7 +178,9 @@ func (j *Job) StartWaiting(cache JobCache) {
 	log.Debug("Wait Duration initial: %s", waitDuration)
 	if waitDuration < 0 {
 		// Needs to be recalculated each time because of Months.
-		waitDuration = j.delayDuration.ToDuration()
+		lastRun := j.LastAttemptedRun
+		lastRun.Add(j.delayDuration.ToDuration())
+		waitDuration = time.Duration(lastRun.UnixNano() - time.Now().UnixNano())
 	}
 	log.Info("Job Scheduled to run in: %s", waitDuration)
 	j.NextRunAt = time.Now().Add(waitDuration)
