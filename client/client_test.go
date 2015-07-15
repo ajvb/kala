@@ -229,7 +229,7 @@ func TestStartJobError(t *testing.T) {
 	kc := New(ts.URL)
 
 	ok, err := kc.StartJob("not-an-actual-id")
-	assert.Error(t, err)
+	assert.NoError(t, err)
 	assert.False(t, ok)
 }
 

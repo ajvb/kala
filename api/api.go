@@ -194,6 +194,10 @@ func HandleStartJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *ht
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
 		j := cache.Get(id)
+		if j == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 
 		j.Run(cache)
 
