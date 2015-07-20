@@ -12,7 +12,7 @@ import (
 func NewTestServer() *httptest.Server {
 	r := mux.NewRouter()
 	db := &job.MockDB{}
-	cache := job.NewMemoryJobCache(db, time.Hour*1)
+	cache := job.NewMemoryJobCache(db, time.Hour)
 	SetupApiRoutes(r, cache, db)
 	return httptest.NewServer(r)
 }

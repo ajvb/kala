@@ -227,10 +227,10 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB) {
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
 }
 
-func StartServer(connString string, cache job.JobCache, db job.JobDB) error {
+func StartServer(listenAddr string, cache job.JobCache, db job.JobDB) error {
 	r := mux.NewRouter()
 	SetupApiRoutes(r, cache, db)
 	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log})
 	n.UseHandler(r)
-	return http.ListenAndServe(connString, n)
+	return http.ListenAndServe(listenAddr, n)
 }

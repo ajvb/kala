@@ -37,9 +37,7 @@ func getMockJobWithGenericSchedule() *Job {
 func TestScheduleParsing(t *testing.T) {
 	cache := NewMockCache()
 
-	fiveMinutesFromNow := time.Now().Add(
-		time.Duration(time.Minute * 5),
-	)
+	fiveMinutesFromNow := time.Now().Add(5 * time.Minute)
 
 	genericMockJob := getMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
 
@@ -183,9 +181,7 @@ func TestDependentJobs(t *testing.T) {
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
 	assert.True(t, len(mockJob.DependentJobs) == 1)
 
-	mockJob.Save(db)
-
-	j, _ := db.Get(mockJob.Id)
+	j := cache.Get(mockJob.Id)
 
 	assert.Equal(t, j.DependentJobs[0], mockChildJob.Id)
 

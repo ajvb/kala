@@ -14,7 +14,7 @@ func TestSaveAndGetJob(t *testing.T) {
 
 	genericMockJob := getMockJobWithGenericSchedule()
 	genericMockJob.Init(cache)
-	genericMockJob.Save(db)
+	db.Save(genericMockJob)
 
 	j, err := db.Get(genericMockJob.Id)
 	assert.Nil(t, err)
@@ -37,7 +37,7 @@ func TestDeleteJob(t *testing.T) {
 
 	genericMockJob := getMockJobWithGenericSchedule()
 	genericMockJob.Init(cache)
-	genericMockJob.Save(db)
+	db.Save(genericMockJob)
 	cache.Set(genericMockJob)
 
 	// Make sure its there

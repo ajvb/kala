@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	log = logging.GetLogger("kala")
+	log                 = logging.GetLogger("kala")
+	DefaultPersistEvery = 5 * time.Second
 )
 
 func main() {
@@ -40,9 +41,9 @@ func main() {
 					Usage: "Interface to listen on, default is all",
 				},
 				cli.StringFlag{
-					Name:  "dbpath",
+					Name:  "boltpath",
 					Value: "",
-					Usage: "Path to the database, default is current directory.",
+					Usage: "Path to the bolt database file, default is current directory.",
 				},
 			},
 			Action: func(c *cli.Context) {
@@ -62,15 +63,15 @@ func main() {
 				}
 
 				// Make sure to handle ~/ in dbpath
-				var dbPath string
-				if c.String("dbpath") != "" {
-					dbPath = fmt.Sprintf("%q", c.String("dbpath"))
+				var boltPath string
+				if c.String("boltpath") != "" {
+					boltPath = fmt.Sprintf("%q", c.String("boltpath"))
 				}
-				db := job.GetBoltDB(dbPath)
+				db := job.GetBoltDB(boltPath)
 
 				// Create cache
-				cache := job.NewMemoryJobCache(db, 5*time.Second)
-				cache.Init()
+				cache := job.NewMemoryJobCache(db, DefaultPersistEvery)
+				cache.Start()
 
 				log.Info("Starting server on port %s...", connectionString)
 				log.Fatal(api.StartServer(connectionString, cache, db))

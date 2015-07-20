@@ -14,7 +14,9 @@ func (m *MockDB) Delete(id string) {}
 func (m *MockDB) Save(job *Job) error {
 	return nil
 }
-func (m *MockDB) Close() {}
+func (m *MockDB) Close() error {
+	return nil
+}
 
 func NewMockCache() *MemoryJobCache {
 	return NewMemoryJobCache(&MockDB{}, time.Hour*5)

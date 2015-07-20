@@ -34,8 +34,8 @@ type BoltJobDB struct {
 	path   string
 }
 
-func (db *BoltJobDB) Close() {
-	db.dbConn.Close()
+func (db *BoltJobDB) Close() error {
+	return db.dbConn.Close()
 }
 
 func (db *BoltJobDB) GetAll() ([]*Job, error) {
@@ -85,9 +85,8 @@ func (db *BoltJobDB) Get(id string) (*Job, error) {
 			return fmt.Errorf("Job with id of %s not found.", id)
 		}
 
-		buffer := bytes.NewBuffer(v)
-		dec := gob.NewDecoder(buffer)
-		err := dec.Decode(j)
+		buf := bytes.NewBuffer(v)
+		err := gob.NewDecoder(buf).Decode(j)
 
 		return err
 	})
