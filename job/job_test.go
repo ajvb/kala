@@ -1,7 +1,6 @@
 package job
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -10,36 +9,12 @@ import (
 
 var testDbPath = ""
 
-func getMockJob() *Job {
-	return &Job{
-		Name:    "mock_job",
-		Command: "bash -c 'date'",
-		Owner:   "aj@ajvb.me",
-		Retries: 2,
-	}
-}
-
-func getMockJobWithSchedule(repeat int, scheduleTime time.Time, delay string) *Job {
-	genericMockJob := getMockJob()
-
-	parsedTime := scheduleTime.Format(time.RFC3339)
-	scheduleStr := fmt.Sprintf("R%d/%s/%s", repeat, parsedTime, delay)
-	genericMockJob.Schedule = scheduleStr
-
-	return genericMockJob
-}
-
-func getMockJobWithGenericSchedule() *Job {
-	fiveMinutesFromNow := time.Now().Add(time.Minute * 5)
-	return getMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
-}
-
 func TestScheduleParsing(t *testing.T) {
 	cache := NewMockCache()
 
 	fiveMinutesFromNow := time.Now().Add(5 * time.Minute)
 
-	genericMockJob := getMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
+	genericMockJob := GetMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
 
 	genericMockJob.Init(cache)
 
@@ -52,7 +27,7 @@ func TestScheduleParsing(t *testing.T) {
 func TestBrokenSchedule(t *testing.T) {
 	cache := NewMockCache()
 
-	mockJob := getMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Schedule = "hfhgasyuweu123"
 
 	err := mockJob.Init(cache)
@@ -76,7 +51,7 @@ func TestDelayParsing(t *testing.T) {
 
 	for _, delayTest := range delayParsingTests {
 		cache := NewMockCache()
-		genericMockJob := getMockJobWithSchedule(1, testTime, delayTest.intervalStr)
+		genericMockJob := GetMockJobWithSchedule(1, testTime, delayTest.intervalStr)
 		genericMockJob.Init(cache)
 		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.ToDuration(), "Parsed duration was incorrect")
 	}
@@ -93,7 +68,7 @@ func TestBrokenDelayHandling(t *testing.T) {
 	for _, intervalTest := range brokenIntervals {
 		cache := NewMockCache()
 
-		genericMockJob := getMockJobWithSchedule(1, testTime, intervalTest)
+		genericMockJob := GetMockJobWithSchedule(1, testTime, intervalTest)
 		err := genericMockJob.Init(cache)
 
 		assert.Error(t, err)
@@ -104,7 +79,7 @@ func TestBrokenDelayHandling(t *testing.T) {
 func TestJobInit(t *testing.T) {
 	cache := NewMockCache()
 
-	genericMockJob := getMockJobWithGenericSchedule()
+	genericMockJob := GetMockJobWithGenericSchedule()
 
 	err := genericMockJob.Init(cache)
 	assert.Nil(t, err, "err should be nil")
@@ -116,7 +91,7 @@ func TestJobInit(t *testing.T) {
 func TestJobDisable(t *testing.T) {
 	cache := NewMockCache()
 
-	genericMockJob := getMockJobWithGenericSchedule()
+	genericMockJob := GetMockJobWithGenericSchedule()
 	genericMockJob.Init(cache)
 
 	assert.False(t, genericMockJob.Disabled, "Job should start with disabled == false")
@@ -129,7 +104,7 @@ func TestJobDisable(t *testing.T) {
 func TestJobRun(t *testing.T) {
 	cache := NewMockCache()
 
-	j := getMockJobWithGenericSchedule()
+	j := GetMockJobWithGenericSchedule()
 	j.Init(cache)
 	j.Run(cache)
 
@@ -143,7 +118,7 @@ func TestJobRun(t *testing.T) {
 func TestOneOffJobs(t *testing.T) {
 	cache := NewMockCache()
 
-	j := getMockJob()
+	j := GetMockJob()
 
 	assert.Equal(t, j.SuccessCount, uint(0))
 	assert.Equal(t, j.ErrorCount, uint(0))
@@ -167,11 +142,11 @@ func TestDependentJobs(t *testing.T) {
 	db := GetBoltDB(testDbPath)
 	cache := NewMemoryJobCache(db, time.Second*5)
 
-	mockJob := getMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Init(cache)
 	cache.Set(mockJob)
 
-	mockChildJob := getMockJob()
+	mockChildJob := GetMockJob()
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}

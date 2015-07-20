@@ -10,7 +10,7 @@ import (
 func TestJobStats(t *testing.T) {
 	cache := NewMockCache()
 
-	j := getMockJobWithGenericSchedule()
+	j := GetMockJobWithGenericSchedule()
 	j.Init(cache)
 
 	j.Run(cache)
@@ -28,14 +28,14 @@ func TestKalaStats(t *testing.T) {
 	cache := NewMockCache()
 
 	for i := 0; i < 5; i++ {
-		j := getMockJobWithGenericSchedule()
+		j := GetMockJobWithGenericSchedule()
 		j.Init(cache)
 		j.Run(cache)
 		cache.Set(j)
 	}
 	now := time.Now()
 	for i := 0; i < 5; i++ {
-		j := getMockJobWithGenericSchedule()
+		j := GetMockJobWithGenericSchedule()
 		j.Init(cache)
 		j.Disable()
 		cache.Set(j)

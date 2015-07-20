@@ -124,7 +124,7 @@ func HandleAddJob(cache job.JobCache) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		newJob, err := unmarshalNewJob(r)
 		if err != nil {
-			http.Error(w, err.Error(), 400)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -132,7 +132,7 @@ func HandleAddJob(cache job.JobCache) func(http.ResponseWriter, *http.Request) {
 		if err != nil {
 			errStr := "Error occured when initializing the job"
 			log.Error(errStr+": %s", err)
-			http.Error(w, errStr, 400)
+			http.Error(w, errStr, http.StatusBadRequest)
 			return
 		}
 		cache.Set(newJob)
