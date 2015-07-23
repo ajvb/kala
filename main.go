@@ -2,30 +2,21 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"runtime"
+	"time"
 
 	"github.com/ajvb/kala/api"
-	"github.com/ajvb/kala/api/middleware"
+	"github.com/ajvb/kala/job"
 	"github.com/ajvb/kala/utils/logging"
 
 	"github.com/codegangsta/cli"
-	"github.com/codegangsta/negroni"
-	"github.com/gorilla/mux"
 )
 
 var (
-	log = logging.GetLogger("kala")
+	log                 = logging.GetLogger("kala")
+	DefaultPersistEvery = 5 * time.Second
 )
-
-func initServer() *negroni.Negroni {
-	r := mux.NewRouter()
-	api.SetupApiRoutes(r)
-	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log})
-	n.UseHandler(r)
-	return n
-}
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -49,6 +40,11 @@ func main() {
 					Value: "",
 					Usage: "Interface to listen on, default is all",
 				},
+				cli.StringFlag{
+					Name:  "boltpath",
+					Value: "",
+					Usage: "Path to the bolt database file, default is current directory.",
+				},
 			},
 			Action: func(c *cli.Context) {
 				var parsedPort string
@@ -65,10 +61,20 @@ func main() {
 				} else {
 					connectionString = parsedPort
 				}
-				r := initServer()
+
+				// Make sure to handle ~/ in dbpath
+				var boltPath string
+				if c.String("boltpath") != "" {
+					boltPath = fmt.Sprintf("%q", c.String("boltpath"))
+				}
+				db := job.GetBoltDB(boltPath)
+
+				// Create cache
+				cache := job.NewMemoryJobCache(db, DefaultPersistEvery)
+				cache.Start()
 
 				log.Info("Starting server on port %s...", connectionString)
-				log.Fatal(http.ListenAndServe(connectionString, r))
+				log.Fatal(api.StartServer(connectionString, cache, db))
 			},
 		},
 	}

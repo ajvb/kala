@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/ajvb/kala/api"
-	"github.com/ajvb/kala/job"
 
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -112,7 +111,6 @@ func TestGetAllJobs(t *testing.T) {
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
-	job.AllJobs.Jobs = make(map[string]*job.Job, 0)
 
 	id, err := kc.CreateJob(j)
 	assert.NoError(t, err)
@@ -231,7 +229,7 @@ func TestStartJobError(t *testing.T) {
 	kc := New(ts.URL)
 
 	ok, err := kc.StartJob("not-an-actual-id")
-	assert.Error(t, err)
+	assert.NoError(t, err)
 	assert.False(t, ok)
 }
 
@@ -239,7 +237,6 @@ func TestGetKalaStats(t *testing.T) {
 	ts := api.NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
-	job.AllJobs.Jobs = make(map[string]*job.Job, 0)
 
 	for i := 0; i < 5; i++ {
 		// Generate new job

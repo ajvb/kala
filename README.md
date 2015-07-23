@@ -237,12 +237,22 @@ TODO
 
 ### For User
 - [ ] Users Documentation
-- [ ] Single command to run docker image
 - [ ] Python Client Library
 - [ ] Node Client Library
-- [ ] CLI
 - [ ] Create single release binary
 
 ### For Contributors
 - [ ] Contributors Documentation
 - [ ] Continuous Integration
+
+### Testing
+- [ ] Add race detector to circleci
+- [ ] Add API Test Suite
+- [ ] Add edge case tests for job scheduling and job dependency
+
+# Original Contributors and Contact
+
+Original Author and Core Maintainer: AJ Bahnken / [@ajvbahnken](http://twitter.com/ajvbahnken) / aj@ajvb.me
+Origianl Reviewers:
+Sam Dolan / [@samdolan](https://github.com/samdolan/)
+Steve Phillips / [@elimisteve](http://twitter.com/elimisteve)

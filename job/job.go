@@ -2,9 +2,7 @@ package job
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
-	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,42 +16,12 @@ import (
 )
 
 var (
-	log = logging.GetLogger("kala")
+	log = logging.GetLogger("kala.job")
 
 	shParser = shellwords.NewParser()
 )
 
 func init() {
-	// Prep cache
-	allJobs, err := GetAllJobs()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, v := range allJobs {
-		v.StartWaiting()
-		AllJobs.Set(v)
-	}
-
-	// Occasionally, save items in cache to db.
-	go AllJobs.PersistEvery(SaveAllJobsWaitTime)
-
-	// Process-level defer for shutting down the db.
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
-	go func() {
-		s := <-c
-		log.Info("Process got signal: %s", s)
-		log.Info("Shutting down....")
-
-		// Persist all jobs to database
-		AllJobs.Persist()
-
-		// Close the database
-		db.Close()
-
-		os.Exit(1)
-	}()
-
 	shParser.ParseEnv = true
 	shParser.ParseBacktick = true
 }
@@ -116,7 +84,11 @@ type Job struct {
 }
 
 // Init fills in the protected fields and parses the iso8601 notation.
-func (j *Job) Init() error {
+// It also adds the job to the Cache
+func (j *Job) Init(cache JobCache) error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
 	u4, err := uuid.NewV4()
 	if err != nil {
 		log.Error("Error occured when generating uuid: %s", err)
@@ -124,10 +96,19 @@ func (j *Job) Init() error {
 	}
 	j.Id = u4.String()
 
+	// Add Job to the cache.
+	err = cache.set(j)
+	if err != nil {
+		return err
+	}
+
 	if len(j.ParentJobs) != 0 {
 		// Add new job to parent jobs
 		for _, p := range j.ParentJobs {
-			parentJob := AllJobs.Get(p)
+			parentJob, err := cache.Get(p)
+			if err != nil {
+				return err
+			}
 			parentJob.DependentJobs = append(parentJob.DependentJobs, j.Id)
 		}
 
@@ -136,16 +117,18 @@ func (j *Job) Init() error {
 
 	if j.Schedule == "" {
 		// If schedule is empty, its a one-off job.
-		go j.Run()
+		go j.Run(cache)
 		return nil
 	}
 
+	j.lock.Unlock()
 	err = j.InitDelayDuration(true)
+	j.lock.Lock()
 	if err != nil {
 		return err
 	}
 
-	j.StartWaiting()
+	j.StartWaiting(cache)
 
 	return nil
 }
@@ -153,14 +136,16 @@ func (j *Job) Init() error {
 // InitDelayDuration is used to parsed the iso8601 Schedule notation into its relevent fields in the Job struct.
 // If checkTime is true, then it will return an error if the Scheduled time has passed.
 func (j *Job) InitDelayDuration(checkTime bool) error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	var err error
 	splitTime := strings.Split(j.Schedule, "/")
 	if len(splitTime) != 3 {
 		return fmt.Errorf(
 			"Schedule not formatted correctly. Should look like: R/2014-03-08T20:00:00Z/PT2H",
 		)
 	}
-
-	var err error
 
 	// Handle Repeat Amount
 	if splitTime[0] == "R" {
@@ -206,21 +191,31 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 }
 
 // StartWaiting begins a timer for when it should execute the Jobs .Run() method.
-func (j *Job) StartWaiting() {
+func (j *Job) StartWaiting(cache JobCache) {
 	waitDuration := time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())
 	log.Debug("Wait Duration initial: %s", waitDuration)
 	if waitDuration < 0 {
 		// Needs to be recalculated each time because of Months.
-		waitDuration = j.delayDuration.ToDuration()
+		if j.LastAttemptedRun.IsZero() {
+			waitDuration = j.delayDuration.ToDuration()
+		} else {
+			lastRun := j.LastAttemptedRun
+			lastRun.Add(j.delayDuration.ToDuration())
+			waitDuration = lastRun.Sub(time.Now())
+		}
 	}
 	log.Info("Job Scheduled to run in: %s", waitDuration)
 	j.NextRunAt = time.Now().Add(waitDuration)
-	j.jobTimer = time.AfterFunc(waitDuration, j.Run)
+	jobRun := func() { j.Run(cache) }
+	j.jobTimer = time.AfterFunc(waitDuration, jobRun)
 }
 
 // Disable stops the job from running by stopping its jobTimer. It also sets Job.Disabled to true,
 // which is reflected in the UI.
 func (j *Job) Disable() {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
 	if j.jobTimer != nil {
 		j.jobTimer.Stop()
 	}
@@ -229,13 +224,13 @@ func (j *Job) Disable() {
 
 // Run executes the Job's command, collects metadata around the success
 // or failure of the Job's execution, and schedules the next run.
-func (j *Job) Run() {
+func (j *Job) Run(cache JobCache) {
 	log.Info("Job %s running", j.Name)
 
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
-	j.runSetup()
+	j.runSetup(cache)
 
 	for {
 		err := j.runCmd()
@@ -274,7 +269,12 @@ func (j *Job) Run() {
 	// Run Dependent Jobs
 	if len(j.DependentJobs) != 0 {
 		for _, id := range j.DependentJobs {
-			go AllJobs.Get(id).Run()
+			newJob, err := cache.Get(id)
+			if err != nil {
+				log.Error("Error retrieving dependent job with id of %s", id)
+			} else {
+				newJob.Run(cache)
+			}
 		}
 	}
 
@@ -312,14 +312,14 @@ func (j *Job) shouldRetry() bool {
 	return true
 }
 
-func (j *Job) runSetup() {
+func (j *Job) runSetup(cache JobCache) {
 	// Setup Job Stat
 	j.currentStat = NewJobStat(j.Id)
 
 	// Schedule next run
 	if j.timesToRepeat != 0 {
 		j.timesToRepeat--
-		go j.StartWaiting()
+		go j.StartWaiting(cache)
 	}
 
 	j.LastAttemptedRun = time.Now()

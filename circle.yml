@@ -3,13 +3,23 @@ machine:
         America/Los_Angeles
     environment:
         GOPATH: "${HOME}/gopath"
+        ORG_NAME: "github.com/ajvb"
+        REPO_PATH: "${ORG_NAME}/kala"
 
 dependencies:
     override:
-        - go get -t -d -v ./...
+        # We have to copy this manually to avoid symlinks, which screws all kinds of stuff up
+        - rm -rf ${GOPATH}/src/${REPO_PATH}
+        - mkdir -p ${GOPATH}/src/${ORG_NAME}
+        - cp -r ../kala ${GOPATH}/src/${ORG_NAME}
 
-        - go build -v
+        - go get -t -d -v ./...:
+            pwd: ../gopath/src/${REPO_PATH}
+
+        - go build -v:
+            pwd: ../gopath/src/${REPO_PATH}
 
 test:
     override:
-        - go test ./...
+        - go test -race ./...:
+            pwd: ../gopath/src/${REPO_PATH}

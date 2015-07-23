@@ -6,9 +6,11 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/ajvb/kala/api/middleware"
 	"github.com/ajvb/kala/job"
 	"github.com/ajvb/kala/utils/logging"
 
+	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
 )
 
@@ -24,7 +26,7 @@ const (
 )
 
 var (
-	log = logging.GetLogger("api")
+	log = logging.GetLogger("kala.api")
 )
 
 type KalaStatsResponse struct {
@@ -33,18 +35,19 @@ type KalaStatsResponse struct {
 
 // HandleKalaStatsRequest is the hanlder for getting system-level metrics
 // /api/v1/stats
-func HandleKalaStatsRequest(w http.ResponseWriter, r *http.Request) {
-	resp := &KalaStatsResponse{
-		Stats: job.NewKalaStats(),
-	}
+func HandleKalaStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		resp := &KalaStatsResponse{
+			Stats: job.NewKalaStats(cache),
+		}
 
-	w.Header().Set(contentType, jsonContentType)
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		log.Error("Error occured when marshalling response: %s", err)
-		return
+		w.Header().Set(contentType, jsonContentType)
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			log.Error("Error occured when marshalling response: %s", err)
+			return
+		}
 	}
-
 }
 
 type ListJobStatsResponse struct {
@@ -53,21 +56,32 @@ type ListJobStatsResponse struct {
 
 // HandleListJobStatsRequest is the handler for getting job-specific stats
 // /api/v1/job/stats/{id}
-func HandleListJobStatsRequest(w http.ResponseWriter, r *http.Request) {
-	id := mux.Vars(r)["id"]
-	j := job.AllJobs.Get(id)
+func HandleListJobStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := mux.Vars(r)["id"]
+		j, err := cache.Get(id)
+		if err != nil {
+			log.Error("Error occured when trying to get the job you requested.")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 
-	resp := &ListJobStatsResponse{
-		JobStats: j.Stats,
+		if j == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		resp := &ListJobStatsResponse{
+			JobStats: j.Stats,
+		}
+
+		w.Header().Set(contentType, jsonContentType)
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			log.Error("Error occured when marshalling response: %s", err)
+			return
+		}
 	}
-
-	w.Header().Set(contentType, jsonContentType)
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		log.Error("Error occured when marshalling response: %s", err)
-		return
-	}
-
 }
 
 type ListJobsResponse struct {
@@ -76,18 +90,19 @@ type ListJobsResponse struct {
 
 // HandleListJobs responds with an array of all Jobs within the server,
 // active or disabled.
-func HandleListJobsRequest(w http.ResponseWriter, r *http.Request) {
-	resp := &ListJobsResponse{
-		Jobs: job.AllJobs.GetAll(),
-	}
+func HandleListJobsRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		resp := &ListJobsResponse{
+			Jobs: cache.GetAll(),
+		}
 
-	w.Header().Set(contentType, jsonContentType)
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		log.Error("Error occured when marshalling response: %s", err)
-		return
+		w.Header().Set(contentType, jsonContentType)
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			log.Error("Error occured when marshalling response: %s", err)
+			return
+		}
 	}
-
 }
 
 type AddJobResponse struct {
@@ -114,56 +129,59 @@ func unmarshalNewJob(r *http.Request) (*job.Job, error) {
 
 // HandleAddJob takes a job object and unmarshals it to a Job type,
 // and then throws the job in the schedulers.
-func HandleAddJob(w http.ResponseWriter, r *http.Request) {
-	newJob, err := unmarshalNewJob(r)
-	if err != nil {
-		http.Error(w, err.Error(), 400)
-		return
-	}
+func HandleAddJob(cache job.JobCache) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		newJob, err := unmarshalNewJob(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-	err = newJob.Init()
-	if err != nil {
-		errStr := "Error occured when initializing the job"
-		log.Error(errStr+": %s", err)
-		http.Error(w, errStr, 400)
-		return
-	}
-	job.AllJobs.Set(newJob)
+		err = newJob.Init(cache)
+		if err != nil {
+			errStr := "Error occured when initializing the job"
+			log.Error(errStr+": %s", err)
+			http.Error(w, errStr, http.StatusBadRequest)
+			return
+		}
 
-	resp := &AddJobResponse{
-		Id: newJob.Id,
-	}
+		resp := &AddJobResponse{
+			Id: newJob.Id,
+		}
 
-	w.Header().Set(contentType, jsonContentType)
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		log.Error("Error occured when marshalling response: %s", err)
-		return
+		w.Header().Set(contentType, jsonContentType)
+		w.WriteHeader(http.StatusCreated)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			log.Error("Error occured when marshalling response: %s", err)
+			return
+		}
 	}
 }
 
 // HandleJobRequest routes requests to /api/v1/job/{id} to either
 // handleDeleteJob if its a DELETE or handleGetJob if its a GET request.
-func HandleJobRequest(w http.ResponseWriter, r *http.Request) {
-	id := mux.Vars(r)["id"]
+func HandleJobRequest(cache job.JobCache, db job.JobDB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := mux.Vars(r)["id"]
 
-	j := job.AllJobs.Get(id)
-	if j == nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
+		j, err := cache.Get(id)
+		if err != nil {
+			log.Error("Error occured when trying to get the job you requested.")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if j == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		if r.Method == "DELETE" {
+			j.Delete(cache, db)
+			w.WriteHeader(http.StatusNoContent)
+		} else if r.Method == "GET" {
+			handleGetJob(w, r, j)
+		}
 	}
-
-	if r.Method == "DELETE" {
-		handleDeleteJob(w, r, j)
-	} else if r.Method == "GET" {
-		handleGetJob(w, r, j)
-	}
-}
-
-func handleDeleteJob(w http.ResponseWriter, r *http.Request, j *job.Job) {
-	j.Delete()
-
-	w.WriteHeader(http.StatusNoContent)
 }
 
 type JobResponse struct {
@@ -185,33 +203,52 @@ func handleGetJob(w http.ResponseWriter, r *http.Request, j *job.Job) {
 
 // HandleStartJobRequest is the handler for manually starting jobs
 // /api/v1/job/start/{id}
-func HandleStartJobRequest(w http.ResponseWriter, r *http.Request) {
-	id := mux.Vars(r)["id"]
-	j := job.AllJobs.Get(id)
+func HandleStartJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := mux.Vars(r)["id"]
+		j, err := cache.Get(id)
+		if err != nil {
+			log.Error("Error occured when trying to get the job you requested.")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if j == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 
-	j.Run()
+		j.Run(cache)
 
-	w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusNoContent)
+	}
 }
 
 // SetupApiRoutes is used within main to initialize all of the routes
-func SetupApiRoutes(r *mux.Router) {
+func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB) {
 	// Route for creating a job
-	r.HandleFunc(ApiJobPath, HandleAddJob).Methods("POST")
-	r.HandleFunc(ApiUrlPrefix+"job", HandleAddJob).Methods("POST")
+	r.HandleFunc(ApiJobPath, HandleAddJob(cache)).Methods("POST")
+	r.HandleFunc(ApiUrlPrefix+"job", HandleAddJob(cache)).Methods("POST")
 	// Route for deleting and getting a job
-	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest).Methods("DELETE", "GET")
-	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest).Methods("DELETE", "GET")
+	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
+	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
 	// Route for getting job stats
-	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest).Methods("GET")
-	r.HandleFunc(ApiJobPath+"stats/{id}/", HandleListJobStatsRequest).Methods("GET")
+	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest(cache)).Methods("GET")
+	r.HandleFunc(ApiJobPath+"stats/{id}/", HandleListJobStatsRequest(cache)).Methods("GET")
 	// Route for listing all jops
-	r.HandleFunc(ApiJobPath, HandleListJobsRequest).Methods("GET")
-	r.HandleFunc(ApiUrlPrefix+"job", HandleListJobsRequest).Methods("GET")
+	r.HandleFunc(ApiJobPath, HandleListJobsRequest(cache)).Methods("GET")
+	r.HandleFunc(ApiUrlPrefix+"job", HandleListJobsRequest(cache)).Methods("GET")
 	// Route for manually start a job
-	r.HandleFunc(ApiJobPath+"start/{id}", HandleStartJobRequest).Methods("POST")
-	r.HandleFunc(ApiJobPath+"start/{id}/", HandleStartJobRequest).Methods("POST")
+	r.HandleFunc(ApiJobPath+"start/{id}", HandleStartJobRequest(cache)).Methods("POST")
+	r.HandleFunc(ApiJobPath+"start/{id}/", HandleStartJobRequest(cache)).Methods("POST")
 	// Route for getting app-level metrics
-	r.HandleFunc(ApiUrlPrefix+"stats", HandleKalaStatsRequest).Methods("GET")
-	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest).Methods("GET")
+	r.HandleFunc(ApiUrlPrefix+"stats", HandleKalaStatsRequest(cache)).Methods("GET")
+	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
+}
+
+func StartServer(listenAddr string, cache job.JobCache, db job.JobDB) error {
+	r := mux.NewRouter()
+	SetupApiRoutes(r, cache, db)
+	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log})
+	n.UseHandler(r)
+	return http.ListenAndServe(listenAddr, n)
 }

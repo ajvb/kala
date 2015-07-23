@@ -8,10 +8,12 @@ import (
 )
 
 func TestJobStats(t *testing.T) {
-	j := getMockJobWithGenericSchedule()
-	j.Init()
+	cache := NewMockCache()
 
-	j.Run()
+	j := GetMockJobWithGenericSchedule()
+	j.Init(cache)
+
+	j.Run(cache)
 	now := time.Now()
 
 	assert.NotNil(t, j.Stats[0])
@@ -23,23 +25,21 @@ func TestJobStats(t *testing.T) {
 }
 
 func TestKalaStats(t *testing.T) {
-	AllJobs.Jobs = make(map[string]*Job, 0)
+	cache := NewMockCache()
 
 	for i := 0; i < 5; i++ {
-		j := getMockJobWithGenericSchedule()
-		j.Init()
-		j.Run()
-		AllJobs.Set(j)
+		j := GetMockJobWithGenericSchedule()
+		j.Init(cache)
+		j.Run(cache)
 	}
 	now := time.Now()
 	for i := 0; i < 5; i++ {
-		j := getMockJobWithGenericSchedule()
-		j.Init()
+		j := GetMockJobWithGenericSchedule()
+		j.Init(cache)
 		j.Disable()
-		AllJobs.Set(j)
 	}
 
-	kalaStat := NewKalaStats()
+	kalaStat := NewKalaStats(cache)
 	createdAt := time.Now()
 	nextRunAt := time.Now().Add(
 		time.Duration(time.Minute * 5),
