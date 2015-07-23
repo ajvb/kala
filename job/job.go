@@ -84,13 +84,20 @@ type Job struct {
 }
 
 // Init fills in the protected fields and parses the iso8601 notation.
+// It also adds the job to the Cache
 func (j *Job) Init(cache JobCache) error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
 	u4, err := uuid.NewV4()
 	if err != nil {
 		log.Error("Error occured when generating uuid: %s", err)
 		return err
 	}
 	j.Id = u4.String()
+
+	// Add Job to the cache.
+	cache.set(j)
 
 	if len(j.ParentJobs) != 0 {
 		// Add new job to parent jobs
@@ -108,7 +115,9 @@ func (j *Job) Init(cache JobCache) error {
 		return nil
 	}
 
+	j.lock.Unlock()
 	err = j.InitDelayDuration(true)
+	j.lock.Lock()
 	if err != nil {
 		return err
 	}
@@ -121,6 +130,9 @@ func (j *Job) Init(cache JobCache) error {
 // InitDelayDuration is used to parsed the iso8601 Schedule notation into its relevent fields in the Job struct.
 // If checkTime is true, then it will return an error if the Scheduled time has passed.
 func (j *Job) InitDelayDuration(checkTime bool) error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
 	var err error
 	splitTime := strings.Split(j.Schedule, "/")
 	if len(splitTime) != 3 {
@@ -195,6 +207,9 @@ func (j *Job) StartWaiting(cache JobCache) {
 // Disable stops the job from running by stopping its jobTimer. It also sets Job.Disabled to true,
 // which is reflected in the UI.
 func (j *Job) Disable() {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
 	if j.jobTimer != nil {
 		j.jobTimer.Stop()
 	}

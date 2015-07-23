@@ -143,15 +143,14 @@ func TestDependentJobs(t *testing.T) {
 	cache := NewMemoryJobCache(db, time.Second*5)
 
 	mockJob := GetMockJobWithGenericSchedule()
+	mockJob.Name = "mock_parent_job"
 	mockJob.Init(cache)
-	cache.Set(mockJob)
 
 	mockChildJob := GetMockJob()
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
 	mockChildJob.Init(cache)
-	cache.Set(mockChildJob)
 
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
 	assert.True(t, len(mockJob.DependentJobs) == 1)

@@ -31,14 +31,12 @@ func TestKalaStats(t *testing.T) {
 		j := GetMockJobWithGenericSchedule()
 		j.Init(cache)
 		j.Run(cache)
-		cache.Set(j)
 	}
 	now := time.Now()
 	for i := 0; i < 5; i++ {
 		j := GetMockJobWithGenericSchedule()
 		j.Init(cache)
 		j.Disable()
-		cache.Set(j)
 	}
 
 	kalaStat := NewKalaStats(cache)

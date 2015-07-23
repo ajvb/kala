@@ -139,7 +139,6 @@ func HandleAddJob(cache job.JobCache) func(http.ResponseWriter, *http.Request) {
 			http.Error(w, errStr, http.StatusBadRequest)
 			return
 		}
-		cache.Set(newJob)
 
 		resp := &AddJobResponse{
 			Id: newJob.Id,

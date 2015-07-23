@@ -36,7 +36,6 @@ func generateJobAndCache() (*job.MemoryJobCache, *job.Job) {
 	cache := job.NewMockCache()
 	job := job.GetMockJobWithGenericSchedule()
 	job.Init(cache)
-	cache.Set(job)
 	return cache, job
 }
 
@@ -202,7 +201,6 @@ func (a *ApiTestSuite) TestHandleListJobsRequest() {
 	cache, jobOne := generateJobAndCache()
 	jobTwo := job.GetMockJobWithGenericSchedule()
 	jobTwo.Init(cache)
-	cache.Set(jobTwo)
 
 	r := mux.NewRouter()
 	r.HandleFunc(ApiJobPath, HandleListJobsRequest(cache)).Methods("GET")
@@ -262,7 +260,6 @@ func (a *ApiTestSuite) TestHandleStartJobRequestNotFound() {
 func (a *ApiTestSuite) TestHandleKalaStatsRequest() {
 	cache, _ := generateJobAndCache()
 	jobTwo := job.GetMockJobWithGenericSchedule()
-	cache.Set(jobTwo)
 	jobTwo.Init(cache)
 	jobTwo.Run(cache)
 

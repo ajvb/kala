@@ -36,7 +36,6 @@ func TestDeleteJob(t *testing.T) {
 	genericMockJob := GetMockJobWithGenericSchedule()
 	genericMockJob.Init(cache)
 	db.Save(genericMockJob)
-	cache.Set(genericMockJob)
 
 	// Make sure its there
 	j, err := db.Get(genericMockJob.Id)

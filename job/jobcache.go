@@ -10,7 +10,7 @@ import (
 type JobCache interface {
 	Get(id string) *Job
 	GetAll() map[string]*Job
-	Set(j *Job)
+	set(j *Job)
 	Delete(id string)
 	Persist() error
 }
@@ -44,7 +44,7 @@ func (c *MemoryJobCache) Start() {
 	}
 	for _, j := range allJobs {
 		j.StartWaiting(c)
-		c.Set(j)
+		c.set(j)
 	}
 
 	// Occasionally, save items in cache to db.
@@ -82,7 +82,7 @@ func (c *MemoryJobCache) GetAll() map[string]*Job {
 	return c.jobs
 }
 
-func (c *MemoryJobCache) Set(j *Job) {
+func (c *MemoryJobCache) set(j *Job) {
 	c.rwLock.Lock()
 	defer c.rwLock.Unlock()
 
