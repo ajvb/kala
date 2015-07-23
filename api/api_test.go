@@ -61,7 +61,8 @@ func (a *ApiTestSuite) TestHandleAddJob() {
 	var addJobResp AddJobResponse
 	err = json.Unmarshal(w.Body.Bytes(), &addJobResp)
 	a.NoError(err)
-	retrievedJob := cache.Get(addJobResp.Id)
+	retrievedJob, err := cache.Get(addJobResp.Id)
+	a.NoError(err)
 	a.Equal(jobMap["name"], retrievedJob.Name)
 	a.Equal(jobMap["owner"], retrievedJob.Owner)
 	a.Equal(w.Code, http.StatusCreated)

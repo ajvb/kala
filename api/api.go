@@ -59,7 +59,12 @@ type ListJobStatsResponse struct {
 func HandleListJobStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
-		j := cache.Get(id)
+		j, err := cache.Get(id)
+		if err != nil {
+			log.Error("Error occured when trying to get the job you requested.")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 
 		if j == nil {
 			w.WriteHeader(http.StatusNotFound)
@@ -159,7 +164,12 @@ func HandleJobRequest(cache job.JobCache, db job.JobDB) func(w http.ResponseWrit
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
 
-		j := cache.Get(id)
+		j, err := cache.Get(id)
+		if err != nil {
+			log.Error("Error occured when trying to get the job you requested.")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 		if j == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -196,7 +206,12 @@ func handleGetJob(w http.ResponseWriter, r *http.Request, j *job.Job) {
 func HandleStartJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
-		j := cache.Get(id)
+		j, err := cache.Get(id)
+		if err != nil {
+			log.Error("Error occured when trying to get the job you requested.")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 		if j == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
