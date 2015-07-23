@@ -1,16 +1,21 @@
 package job
 
 import (
+	"errors"
 	"os"
 	"os/signal"
 	"sync"
 	"time"
 )
 
+var (
+	JobDoesntExistErr = errors.New("The job you requested does not exist")
+)
+
 type JobCache interface {
-	Get(id string) *Job
+	Get(id string) (*Job, error)
 	GetAll() map[string]*Job
-	set(j *Job)
+	set(j *Job) error
 	Delete(id string)
 	Persist() error
 }
@@ -68,11 +73,16 @@ func (c *MemoryJobCache) Start() {
 	}()
 }
 
-func (c *MemoryJobCache) Get(id string) *Job {
+func (c *MemoryJobCache) Get(id string) (*Job, error) {
 	c.rwLock.Lock()
 	defer c.rwLock.Unlock()
 
-	return c.jobs[id]
+	j := c.jobs[id]
+	if j == nil {
+		return nil, JobDoesntExistErr
+	}
+
+	return j, nil
 }
 
 func (c *MemoryJobCache) GetAll() map[string]*Job {
@@ -82,16 +92,16 @@ func (c *MemoryJobCache) GetAll() map[string]*Job {
 	return c.jobs
 }
 
-func (c *MemoryJobCache) set(j *Job) {
+func (c *MemoryJobCache) set(j *Job) error {
 	c.rwLock.Lock()
 	defer c.rwLock.Unlock()
 
 	if j == nil {
-		return
+		return nil
 	}
 
 	c.jobs[j.Id] = j
-	return
+	return nil
 }
 
 func (c *MemoryJobCache) Delete(id string) {

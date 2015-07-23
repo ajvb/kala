@@ -155,7 +155,8 @@ func TestDependentJobs(t *testing.T) {
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
 	assert.True(t, len(mockJob.DependentJobs) == 1)
 
-	j := cache.Get(mockJob.Id)
+	j, err := cache.Get(mockJob.Id)
+	assert.NoError(t, err)
 
 	assert.Equal(t, j.DependentJobs[0], mockChildJob.Id)
 

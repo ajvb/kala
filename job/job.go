@@ -97,12 +97,18 @@ func (j *Job) Init(cache JobCache) error {
 	j.Id = u4.String()
 
 	// Add Job to the cache.
-	cache.set(j)
+	err = cache.set(j)
+	if err != nil {
+		return err
+	}
 
 	if len(j.ParentJobs) != 0 {
 		// Add new job to parent jobs
 		for _, p := range j.ParentJobs {
-			parentJob := cache.Get(p)
+			parentJob, err := cache.Get(p)
+			if err != nil {
+				return err
+			}
 			parentJob.DependentJobs = append(parentJob.DependentJobs, j.Id)
 		}
 
@@ -263,7 +269,12 @@ func (j *Job) Run(cache JobCache) {
 	// Run Dependent Jobs
 	if len(j.DependentJobs) != 0 {
 		for _, id := range j.DependentJobs {
-			go cache.Get(id).Run(cache)
+			newJob, err := cache.Get(id)
+			if err != nil {
+				log.Error("Error retrieving dependent job with id of %s", id)
+			} else {
+				newJob.Run(cache)
+			}
 		}
 	}
 
