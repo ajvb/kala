@@ -62,12 +62,7 @@ func main() {
 					connectionString = parsedPort
 				}
 
-				// Make sure to handle ~/ in dbpath
-				var boltPath string
-				if c.String("boltpath") != "" {
-					boltPath = fmt.Sprintf("%q", c.String("boltpath"))
-				}
-				db := job.GetBoltDB(boltPath)
+				db := job.GetBoltDB(c.String("boltpath"))
 
 				// Create cache
 				cache := job.NewMemoryJobCache(db, DefaultPersistEvery)
