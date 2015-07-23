@@ -47,7 +47,6 @@ func HandleKalaStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r *h
 			log.Error("Error occured when marshalling response: %s", err)
 			return
 		}
-
 	}
 }
 
@@ -61,6 +60,11 @@ func HandleListJobStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
 		j := cache.Get(id)
+
+		if j == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 
 		resp := &ListJobStatsResponse{
 			JobStats: j.Stats,
