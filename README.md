@@ -229,7 +229,6 @@ TODO
 ### Features
 - [ ] Web UI
 - [ ] Config file and/or CL flags
-    - Port & Host (needs improvement)
     - Verbose/Debug logging
     - Default owner
 - [ ] Error Reporting on job failure
@@ -246,8 +245,6 @@ TODO
 - [ ] Continuous Integration
 
 ### Testing
-- [ ] Add race detector to circleci
-- [ ] Add API Test Suite
 - [ ] Add edge case tests for job scheduling and job dependency
 
 # Original Contributors and Contact
