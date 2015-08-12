@@ -253,6 +253,6 @@ TODO
 # Original Contributors and Contact
 
 Original Author and Core Maintainer: AJ Bahnken / [@ajvbahnken](http://twitter.com/ajvbahnken) / aj@ajvb.me
-Origianl Reviewers:
+Original Reviewers:
 Sam Dolan / [@samdolan](https://github.com/samdolan/)
 Steve Phillips / [@elimisteve](http://twitter.com/elimisteve)
