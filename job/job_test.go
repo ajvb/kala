@@ -139,8 +139,7 @@ func TestOneOffJobs(t *testing.T) {
 }
 
 func TestDependentJobs(t *testing.T) {
-	db := GetBoltDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*5)
+	cache := NewMockCache()
 
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Name = "mock_parent_job"
@@ -166,5 +165,4 @@ func TestDependentJobs(t *testing.T) {
 
 	assert.WithinDuration(t, mockChildJob.LastAttemptedRun, n, 4*time.Second)
 	assert.WithinDuration(t, mockChildJob.LastSuccess, n, 4*time.Second)
-	db.Close()
 }
