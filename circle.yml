@@ -20,6 +20,14 @@ dependencies:
             pwd: ../gopath/src/${REPO_PATH}
 
 test:
+    pre:
+        - go get github.com/axw/gocov/gocov github.com/mattn/goveralls golang.org/x/tools/cmd/cover github.com/bluesuncorp/overalls:
+            pwd: ../gopath/src/${REPO_PATH}
     override:
         - go test -race ./...:
+            pwd: ../gopath/src/${REPO_PATH}
+        - $GOPATH/bin/overalls -project=${REPO_PATH} -covermode=count -debug:
+            pwd: ../gopath/src/${REPO_PATH}
+    post:
+        - $GOPATH/bin/goveralls -coverprofile=overalls.coverprofile -service=circle-ci -repotoken=$COVERALLS_KEY:
             pwd: ../gopath/src/${REPO_PATH}
