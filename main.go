@@ -8,6 +8,7 @@ import (
 
 	"github.com/ajvb/kala/api"
 	"github.com/ajvb/kala/job"
+	"github.com/ajvb/kala/job/storage"
 	"github.com/ajvb/kala/utils/logging"
 
 	"github.com/codegangsta/cli"
@@ -62,7 +63,7 @@ func main() {
 					connectionString = parsedPort
 				}
 
-				db := job.GetBoltDB(c.String("boltpath"))
+				db := storage.GetBoltDB(c.String("boltpath"))
 
 				// Create cache
 				cache := job.NewMemoryJobCache(db, DefaultPersistEvery)
