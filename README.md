@@ -218,7 +218,7 @@ ajvb$ curl http://127.0.0.1:8000/api/v1/stats/
 
 # Documentation
 
-[Can be found here](http://godoc.org/github.com/ajvb/kala)
+[Contribtuor documentation can be found here](http://godoc.org/github.com/ajvb/kala)
 
 # Contributing
 
@@ -226,30 +226,19 @@ TODO
 
 # TODO's
 
-### Features
-- [ ] Web UI
-- [ ] Config file and/or CL flags
-    - Verbose/Debug logging
-    - Default owner
-- [ ] Error Reporting on job failure
-- [ ] Remove dependance on external http library in client.
-
 ### For User
-- [ ] Users Documentation
 - [ ] Python Client Library
 - [ ] Node Client Library
 - [ ] Create single release binary
 
 ### For Contributors
 - [ ] Contributors Documentation
-- [ ] Continuous Integration
-
-### Testing
-- [ ] Add edge case tests for job scheduling and job dependency
 
 # Original Contributors and Contact
 
-Original Author and Core Maintainer: AJ Bahnken / [@ajvbahnken](http://twitter.com/ajvbahnken) / aj@ajvb.me
+Original Author and Core Maintainer:
+    * AJ Bahnken / [@ajvbahnken](http://twitter.com/ajvbahnken) / aj@ajvb.me
+
 Original Reviewers:
-Sam Dolan / [@samdolan](https://github.com/samdolan/)
-Steve Phillips / [@elimisteve](http://twitter.com/elimisteve)
+    * Sam Dolan / [@samdolan](https://github.com/samdolan/)
+    * Steve Phillips / [@elimisteve](http://twitter.com/elimisteve)
