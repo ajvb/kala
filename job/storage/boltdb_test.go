@@ -1,18 +1,22 @@
-package job
+package storage
 
 import (
 	"testing"
 	"time"
 
+	"github.com/ajvb/kala/job"
+
 	"github.com/stretchr/testify/assert"
 )
 
+var testDbPath = ""
+
 func TestSaveAndGetJob(t *testing.T) {
 	db := GetBoltDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*60)
+	cache := job.NewMemoryJobCache(db, time.Second*60)
 	defer db.Close()
 
-	genericMockJob := GetMockJobWithGenericSchedule()
+	genericMockJob := job.GetMockJobWithGenericSchedule()
 	genericMockJob.Init(cache)
 	db.Save(genericMockJob)
 
@@ -30,10 +34,10 @@ func TestSaveAndGetJob(t *testing.T) {
 
 func TestDeleteJob(t *testing.T) {
 	db := GetBoltDB(testDbPath)
-	cache := NewMemoryJobCache(db, time.Second*60)
+	cache := job.NewMemoryJobCache(db, time.Second*60)
 	defer db.Close()
 
-	genericMockJob := GetMockJobWithGenericSchedule()
+	genericMockJob := job.GetMockJobWithGenericSchedule()
 	genericMockJob.Init(cache)
 	db.Save(genericMockJob)
 

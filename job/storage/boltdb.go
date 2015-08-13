@@ -1,4 +1,4 @@
-package job
+package storage
 
 import (
 	"bytes"
@@ -7,10 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ajvb/kala/job"
+	"github.com/ajvb/kala/utils/logging"
+
 	"github.com/boltdb/bolt"
 )
 
 var (
+	log = logging.GetLogger("kala.job.storage")
+
 	jobBucket = []byte("jobs")
 )
 
@@ -38,8 +43,8 @@ func (db *BoltJobDB) Close() error {
 	return db.dbConn.Close()
 }
 
-func (db *BoltJobDB) GetAll() ([]*Job, error) {
-	allJobs := []*Job{}
+func (db *BoltJobDB) GetAll() ([]*job.Job, error) {
+	allJobs := []*job.Job{}
 
 	err := db.dbConn.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(jobBucket)
@@ -50,7 +55,7 @@ func (db *BoltJobDB) GetAll() ([]*Job, error) {
 		err = bucket.ForEach(func(k, v []byte) error {
 			buffer := bytes.NewBuffer(v)
 			dec := gob.NewDecoder(buffer)
-			j := new(Job)
+			j := new(job.Job)
 			err := dec.Decode(j)
 
 			if err != nil {
@@ -74,8 +79,8 @@ func (db *BoltJobDB) GetAll() ([]*Job, error) {
 	return allJobs, err
 }
 
-func (db *BoltJobDB) Get(id string) (*Job, error) {
-	j := new(Job)
+func (db *BoltJobDB) Get(id string) (*job.Job, error) {
+	j := new(job.Job)
 
 	err := db.dbConn.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(jobBucket)
@@ -106,7 +111,7 @@ func (db *BoltJobDB) Delete(id string) {
 	})
 }
 
-func (db *BoltJobDB) Save(j *Job) error {
+func (db *BoltJobDB) Save(j *job.Job) error {
 	err := db.dbConn.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(jobBucket)
 		if err != nil {
