@@ -15,7 +15,11 @@ notation, Dependant Jobs, and is Persistent (using BoltDB). Eventually it will s
 
 #### Have any feedback or bugs to report?
 
-Please create an issue within Github, or also feel free to email me at aj <at> ajvb.em
+Please create an issue within Github, or also feel free to email me at aj <at> ajvb.me
+
+
+Mailing List: https://groups.google.com/forum/#!forum/kala-scheduler
+
 
 #### I need [fault tolerance, distributed-features, this to work at scale]
 
