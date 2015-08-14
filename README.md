@@ -21,40 +21,53 @@ Please create an issue within Github, or also feel free to email me at aj <at> a
 
 I recommend checking out [Chronos](https://github.com/airbnb/chronos). This is designed to be the Chronos for start-ups.
 
-# Installing Kala
+## Installing Kala
 
-## Source
+*Requires Go 1.0+ and git*
 
-Step 0: Requires Go 1.0+ and git
+1. Get Kala
 
-Step 1: Clone this repo
-
-```
-git clone https://github.com/ajvb/kala.git
+	```
+go get github.com/ajvb/kala
 ```
 
-Step 2: Install Dependencies
+2. Run Kala
 
-```
-cd kala && go get ./...
-```
+	```
+	kala run
+	```
 
-Step 3: Build the Kala binary
+## Development
 
-```
-go build
-```
+1. Change directory to Kala source
 
-Step 4: Move to somewhere in your $PATH
+	```
+	cd $GOPATH/src/github.com/ajvb/kala
+	```
 
-```
-mv kala /usr/local/bin/
-```
+2. Restore Godeps
 
-One liner:
-```
-git clone https://github.com/ajvb/kala.git && cd kala && go get ./... && go build && mv kala /usr/local/bin/
-```
+	```
+	godep restore
+	```
+
+3. Build the local Kala binary
+
+	```
+	go build
+	```
+
+4. Run local Kala
+
+	```
+	./kala run
+	```
+
+5. **Optional:** Replace the preinstalled Kala with local Kala
+
+	```
+	go install
+	```
 
 
 # Getting Started
