@@ -13,7 +13,9 @@ func (m *MockDB) GetAll() ([]*Job, error) {
 func (m *MockDB) Get(id string) (*Job, error) {
 	return nil, nil
 }
-func (m *MockDB) Delete(id string) {}
+func (m *MockDB) Delete(id string) error {
+	return nil
+}
 func (m *MockDB) Save(job *Job) error {
 	return nil
 }

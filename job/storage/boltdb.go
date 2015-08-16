@@ -103,12 +103,12 @@ func (db *BoltJobDB) Get(id string) (*job.Job, error) {
 	return j, nil
 }
 
-func (db *BoltJobDB) Delete(id string) {
-	db.dbConn.Update(func(tx *bolt.Tx) error {
+func (db *BoltJobDB) Delete(id string) error {
+	err := db.dbConn.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(jobBucket)
-		bucket.Delete([]byte(id))
-		return nil
+		return bucket.Delete([]byte(id))
 	})
+	return err
 }
 
 func (db *BoltJobDB) Save(j *job.Job) error {
