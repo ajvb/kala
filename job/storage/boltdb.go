@@ -3,7 +3,6 @@ package storage
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
 	"strings"
 	"time"
 
@@ -87,7 +86,7 @@ func (db *BoltJobDB) Get(id string) (*job.Job, error) {
 
 		v := b.Get([]byte(id))
 		if v == nil {
-			return fmt.Errorf("Job with id of %s not found.", id)
+			return job.ErrJobNotFound(id)
 		}
 
 		buf := bytes.NewBuffer(v)
