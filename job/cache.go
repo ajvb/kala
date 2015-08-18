@@ -15,7 +15,7 @@ var (
 type JobCache interface {
 	Get(id string) (*Job, error)
 	GetAll() *JobsMap
-	set(j *Job) error
+	Set(j *Job) error
 	Delete(id string)
 	Persist() error
 }
@@ -59,7 +59,7 @@ func (c *MemoryJobCache) Start() {
 	}
 	for _, j := range allJobs {
 		j.StartWaiting(c)
-		c.set(j)
+		c.Set(j)
 	}
 
 	// Occasionally, save items in cache to db.
@@ -96,13 +96,10 @@ func (c *MemoryJobCache) Get(id string) (*Job, error) {
 }
 
 func (c *MemoryJobCache) GetAll() *JobsMap {
-	c.jobs.Lock.RLock()
-	defer c.jobs.Lock.RUnlock()
-
 	return c.jobs
 }
 
-func (c *MemoryJobCache) set(j *Job) error {
+func (c *MemoryJobCache) Set(j *Job) error {
 	c.jobs.Lock.Lock()
 	defer c.jobs.Lock.Unlock()
 
@@ -122,8 +119,8 @@ func (c *MemoryJobCache) Delete(id string) {
 }
 
 func (c *MemoryJobCache) Persist() error {
-	c.jobs.Lock.Lock()
-	defer c.jobs.Lock.Unlock()
+	c.jobs.Lock.RLock()
+	defer c.jobs.Lock.RUnlock()
 
 	for _, j := range c.jobs.Jobs {
 		err := c.jobDB.Save(j)
