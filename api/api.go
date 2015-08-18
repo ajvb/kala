@@ -92,8 +92,12 @@ type ListJobsResponse struct {
 // active or disabled.
 func HandleListJobsRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allJobs := cache.GetAll()
+		allJobs.Lock.RLock()
+		defer allJobs.Lock.RUnlock()
+
 		resp := &ListJobsResponse{
-			Jobs: cache.GetAll(),
+			Jobs: allJobs.Jobs,
 		}
 
 		w.Header().Set(contentType, jsonContentType)

@@ -25,15 +25,17 @@ func NewKalaStats(cache JobCache) *KalaStats {
 		CreatedAt: time.Now(),
 	}
 	jobs := cache.GetAll()
+	jobs.Lock.RLock()
+	defer jobs.Lock.RUnlock()
 
-	ks.Jobs = len(jobs)
-	if len(jobs) == 0 {
+	ks.Jobs = len(jobs.Jobs)
+	if ks.Jobs == 0 {
 		return ks
 	}
 
 	nextRun := time.Time{}
 	lastRun := time.Time{}
-	for _, job := range jobs {
+	for _, job := range jobs.Jobs {
 		if job.Disabled {
 			ks.DisabledJobs += 1
 		} else {

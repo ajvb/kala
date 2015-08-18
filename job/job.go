@@ -123,7 +123,7 @@ func (j *Job) Init(cache JobCache) error {
 	j.Id = u4.String()
 
 	// Add Job to the cache.
-	err = cache.set(j)
+	err = cache.Set(j)
 	if err != nil {
 		return err
 	}
