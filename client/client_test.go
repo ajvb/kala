@@ -2,17 +2,28 @@ package client
 
 import (
 	"fmt"
+	"net/http/httptest"
 	"os"
 	"time"
 
 	"github.com/ajvb/kala/api"
+	"github.com/ajvb/kala/job"
 
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
+func NewTestServer() *httptest.Server {
+	r := mux.NewRouter()
+	db := &job.MockDB{}
+	cache := job.NewMemoryJobCache(db, time.Hour)
+	api.SetupApiRoutes(r, cache, db)
+	return httptest.NewServer(r)
+}
+
 func cleanUp() {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	jobs, err := kc.GetAllJobs()
