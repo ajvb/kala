@@ -11,7 +11,7 @@ Kala was inspired by [Chronos](https://github.com/airbnb/chronos), developed by 
 is fault tolerant and distributed by design. These are two features which Kala does not have, as it was built for smaller deployments.
 
 It has a simple JSON over HTTP API, so it is language agnostic. It has Job Stats, Configurable Retries, uses ISO 8601 Date and Interval
-notation, Dependant Jobs, and is Persistent (using BoltDB). Eventually it will support Redis as a Backend and have a Web UI.
+notation, Dependant Jobs, and is Persistent (using BoltDB). Eventually it will have a Web UI.
 
 #### Have any feedback or bugs to report?
 
@@ -85,6 +85,12 @@ ajvb$ kala run
 
 ajvb$ kala run -p 2222
 2015/06/10 18:31:31 main.go:59:func·001 :: INFO 002 Starting server on port :2222...
+```
+
+Kala uses BoltDB by default for the job database, however you can also use Redis by using the jobDB and jobDBAddress params:
+
+```bash
+kala run --jobDB=redis --jobDBAddress=127.0.0.1:6379
 ```
 
 Kala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.

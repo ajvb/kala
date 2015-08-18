@@ -1,9 +1,8 @@
-package storage
+package boltdb
 
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
 	"strings"
 	"time"
 
@@ -87,7 +86,7 @@ func (db *BoltJobDB) Get(id string) (*job.Job, error) {
 
 		v := b.Get([]byte(id))
 		if v == nil {
-			return fmt.Errorf("Job with id of %s not found.", id)
+			return job.ErrJobNotFound(id)
 		}
 
 		buf := bytes.NewBuffer(v)
@@ -103,12 +102,12 @@ func (db *BoltJobDB) Get(id string) (*job.Job, error) {
 	return j, nil
 }
 
-func (db *BoltJobDB) Delete(id string) {
-	db.dbConn.Update(func(tx *bolt.Tx) error {
+func (db *BoltJobDB) Delete(id string) error {
+	err := db.dbConn.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(jobBucket)
-		bucket.Delete([]byte(id))
-		return nil
+		return bucket.Delete([]byte(id))
 	})
+	return err
 }
 
 func (db *BoltJobDB) Save(j *job.Job) error {

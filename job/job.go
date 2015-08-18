@@ -1,6 +1,8 @@
 package job
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"os/exec"
 	"strconv"
@@ -81,6 +83,30 @@ type Job struct {
 	Stats       []*JobStat `json:"-"`
 
 	lock sync.Mutex
+}
+
+// Bytes returns the byte representation of the Job.
+func (j Job) Bytes() ([]byte, error) {
+	buff := new(bytes.Buffer)
+	enc := gob.NewEncoder(buff)
+	err := enc.Encode(j)
+	if err != nil {
+		return nil, err
+	}
+	return buff.Bytes(), nil
+}
+
+// NewFromBytes returns a Job instance from a byte representation.
+func NewFromBytes(b []byte) (*Job, error) {
+	j := &Job{}
+
+	buf := bytes.NewBuffer(b)
+	err := gob.NewDecoder(buf).Decode(j)
+	if err != nil {
+		return nil, err
+	}
+
+	return j, nil
 }
 
 // Init fills in the protected fields and parses the iso8601 notation.
