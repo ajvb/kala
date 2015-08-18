@@ -14,17 +14,28 @@ var (
 
 type JobCache interface {
 	Get(id string) (*Job, error)
-	GetAll() map[string]*Job
+	GetAll() *JobsMap
 	set(j *Job) error
 	Delete(id string)
 	Persist() error
 }
 
+type JobsMap struct {
+	Jobs map[string]*Job
+	Lock sync.RWMutex
+}
+
+func NewJobsMap() *JobsMap {
+	return &JobsMap{
+		Jobs: map[string]*Job{},
+		Lock: sync.RWMutex{},
+	}
+}
+
 type MemoryJobCache struct {
 	// Jobs is a map from Job id's to pointers to the jobs.
 	// Used as the main "data store" within this cache implementation.
-	jobs            map[string]*Job
-	rwLock          sync.Mutex
+	jobs            *JobsMap
 	jobDB           JobDB
 	persistWaitTime time.Duration
 }
@@ -34,8 +45,7 @@ func NewMemoryJobCache(jobDB JobDB, persistWaitTime time.Duration) *MemoryJobCac
 		persistWaitTime = 5 * time.Second
 	}
 	return &MemoryJobCache{
-		jobs:            map[string]*Job{},
-		rwLock:          sync.Mutex{},
+		jobs:            NewJobsMap(),
 		jobDB:           jobDB,
 		persistWaitTime: persistWaitTime,
 	}
@@ -74,10 +84,10 @@ func (c *MemoryJobCache) Start() {
 }
 
 func (c *MemoryJobCache) Get(id string) (*Job, error) {
-	c.rwLock.Lock()
-	defer c.rwLock.Unlock()
+	c.jobs.Lock.RLock()
+	defer c.jobs.Lock.RUnlock()
 
-	j := c.jobs[id]
+	j := c.jobs.Jobs[id]
 	if j == nil {
 		return nil, JobDoesntExistErr
 	}
@@ -85,37 +95,37 @@ func (c *MemoryJobCache) Get(id string) (*Job, error) {
 	return j, nil
 }
 
-func (c *MemoryJobCache) GetAll() map[string]*Job {
-	c.rwLock.Lock()
-	defer c.rwLock.Unlock()
+func (c *MemoryJobCache) GetAll() *JobsMap {
+	c.jobs.Lock.RLock()
+	defer c.jobs.Lock.RUnlock()
 
 	return c.jobs
 }
 
 func (c *MemoryJobCache) set(j *Job) error {
-	c.rwLock.Lock()
-	defer c.rwLock.Unlock()
+	c.jobs.Lock.Lock()
+	defer c.jobs.Lock.Unlock()
 
 	if j == nil {
 		return nil
 	}
 
-	c.jobs[j.Id] = j
+	c.jobs.Jobs[j.Id] = j
 	return nil
 }
 
 func (c *MemoryJobCache) Delete(id string) {
-	c.rwLock.Lock()
-	defer c.rwLock.Unlock()
+	c.jobs.Lock.Lock()
+	defer c.jobs.Lock.Unlock()
 
-	delete(c.jobs, id)
+	delete(c.jobs.Jobs, id)
 }
 
 func (c *MemoryJobCache) Persist() error {
-	c.rwLock.Lock()
-	defer c.rwLock.Unlock()
+	c.jobs.Lock.Lock()
+	defer c.jobs.Lock.Unlock()
 
-	for _, j := range c.jobs {
+	for _, j := range c.jobs.Jobs {
 		err := c.jobDB.Save(j)
 		if err != nil {
 			return err
