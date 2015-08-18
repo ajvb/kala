@@ -55,7 +55,7 @@ func NewJobMap() map[string]string {
 }
 
 func TestCreateGetDeleteJob(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
@@ -79,7 +79,7 @@ func TestCreateGetDeleteJob(t *testing.T) {
 }
 
 func TestCreateJobError(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
@@ -94,7 +94,7 @@ func TestCreateJobError(t *testing.T) {
 }
 
 func TestGetJobError(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 
@@ -106,7 +106,7 @@ func TestGetJobError(t *testing.T) {
 }
 
 func TestDeleteJobError(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 
@@ -118,7 +118,7 @@ func TestDeleteJobError(t *testing.T) {
 }
 
 func TestGetAllJobs(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
@@ -138,7 +138,7 @@ func TestGetAllJobs(t *testing.T) {
 }
 
 func TestGetAllJobsNoJobsExist(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 
@@ -151,7 +151,7 @@ func TestGetAllJobsNoJobsExist(t *testing.T) {
 }
 
 func TestDeleteJob(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
@@ -170,7 +170,7 @@ func TestDeleteJob(t *testing.T) {
 }
 
 func TestGetJobStats(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
@@ -198,7 +198,7 @@ func TestGetJobStats(t *testing.T) {
 }
 
 func TestGetJobStatsError(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 
@@ -208,7 +208,7 @@ func TestGetJobStatsError(t *testing.T) {
 }
 
 func TestStartJob(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
@@ -235,7 +235,7 @@ func TestStartJob(t *testing.T) {
 }
 
 func TestStartJobError(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 
@@ -245,7 +245,7 @@ func TestStartJobError(t *testing.T) {
 }
 
 func TestGetKalaStats(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 
