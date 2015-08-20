@@ -138,7 +138,7 @@ func TestOneOffJobs(t *testing.T) {
 	assert.Nil(t, j.jobTimer)
 }
 
-func TestDependentJobs(t *testing.T) {
+func TestDependentJobsSimple(t *testing.T) {
 	cache := NewMockCache()
 
 	mockJob := GetMockJobWithGenericSchedule()
@@ -165,4 +165,225 @@ func TestDependentJobs(t *testing.T) {
 
 	assert.WithinDuration(t, mockChildJob.LastAttemptedRun, n, 4*time.Second)
 	assert.WithinDuration(t, mockChildJob.LastSuccess, n, 4*time.Second)
+}
+
+// TODO:
+// Parent with two childs which each have a child.
+// Parent with a chain of length 5 with the first being slow and the rest being fast.
+
+// Parent with two childs
+func TestDependentJobsTwoChilds(t *testing.T) {
+	cache := NewMockCache()
+
+	mockJob := GetMockJobWithGenericSchedule()
+	mockJob.Name = "mock_parent_job"
+	mockJob.Init(cache)
+
+	mockChildJobOne := GetMockJob()
+	mockChildJobOne.Name = "mock_child_one"
+	mockChildJobOne.ParentJobs = []string{
+		mockJob.Id,
+	}
+	mockChildJobOne.Init(cache)
+
+	mockChildJobTwo := GetMockJob()
+	mockChildJobTwo.Name = "mock_child_two"
+	mockChildJobTwo.ParentJobs = []string{
+		mockJob.Id,
+	}
+	mockChildJobTwo.Init(cache)
+
+	// Check that it gets placed in the array.
+	assert.Equal(t, mockJob.DependentJobs[0], mockChildJobOne.Id)
+	assert.Equal(t, mockJob.DependentJobs[1], mockChildJobTwo.Id)
+	assert.True(t, len(mockJob.DependentJobs) == 2)
+
+	j, err := cache.Get(mockJob.Id)
+	assert.NoError(t, err)
+
+	// Check that we can still get it from the cache.
+	assert.Equal(t, j.DependentJobs[0], mockChildJobOne.Id)
+	assert.Equal(t, j.DependentJobs[1], mockChildJobTwo.Id)
+	assert.True(t, len(j.DependentJobs) == 2)
+
+	j.Run(cache)
+	time.Sleep(time.Second * 2)
+	n := time.Now()
+
+	// TODO use abtime
+	assert.WithinDuration(t, mockChildJobOne.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobOne.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.LastSuccess, n, 4*time.Second)
+
+	// Test the fact that the dependent jobs follow a rule of FIFO
+	assert.True(t, mockChildJobOne.LastAttemptedRun.UnixNano() < mockChildJobTwo.LastAttemptedRun.UnixNano())
+}
+
+// Parent with child with two childs.
+func TestDependentJobsChildWithTwoChilds(t *testing.T) {
+	cache := NewMockCache()
+
+	mockJob := GetMockJobWithGenericSchedule()
+	mockJob.Name = "mock_parent_job"
+	mockJob.Init(cache)
+
+	mockChildJob := GetMockJob()
+	mockChildJob.Name = "mock_child_job"
+	mockChildJob.ParentJobs = []string{
+		mockJob.Id,
+	}
+	mockChildJob.Init(cache)
+
+	mockChildJobOne := GetMockJob()
+	mockChildJobOne.Name = "mock_child_one"
+	mockChildJobOne.ParentJobs = []string{
+		mockChildJob.Id,
+	}
+	mockChildJobOne.Init(cache)
+
+	mockChildJobTwo := GetMockJob()
+	mockChildJobTwo.Name = "mock_child_two"
+	mockChildJobTwo.ParentJobs = []string{
+		mockChildJob.Id,
+	}
+	mockChildJobTwo.Init(cache)
+
+	// Check that it gets placed in the array.
+	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
+	assert.Equal(t, mockChildJob.DependentJobs[0], mockChildJobOne.Id)
+	assert.Equal(t, mockChildJob.DependentJobs[1], mockChildJobTwo.Id)
+	assert.True(t, len(mockJob.DependentJobs) == 1)
+	assert.True(t, len(mockChildJob.DependentJobs) == 2)
+
+	j, err := cache.Get(mockJob.Id)
+	assert.NoError(t, err)
+
+	c, err := cache.Get(mockChildJob.Id)
+	assert.NoError(t, err)
+
+	// Check that we can still get it from the cache.
+	assert.Equal(t, j.DependentJobs[0], mockChildJob.Id)
+	assert.Equal(t, c.DependentJobs[0], mockChildJobOne.Id)
+	assert.Equal(t, c.DependentJobs[1], mockChildJobTwo.Id)
+	assert.True(t, len(j.DependentJobs) == 1)
+	assert.True(t, len(c.DependentJobs) == 2)
+
+	j.Run(cache)
+	time.Sleep(time.Second * 2)
+	n := time.Now()
+
+	// TODO use abtime
+	assert.WithinDuration(t, mockChildJob.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJob.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobOne.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobOne.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.LastSuccess, n, 4*time.Second)
+
+	// Test the fact that the first child is ran before its childern
+	assert.True(t, mockChildJob.LastAttemptedRun.UnixNano() < mockChildJobOne.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJob.LastAttemptedRun.UnixNano() < mockChildJobTwo.LastAttemptedRun.UnixNano())
+
+	// Test the fact that the dependent jobs follow a rule of FIFO
+	assert.True(t, mockChildJobOne.LastAttemptedRun.UnixNano() < mockChildJobTwo.LastAttemptedRun.UnixNano())
+}
+
+// Parent with a chain of length 5
+func TestDependentJobsFiveChain(t *testing.T) {
+	cache := NewMockCache()
+
+	mockJob := GetMockJobWithGenericSchedule()
+	mockJob.Name = "mock_parent_job"
+	mockJob.Init(cache)
+
+	mockChildJobOne := GetMockJob()
+	mockChildJobOne.Name = "mock_child_one"
+	mockChildJobOne.ParentJobs = []string{
+		mockJob.Id,
+	}
+	mockChildJobOne.Init(cache)
+
+	mockChildJobTwo := GetMockJob()
+	mockChildJobTwo.Name = "mock_child_two"
+	mockChildJobTwo.ParentJobs = []string{
+		mockChildJobOne.Id,
+	}
+	mockChildJobTwo.Init(cache)
+
+	mockChildJobThree := GetMockJob()
+	mockChildJobThree.Name = "mock_child_three"
+	mockChildJobThree.ParentJobs = []string{
+		mockChildJobTwo.Id,
+	}
+	mockChildJobThree.Init(cache)
+
+	mockChildJobFour := GetMockJob()
+	mockChildJobFour.Name = "mock_child_four"
+	mockChildJobFour.ParentJobs = []string{
+		mockChildJobThree.Id,
+	}
+	mockChildJobFour.Init(cache)
+
+	mockChildJobFive := GetMockJob()
+	mockChildJobFive.Name = "mock_child_five"
+	mockChildJobFive.ParentJobs = []string{
+		mockChildJobFour.Id,
+	}
+	mockChildJobFive.Init(cache)
+
+	// Check that it gets placed in the array.
+	assert.Equal(t, mockJob.DependentJobs[0], mockChildJobOne.Id)
+	assert.Equal(t, mockChildJobOne.DependentJobs[0], mockChildJobTwo.Id)
+	assert.Equal(t, mockChildJobTwo.DependentJobs[0], mockChildJobThree.Id)
+	assert.Equal(t, mockChildJobThree.DependentJobs[0], mockChildJobFour.Id)
+	assert.Equal(t, mockChildJobFour.DependentJobs[0], mockChildJobFive.Id)
+	assert.True(t, len(mockJob.DependentJobs) == 1)
+	assert.True(t, len(mockChildJobOne.DependentJobs) == 1)
+	assert.True(t, len(mockChildJobTwo.DependentJobs) == 1)
+	assert.True(t, len(mockChildJobThree.DependentJobs) == 1)
+	assert.True(t, len(mockChildJobFour.DependentJobs) == 1)
+
+	j, err := cache.Get(mockJob.Id)
+	assert.NoError(t, err)
+	cOne, err := cache.Get(mockChildJobOne.Id)
+	assert.NoError(t, err)
+	cTwo, err := cache.Get(mockChildJobTwo.Id)
+	assert.NoError(t, err)
+	cThree, err := cache.Get(mockChildJobThree.Id)
+	assert.NoError(t, err)
+	cFour, err := cache.Get(mockChildJobFour.Id)
+	assert.NoError(t, err)
+
+	// Check that we can still get it from the cache.
+	assert.Equal(t, j.DependentJobs[0], mockChildJobOne.Id)
+	assert.Equal(t, cOne.DependentJobs[0], mockChildJobTwo.Id)
+	assert.Equal(t, cTwo.DependentJobs[0], mockChildJobThree.Id)
+	assert.Equal(t, cThree.DependentJobs[0], mockChildJobFour.Id)
+	assert.Equal(t, cFour.DependentJobs[0], mockChildJobFive.Id)
+	assert.True(t, len(j.DependentJobs) == 1)
+	assert.True(t, len(cOne.DependentJobs) == 1)
+	assert.True(t, len(cTwo.DependentJobs) == 1)
+	assert.True(t, len(cThree.DependentJobs) == 1)
+	assert.True(t, len(cFour.DependentJobs) == 1)
+
+	j.Run(cache)
+	time.Sleep(time.Second * 2)
+	n := time.Now()
+
+	// TODO use abtime
+	assert.WithinDuration(t, mockChildJobOne.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobOne.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobThree.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobThree.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobFour.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobFour.LastSuccess, n, 4*time.Second)
+
+	// Test the fact that the first child is ran before its childern
+	assert.True(t, mockChildJobOne.LastAttemptedRun.UnixNano() < mockChildJobTwo.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobTwo.LastAttemptedRun.UnixNano() < mockChildJobThree.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobThree.LastAttemptedRun.UnixNano() < mockChildJobFour.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobFour.LastAttemptedRun.UnixNano() < mockChildJobFive.LastAttemptedRun.UnixNano())
 }
