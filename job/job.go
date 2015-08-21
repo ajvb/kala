@@ -83,6 +83,8 @@ type Job struct {
 	Stats       []*JobStat `json:"-"`
 
 	lock sync.Mutex
+
+	numberOfAttempts uint
 }
 
 // Bytes returns the byte representation of the Job.
@@ -226,7 +228,7 @@ func (j *Job) StartWaiting(cache JobCache) {
 			waitDuration = j.delayDuration.ToDuration()
 		} else {
 			lastRun := j.LastAttemptedRun
-			lastRun.Add(j.delayDuration.ToDuration())
+			lastRun = lastRun.Add(j.delayDuration.ToDuration())
 			waitDuration = lastRun.Sub(time.Now())
 		}
 	}
@@ -381,6 +383,8 @@ func (j *Job) Run(cache JobCache) {
 }
 
 func (j *Job) runCmd() error {
+	j.numberOfAttempts++
+
 	// Execute command
 	args, err := shParser.Parse(j.Command)
 	if err != nil {

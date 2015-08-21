@@ -1,6 +1,7 @@
 package job
 
 import (
+	"strings"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -29,6 +30,55 @@ func TestBrokenSchedule(t *testing.T) {
 
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Schedule = "hfhgasyuweu123"
+
+	err := mockJob.Init(cache)
+
+	assert.Error(t, err)
+	assert.Nil(t, mockJob.jobTimer)
+}
+
+func TestBrokenEpsilon(t *testing.T) {
+	cache := NewMockCache()
+
+	mockJob := GetMockJobWithGenericSchedule()
+	mockJob.Epsilon = "asdasd"
+
+	err := mockJob.Init(cache)
+
+	assert.Error(t, err)
+	assert.Nil(t, mockJob.jobTimer)
+}
+
+func TestBrokenScheduleTimeHasAlreadyPassed(t *testing.T) {
+	cache := NewMockCache()
+
+	fiveMinutesFromNow := time.Now()
+	time.Sleep(time.Millisecond * 30)
+	mockJob := GetMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
+
+	err := mockJob.Init(cache)
+
+	assert.Error(t, err)
+	assert.Nil(t, mockJob.jobTimer)
+}
+
+func TestBrokenScheduleBrokenRepeat(t *testing.T) {
+	cache := NewMockCache()
+
+	mockJob := GetMockJobWithGenericSchedule()
+	mockJob.Schedule = strings.Replace(mockJob.Schedule, "R2", "RRR", 1)
+
+	err := mockJob.Init(cache)
+
+	assert.Error(t, err)
+	assert.Nil(t, mockJob.jobTimer)
+}
+
+func TestBrokenScheduleBrokenInitialScheduleTime(t *testing.T) {
+	cache := NewMockCache()
+
+	mockJob := GetMockJobWithGenericSchedule()
+	mockJob.Schedule = "R0/hfhgasyuweu123/PT10S"
 
 	err := mockJob.Init(cache)
 
@@ -113,6 +163,45 @@ func TestJobRun(t *testing.T) {
 	assert.Equal(t, j.SuccessCount, uint(1))
 	assert.WithinDuration(t, j.LastSuccess, now, 2*time.Second)
 	assert.WithinDuration(t, j.LastAttemptedRun, now, 2*time.Second)
+}
+
+func TestJobRunAndRepeat(t *testing.T) {
+	cache := NewMockCache()
+
+	oneSecondFromNow := time.Now().Add(time.Second)
+	j := GetMockJobWithSchedule(2, oneSecondFromNow, "PT1S")
+	j.Init(cache)
+
+	for i := 0; i < 3; i++ {
+		time.Sleep(time.Second)
+		now := time.Now()
+		assert.Equal(t, j.SuccessCount, uint(i+1))
+		assert.WithinDuration(t, j.LastSuccess, now, 3*time.Second)
+		assert.WithinDuration(t, j.LastAttemptedRun, now, 3*time.Second)
+	}
+
+}
+
+func TestJobEpsilon(t *testing.T) {
+	cache := NewMockCache()
+
+	oneSecondFromNow := time.Now().Add(time.Second)
+	j := GetMockJobWithSchedule(0, oneSecondFromNow, "P1DT1S")
+	j.Epsilon = "PT1S"
+	j.Command = "bash -c 'cd /etc && touch l'"
+	j.Retries = 2
+	j.Init(cache)
+
+	time.Sleep(time.Second * 2)
+
+	now := time.Now()
+
+	assert.Equal(t, j.SuccessCount, uint(0))
+	assert.Equal(t, j.ErrorCount, uint(1))
+	assert.Equal(t, j.numberOfAttempts, uint(3))
+	assert.WithinDuration(t, j.LastError, now, 3*time.Second)
+	assert.WithinDuration(t, j.LastAttemptedRun, now, 3*time.Second)
+	assert.True(t, j.LastSuccess.IsZero())
 }
 
 func TestOneOffJobs(t *testing.T) {

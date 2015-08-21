@@ -11,7 +11,23 @@ import (
 
 var testDbPath = ""
 
+func setupTest(t *testing.T) {
+	db := GetBoltDB(testDbPath)
+	defer db.Close()
+
+	jobs, err := db.GetAll()
+	assert.NoError(t, err)
+
+	for _, j := range jobs {
+		err = db.Delete(j.Id)
+		assert.NoError(t, err)
+	}
+
+}
+
 func TestSaveAndGetJob(t *testing.T) {
+	setupTest(t)
+
 	db := GetBoltDB(testDbPath)
 	cache := job.NewMemoryJobCache(db, time.Second*60)
 	defer db.Close()
@@ -33,6 +49,8 @@ func TestSaveAndGetJob(t *testing.T) {
 }
 
 func TestDeleteJob(t *testing.T) {
+	setupTest(t)
+
 	db := GetBoltDB(testDbPath)
 	cache := job.NewMemoryJobCache(db, time.Second*60)
 	defer db.Close()
@@ -60,4 +78,26 @@ func TestDeleteJob(t *testing.T) {
 	assert.Nil(t, retrievedJobTwo)
 
 	genericMockJob.Delete(cache, db)
+}
+
+func TestSaveAndGetAllJobs(t *testing.T) {
+	setupTest(t)
+
+	db := GetBoltDB(testDbPath)
+	cache := job.NewMemoryJobCache(db, time.Second*60)
+	defer db.Close()
+
+	genericMockJobOne := job.GetMockJobWithGenericSchedule()
+	genericMockJobOne.Init(cache)
+	err := db.Save(genericMockJobOne)
+	assert.NoError(t, err)
+
+	genericMockJobTwo := job.GetMockJobWithGenericSchedule()
+	genericMockJobTwo.Init(cache)
+	err = db.Save(genericMockJobTwo)
+	assert.NoError(t, err)
+
+	jobs, err := db.GetAll()
+	assert.Nil(t, err)
+	assert.Equal(t, len(jobs), 2)
 }
