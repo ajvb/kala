@@ -10,13 +10,13 @@ API_URL = "http://127.0.0.1:8000/api/v1/job/"
 scheduled_start = datetime.isoformat(datetime.now(tzlocal()) + timedelta(0, 10))
 parent_job = {
     "name": "test_job",
-    "command": "bash " + os.path.dirname(os.path.realpath(__file__)) + "/example-kala-commands/example-command.sh",
+    "command": "bash " + os.path.dirname(os.path.realpath(__file__)) + "/../example-kala-commands/example-command.sh",
     "epsilon": "PT5S",
     "schedule": "%s/%s/%s" % ("R2", scheduled_start, "PT10S"),
 }
 child_job = {
     "name": "my_child_job",
-    "command": "bash " + os.path.dirname(os.path.realpath(__file__)) + "/example-kala-commands/example-command.sh",
+    "command": "bash " + os.path.dirname(os.path.realpath(__file__)) + "/../example-kala-commands/example-command.sh",
     "epsilon": "PT5S",
 }
 
