@@ -42,7 +42,7 @@ end
 
 data = {
   name: 'ruby_job',
-  command: "bash #{Dir.pwd}/example-kala-commands/example-command.sh",
+  command: "bash #{Dir.pwd}/../example-kala-commands/example-command.sh",
   epsilon: 'PT5S',
   schedule: "R2/#{(Time.now + 10).iso8601}/PT10S"
 }

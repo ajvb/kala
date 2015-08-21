@@ -9,7 +9,7 @@ API_URL = "http://127.0.0.1:8000/api/v1/job/"
 
 data = {
     "name": "test_job",
-    "command": "bash " + os.path.dirname(os.path.realpath(__file__)) + "/example-kala-commands/example-command.sh",
+    "command": "bash " + os.path.dirname(os.path.realpath(__file__)) + "../example-kala-commands/example-command.sh",
     "epsilon": "PT5S",
 }
 
