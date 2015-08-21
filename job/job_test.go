@@ -145,7 +145,6 @@ func TestOneOffJobs(t *testing.T) {
 // TODO:
 // Parent with two childs which each have a child.
 // Two Parents with the two child which both share the same single child
-// Parent gets deleted
 // Link in the chain fails
 
 func TestDependentJobsSimple(t *testing.T) {
@@ -590,6 +589,7 @@ func TestDependentJobsChildGetsDeleted(t *testing.T) {
 	assert.True(t, len(mockJob.DependentJobs) == 1)
 
 	cache.Delete(mockChildJob.Id)
+	time.Sleep(time.Second)
 
 	// Check to make sure its deleted
 	_, err := cache.Get(mockChildJob.Id)
@@ -629,4 +629,56 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 
 	assert.True(t, mockChildJob.LastAttemptedRun.IsZero())
 	assert.True(t, mockChildJob.LastSuccess.IsZero())
+}
+
+// Parent gets deleted -- If a parent job is deleted, unless its child jobs have another parent, they will be deleted as well.
+func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
+	cache := NewMockCache()
+
+	mockJob := GetMockJobWithGenericSchedule()
+	mockJob.Name = "mock_parent_job"
+	mockJob.Init(cache)
+
+	mockJobBackup := GetMockJobWithGenericSchedule()
+	mockJobBackup.Name = "mock_parent_job_backup"
+	mockJobBackup.Init(cache)
+
+	mockChildJobWithNoBackup := GetMockJob()
+	mockChildJobWithNoBackup.ParentJobs = []string{
+		mockJob.Id,
+	}
+	mockChildJobWithNoBackup.Init(cache)
+
+	mockChildJobWithBackup := GetMockJob()
+	mockChildJobWithBackup.ParentJobs = []string{
+		mockJob.Id,
+		mockJobBackup.Id,
+	}
+	mockChildJobWithBackup.Init(cache)
+
+	assert.Equal(t, mockJob.DependentJobs[0], mockChildJobWithNoBackup.Id)
+	assert.Equal(t, mockJob.DependentJobs[1], mockChildJobWithBackup.Id)
+	assert.True(t, len(mockJob.DependentJobs) == 2)
+	assert.Equal(t, mockJobBackup.DependentJobs[0], mockChildJobWithBackup.Id)
+	assert.True(t, len(mockJobBackup.DependentJobs) == 1)
+
+	cache.Delete(mockJob.Id)
+	time.Sleep(time.Second)
+
+	// Make sure it is deleted
+	_, err := cache.Get(mockJob.Id)
+	assert.Error(t, err)
+	assert.Equal(t, err, JobDoesntExistErr)
+
+	// Check if mockChildJobWithNoBackup is deleted
+	_, err = cache.Get(mockChildJobWithNoBackup.Id)
+	assert.Error(t, err)
+	assert.Equal(t, err, JobDoesntExistErr)
+
+	// Check to make sure mockChildJboWithBackup is not deleted
+	j, err := cache.Get(mockChildJobWithBackup.Id)
+	assert.NoError(t, err)
+	assert.Equal(t, j.ParentJobs[0], mockJobBackup.Id)
+	assert.True(t, len(j.ParentJobs) == 1)
+
 }

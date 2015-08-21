@@ -242,7 +242,7 @@ ajvb$ curl http://127.0.0.1:8000/api/v1/stats/
 
 # Documentation
 
-[Contribtuor documentation can be found here](http://godoc.org/github.com/ajvb/kala)
+[Contributor Documentation can be found here](http://godoc.org/github.com/ajvb/kala)
 
 ## Dependent Jobs
 
@@ -250,8 +250,14 @@ ajvb$ curl http://127.0.0.1:8000/api/v1/stats/
 
 Check out this [example for how to add dependent jobs](https://github.com/ajvb/kala/blob/master/examples/example_dependent_jobs.py) within a python script.
 
+### Notes on Dependent Jobs
 
-### Dependent jobs follow a rule of FIFO
+    * Dependent jobs follow a rule of First In First Out
+    * A child will always have to wait until a parent job finishes before it runs
+    * A child will not run if its parent job does not.
+    * If a child job is disabled, it's parent job will still run, but it will not.
+    * If a child job is deleted, it's parent job will continue to stay around.
+    * If a parent job is deleted, unless its child jobs have another parent, they will be deleted as well.
 
 # Contributing
 

@@ -252,14 +252,17 @@ func (j *Job) Disable() {
 func (j *Job) DeleteFromParentJobs(cache JobCache) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
+
 	if len(j.ParentJobs) != 0 {
 		for _, p := range j.ParentJobs {
 			parentJob, err := cache.Get(p)
-			parentJob.lock.Lock()
-			defer parentJob.lock.Unlock()
 			if err != nil {
 				return err
 			}
+
+			parentJob.lock.Lock()
+			defer parentJob.lock.Unlock()
+
 			ndx := 0
 			for i, id := range parentJob.DependentJobs {
 				if id == j.Id {
@@ -270,6 +273,43 @@ func (j *Job) DeleteFromParentJobs(cache JobCache) error {
 			parentJob.DependentJobs = append(
 				parentJob.DependentJobs[:ndx], parentJob.DependentJobs[ndx+1:]...,
 			)
+		}
+	}
+	return nil
+}
+
+func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	if len(j.DependentJobs) != 0 {
+		for _, id := range j.DependentJobs {
+			childJob, err := cache.Get(id)
+
+			if err != nil {
+				return err
+			}
+
+			childJob.lock.Lock()
+
+			ndx := 0
+			for i, id := range childJob.ParentJobs {
+				if id == j.Id {
+					ndx = i
+					break
+				}
+			}
+			childJob.ParentJobs = append(
+				childJob.ParentJobs[:ndx], childJob.ParentJobs[ndx+1:]...,
+			)
+
+			childJob.lock.Unlock()
+
+			// If there are no other parent jobs, delete this job.
+			if len(childJob.ParentJobs) == 0 {
+				cache.Delete(childJob.Id)
+			}
+
 		}
 	}
 	return nil
