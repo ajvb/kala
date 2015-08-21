@@ -250,9 +250,13 @@ func (j *Job) Disable() {
 
 // DeleteFromParentJobs goes through and deletes the current job from any parent jobs.
 func (j *Job) DeleteFromParentJobs(cache JobCache) error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
 	if len(j.ParentJobs) != 0 {
 		for _, p := range j.ParentJobs {
 			parentJob, err := cache.Get(p)
+			parentJob.lock.Lock()
+			defer parentJob.lock.Unlock()
 			if err != nil {
 				return err
 			}
