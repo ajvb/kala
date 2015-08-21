@@ -248,9 +248,81 @@ func (j *Job) Disable() {
 	j.Disabled = true
 }
 
+// DeleteFromParentJobs goes through and deletes the current job from any parent jobs.
+func (j *Job) DeleteFromParentJobs(cache JobCache) error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	if len(j.ParentJobs) != 0 {
+		for _, p := range j.ParentJobs {
+			parentJob, err := cache.Get(p)
+			if err != nil {
+				return err
+			}
+
+			parentJob.lock.Lock()
+			defer parentJob.lock.Unlock()
+
+			ndx := 0
+			for i, id := range parentJob.DependentJobs {
+				if id == j.Id {
+					ndx = i
+					break
+				}
+			}
+			parentJob.DependentJobs = append(
+				parentJob.DependentJobs[:ndx], parentJob.DependentJobs[ndx+1:]...,
+			)
+		}
+	}
+	return nil
+}
+
+func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	if len(j.DependentJobs) != 0 {
+		for _, id := range j.DependentJobs {
+			childJob, err := cache.Get(id)
+
+			if err != nil {
+				return err
+			}
+
+			childJob.lock.Lock()
+
+			ndx := 0
+			for i, id := range childJob.ParentJobs {
+				if id == j.Id {
+					ndx = i
+					break
+				}
+			}
+			childJob.ParentJobs = append(
+				childJob.ParentJobs[:ndx], childJob.ParentJobs[ndx+1:]...,
+			)
+
+			childJob.lock.Unlock()
+
+			// If there are no other parent jobs, delete this job.
+			if len(childJob.ParentJobs) == 0 {
+				cache.Delete(childJob.Id)
+			}
+
+		}
+	}
+	return nil
+}
+
 // Run executes the Job's command, collects metadata around the success
 // or failure of the Job's execution, and schedules the next run.
 func (j *Job) Run(cache JobCache) {
+	if j.Disabled {
+		log.Info("Job %s tried to run, but exited early because its disabled.", j.Name)
+		return
+	}
+
 	log.Info("Job %s running", j.Name)
 
 	j.lock.Lock()

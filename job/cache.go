@@ -115,6 +115,21 @@ func (c *MemoryJobCache) Delete(id string) {
 	c.jobs.Lock.Lock()
 	defer c.jobs.Lock.Unlock()
 
+	j := c.jobs.Jobs[id]
+	if j == nil {
+		// TODO
+		//return JobDoesntExistErr
+		return
+	}
+
+	j.Disable()
+
+	go j.DeleteFromParentJobs(c)
+
+	// Remove itself from dependent jobs as a parent job
+	// and possibly delete child jobs if they don't have any other parents.
+	go j.DeleteFromDependentJobs(c)
+
 	delete(c.jobs.Jobs, id)
 }
 
