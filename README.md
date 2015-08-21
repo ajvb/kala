@@ -244,6 +244,15 @@ ajvb$ curl http://127.0.0.1:8000/api/v1/stats/
 
 [Contribtuor documentation can be found here](http://godoc.org/github.com/ajvb/kala)
 
+## Dependent Jobs
+
+### How to add a dependent job
+
+Check out this [example for how to add dependent jobs](https://github.com/ajvb/kala/blob/master/examples/example_dependent_jobs.py) within a python script.
+
+
+### Dependent jobs follow a rule of FIFO
+
 # Contributing
 
 TODO

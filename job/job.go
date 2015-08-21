@@ -248,9 +248,37 @@ func (j *Job) Disable() {
 	j.Disabled = true
 }
 
+// DeleteFromParentJobs goes through and deletes the current job from any parent jobs.
+func (j *Job) DeleteFromParentJobs(cache JobCache) error {
+	if len(j.ParentJobs) != 0 {
+		for _, p := range j.ParentJobs {
+			parentJob, err := cache.Get(p)
+			if err != nil {
+				return err
+			}
+			ndx := 0
+			for i, id := range parentJob.DependentJobs {
+				if id == j.Id {
+					ndx = i
+					break
+				}
+			}
+			parentJob.DependentJobs = append(
+				parentJob.DependentJobs[:ndx], parentJob.DependentJobs[ndx+1:]...,
+			)
+		}
+	}
+	return nil
+}
+
 // Run executes the Job's command, collects metadata around the success
 // or failure of the Job's execution, and schedules the next run.
 func (j *Job) Run(cache JobCache) {
+	if j.Disabled {
+		log.Info("Job %s tried to run, but exited early because its disabled.", j.Name)
+		return
+	}
+
 	log.Info("Job %s running", j.Name)
 
 	j.lock.Lock()
