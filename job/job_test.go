@@ -142,11 +142,6 @@ func TestOneOffJobs(t *testing.T) {
 // Dependent Job Tests
 //
 
-// TODO:
-// Parent with two childs which each have a child.
-// Two Parents with the two child which both share the same single child
-// Link in the chain fails
-
 func TestDependentJobsSimple(t *testing.T) {
 	cache := NewMockCache()
 
@@ -405,6 +400,73 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	assert.True(t, mockChildJobTwo.LastAttemptedRun.UnixNano() < mockChildJobThree.LastAttemptedRun.UnixNano())
 	assert.True(t, mockChildJobThree.LastAttemptedRun.UnixNano() < mockChildJobFour.LastAttemptedRun.UnixNano())
 	assert.True(t, mockChildJobFour.LastAttemptedRun.UnixNano() < mockChildJobFive.LastAttemptedRun.UnixNano())
+}
+
+// Link in the chain fails
+func TestDependentJobsChainWithFailingJob(t *testing.T) {
+	cache := NewMockCache()
+
+	mockJob := GetMockJobWithGenericSchedule()
+	mockJob.Name = "mock_parent_job"
+	mockJob.Init(cache)
+
+	mockChildJobOne := GetMockJob()
+	mockChildJobOne.Name = "mock_child_one"
+	// ***Where we make it fail***
+	mockChildJobOne.Command = "bash -c 'cd /etc && touch l'"
+	mockChildJobOne.ParentJobs = []string{
+		mockJob.Id,
+	}
+	mockChildJobOne.Init(cache)
+
+	mockChildJobTwo := GetMockJob()
+	mockChildJobTwo.Name = "mock_child_two"
+	mockChildJobTwo.ParentJobs = []string{
+		mockChildJobOne.Id,
+	}
+	mockChildJobTwo.Init(cache)
+
+	mockChildJobThree := GetMockJob()
+	mockChildJobThree.Name = "mock_child_three"
+	mockChildJobThree.ParentJobs = []string{
+		mockChildJobTwo.Id,
+	}
+	mockChildJobThree.Init(cache)
+
+	// Check that it gets placed in the array.
+	assert.Equal(t, mockJob.DependentJobs[0], mockChildJobOne.Id)
+	assert.Equal(t, mockChildJobOne.DependentJobs[0], mockChildJobTwo.Id)
+	assert.Equal(t, mockChildJobTwo.DependentJobs[0], mockChildJobThree.Id)
+	assert.True(t, len(mockJob.DependentJobs) == 1)
+	assert.True(t, len(mockChildJobOne.DependentJobs) == 1)
+	assert.True(t, len(mockChildJobTwo.DependentJobs) == 1)
+
+	j, err := cache.Get(mockJob.Id)
+	assert.NoError(t, err)
+	cOne, err := cache.Get(mockChildJobOne.Id)
+	assert.NoError(t, err)
+	cTwo, err := cache.Get(mockChildJobTwo.Id)
+	assert.NoError(t, err)
+
+	// Check that we can still get it from the cache.
+	assert.Equal(t, j.DependentJobs[0], mockChildJobOne.Id)
+	assert.Equal(t, cOne.DependentJobs[0], mockChildJobTwo.Id)
+	assert.Equal(t, cTwo.DependentJobs[0], mockChildJobThree.Id)
+	assert.True(t, len(j.DependentJobs) == 1)
+	assert.True(t, len(cOne.DependentJobs) == 1)
+	assert.True(t, len(cTwo.DependentJobs) == 1)
+
+	j.Run(cache)
+	time.Sleep(time.Second)
+	n := time.Now()
+
+	// TODO use abtime
+	assert.WithinDuration(t, mockChildJobOne.LastAttemptedRun, n, 2*time.Second)
+	assert.True(t, mockChildJobOne.LastSuccess.IsZero())
+	assert.True(t, mockChildJobTwo.LastAttemptedRun.IsZero())
+	assert.True(t, mockChildJobTwo.LastSuccess.IsZero())
+	assert.True(t, mockChildJobThree.LastAttemptedRun.IsZero())
+	assert.True(t, mockChildJobThree.LastSuccess.IsZero())
 }
 
 // TODO Use something like abtime - this test takes 5 seconds just in waiting....

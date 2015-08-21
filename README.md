@@ -129,6 +129,9 @@ All routes have a prefix of `/api/v1`
 #### Official:
 * Go - [client](https://github.com/ajvb/kala/tree/master/client) - Docs: http://godoc.org/github.com/ajvb/kala/client
 
+Install using:
+`go get github.com/ajvb/kala/client`
+
 ## Job Data Struct
 
 [Docs can be found here](http://godoc.org/github.com/ajvb/kala/job#Job)
@@ -252,12 +255,12 @@ Check out this [example for how to add dependent jobs](https://github.com/ajvb/k
 
 ### Notes on Dependent Jobs
 
-    * Dependent jobs follow a rule of First In First Out
-    * A child will always have to wait until a parent job finishes before it runs
-    * A child will not run if its parent job does not.
-    * If a child job is disabled, it's parent job will still run, but it will not.
-    * If a child job is deleted, it's parent job will continue to stay around.
-    * If a parent job is deleted, unless its child jobs have another parent, they will be deleted as well.
+* Dependent jobs follow a rule of First In First Out
+* A child will always have to wait until a parent job finishes before it runs
+* A child will not run if its parent job does not.
+* If a child job is disabled, it's parent job will still run, but it will not.
+* If a child job is deleted, it's parent job will continue to stay around.
+* If a parent job is deleted, unless its child jobs have another parent, they will be deleted as well.
 
 # Contributing
 
