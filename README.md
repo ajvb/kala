@@ -120,6 +120,13 @@ stdout_logfile=/var/log/kala.stdout.log
 stderr_logfile=/var/log/kala.stderr.log
 ```
 
+### Docker 
+
+If you have docker installed, you can build the dockerfile in this directory with
+```docker build -t kala .```
+and run it as a daemon with:
+```docker run -it -d -p 8000:8000 kala```
+
 # API v1 Docs
 
 All routes have a prefix of `/api/v1`
