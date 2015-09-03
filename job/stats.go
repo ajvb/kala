@@ -36,6 +36,9 @@ func NewKalaStats(cache JobCache) *KalaStats {
 	nextRun := time.Time{}
 	lastRun := time.Time{}
 	for _, job := range jobs.Jobs {
+		job.lock.RLock()
+		defer job.lock.RUnlock()
+
 		if job.Disabled {
 			ks.DisabledJobs += 1
 		} else {

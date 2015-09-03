@@ -82,7 +82,7 @@ type Job struct {
 	currentStat *JobStat
 	Stats       []*JobStat `json:"-"`
 
-	lock sync.Mutex
+	lock sync.RWMutex
 
 	numberOfAttempts uint
 }
@@ -156,7 +156,9 @@ func (j *Job) Init(cache JobCache) error {
 		return err
 	}
 
+	j.lock.Unlock()
 	j.StartWaiting(cache)
+	j.lock.Lock()
 
 	return nil
 }
@@ -220,6 +222,9 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 
 // StartWaiting begins a timer for when it should execute the Jobs .Run() method.
 func (j *Job) StartWaiting(cache JobCache) {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
 	waitDuration := time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())
 	log.Debug("Wait Duration initial: %s", waitDuration)
 	if waitDuration < 0 {
@@ -258,12 +263,12 @@ func (j *Job) DeleteFromParentJobs(cache JobCache) error {
 	if len(j.ParentJobs) != 0 {
 		for _, p := range j.ParentJobs {
 			parentJob, err := cache.Get(p)
+
 			if err != nil {
 				return err
 			}
 
 			parentJob.lock.Lock()
-			defer parentJob.lock.Unlock()
 
 			ndx := 0
 			for i, id := range parentJob.DependentJobs {
@@ -275,11 +280,14 @@ func (j *Job) DeleteFromParentJobs(cache JobCache) error {
 			parentJob.DependentJobs = append(
 				parentJob.DependentJobs[:ndx], parentJob.DependentJobs[ndx+1:]...,
 			)
+
+			parentJob.lock.Unlock()
 		}
 	}
 	return nil
 }
 
+// DeleteFromDependentJobs
 func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
@@ -287,9 +295,14 @@ func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
 	if len(j.DependentJobs) != 0 {
 		for _, id := range j.DependentJobs {
 			childJob, err := cache.Get(id)
-
 			if err != nil {
 				return err
+			}
+
+			// If there are no other parent jobs, delete this job.
+			if len(childJob.ParentJobs) == 1 {
+				cache.Delete(childJob.Id)
+				continue
 			}
 
 			childJob.lock.Lock()
@@ -307,11 +320,6 @@ func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
 
 			childJob.lock.Unlock()
 
-			// If there are no other parent jobs, delete this job.
-			if len(childJob.ParentJobs) == 0 {
-				cache.Delete(childJob.Id)
-			}
-
 		}
 	}
 	return nil
@@ -320,15 +328,15 @@ func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
 // Run executes the Job's command, collects metadata around the success
 // or failure of the Job's execution, and schedules the next run.
 func (j *Job) Run(cache JobCache) {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
 	if j.Disabled {
 		log.Info("Job %s tried to run, but exited early because its disabled.", j.Name)
 		return
 	}
 
 	log.Info("Job %s running", j.Name)
-
-	j.lock.Lock()
-	defer j.lock.Unlock()
 
 	j.runSetup(cache)
 
@@ -351,8 +359,9 @@ func (j *Job) Run(cache JobCache) {
 			// If it doesn't retry, cleanup and exit.
 			j.runCleanup()
 			return
+		} else {
+			break
 		}
-		break
 	}
 
 	log.Info("%s was successful!", j.Name)
@@ -402,7 +411,7 @@ func (j *Job) shouldRetry() bool {
 
 	// Check Epsilon
 	if j.Epsilon != "" {
-		if j.epsilonDuration.ToDuration() == 0 {
+		if j.epsilonDuration.ToDuration() != 0 {
 			timeSinceStart := time.Now().Sub(j.NextRunAt)
 			timeLeftToRetry := j.epsilonDuration.ToDuration() - timeSinceStart
 			if timeLeftToRetry < 0 {

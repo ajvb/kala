@@ -187,20 +187,20 @@ func TestJobEpsilon(t *testing.T) {
 
 	oneSecondFromNow := time.Now().Add(time.Second)
 	j := GetMockJobWithSchedule(0, oneSecondFromNow, "P1DT1S")
-	j.Epsilon = "PT1S"
-	j.Command = "bash -c 'cd /etc && touch l'"
-	j.Retries = 2
+	j.Epsilon = "PT2S"
+	j.Command = "bash -c 'sleep 1 && cd /etc && touch l'"
+	j.Retries = 200
 	j.Init(cache)
 
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 4)
 
 	now := time.Now()
 
 	assert.Equal(t, j.SuccessCount, uint(0))
 	assert.Equal(t, j.ErrorCount, uint(1))
-	assert.Equal(t, j.numberOfAttempts, uint(3))
-	assert.WithinDuration(t, j.LastError, now, 3*time.Second)
-	assert.WithinDuration(t, j.LastAttemptedRun, now, 3*time.Second)
+	assert.Equal(t, j.numberOfAttempts, uint(2))
+	assert.WithinDuration(t, j.LastError, now, 4*time.Second)
+	assert.WithinDuration(t, j.LastAttemptedRun, now, 4*time.Second)
 	assert.True(t, j.LastSuccess.IsZero())
 }
 
@@ -814,17 +814,17 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 	assert.True(t, len(mockJobBackup.DependentJobs) == 1)
 
 	cache.Delete(mockJob.Id)
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 2)
 
 	// Make sure it is deleted
 	_, err := cache.Get(mockJob.Id)
 	assert.Error(t, err)
-	assert.Equal(t, err, JobDoesntExistErr)
+	assert.Equal(t, JobDoesntExistErr, err)
 
 	// Check if mockChildJobWithNoBackup is deleted
 	_, err = cache.Get(mockChildJobWithNoBackup.Id)
 	assert.Error(t, err)
-	assert.Equal(t, err, JobDoesntExistErr)
+	assert.Equal(t, JobDoesntExistErr, err)
 
 	// Check to make sure mockChildJboWithBackup is not deleted
 	j, err := cache.Get(mockChildJobWithBackup.Id)
