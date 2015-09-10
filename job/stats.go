@@ -91,19 +91,19 @@ type StatsMap struct {
 	Lock  sync.RWMutex
 }
 
-type JobStatsManager struct {
+type StatsManager struct {
 	stats *StatsMap
 }
 
-func NewJobStatsManager() *JobStatsManager {
-	return &JobStatsManager{
+func NewStatsManager() *StatsManager {
+	return &StatsManager{
 		stats: &StatsMap{
 			Stats: map[string][]*JobStat{},
 		},
 	}
 }
 
-func (jsm *JobStatsManager) AddStat(stat *JobStat) {
+func (jsm *StatsManager) AddStat(stat *JobStat) {
 	jsm.stats.Lock.Lock()
 	defer jsm.stats.Lock.Unlock()
 
@@ -114,14 +114,14 @@ func (jsm *JobStatsManager) AddStat(stat *JobStat) {
 	}
 }
 
-func (jsm *JobStatsManager) GetAllStats() *StatsMap {
+func (jsm *StatsManager) GetAllStats() *StatsMap {
 	jsm.stats.Lock.RLock()
 	defer jsm.stats.Lock.RUnlock()
 
 	return jsm.stats
 }
 
-func (jsm *JobStatsManager) GetStats(id string) []*JobStat {
+func (jsm *StatsManager) GetStats(id string) []*JobStat {
 	jsm.stats.Lock.RLock()
 	defer jsm.stats.Lock.RUnlock()
 

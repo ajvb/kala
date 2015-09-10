@@ -9,7 +9,7 @@ import (
 
 func TestJobStats(t *testing.T) {
 	cache := NewMockCache()
-	statsManager := NewJobStatsManager()
+	statsManager := NewStatsManager()
 
 	j := GetMockJobWithGenericSchedule()
 	j.Init(cache, statsManager)
@@ -29,7 +29,7 @@ func TestJobStats(t *testing.T) {
 
 func TestKalaStats(t *testing.T) {
 	cache := NewMockCache()
-	stats := NewJobStatsManager()
+	stats := NewStatsManager()
 
 	for i := 0; i < 5; i++ {
 		j := GetMockJobWithGenericSchedule()

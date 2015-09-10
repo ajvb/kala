@@ -56,7 +56,7 @@ type ListJobStatsResponse struct {
 
 // HandleListJobStatsRequest is the handler for getting job-specific stats
 // /api/v1/job/stats/{id}
-func HandleListJobStatsRequest(stats *job.JobStatsManager) func(w http.ResponseWriter, r *http.Request) {
+func HandleListJobStatsRequest(stats *job.StatsManager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
 		jobStats := stats.GetStats(id)
@@ -127,7 +127,7 @@ func unmarshalNewJob(r *http.Request) (*job.Job, error) {
 
 // HandleAddJob takes a job object and unmarshals it to a Job type,
 // and then throws the job in the schedulers.
-func HandleAddJob(cache job.JobCache, stats *job.JobStatsManager) func(http.ResponseWriter, *http.Request) {
+func HandleAddJob(cache job.JobCache, stats *job.StatsManager) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		newJob, err := unmarshalNewJob(r)
 		if err != nil {
@@ -223,7 +223,7 @@ func HandleStartJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *ht
 }
 
 // SetupApiRoutes is used within main to initialize all of the routes
-func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB, stats *job.JobStatsManager) {
+func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB, stats *job.StatsManager) {
 	// Route for creating a job
 	r.HandleFunc(ApiJobPath, HandleAddJob(cache, stats)).Methods("POST")
 	r.HandleFunc(ApiUrlPrefix+"job", HandleAddJob(cache, stats)).Methods("POST")
@@ -244,7 +244,7 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB, stats *job.
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
 }
 
-func StartServer(listenAddr string, cache job.JobCache, db job.JobDB, stats *job.JobStatsManager) error {
+func StartServer(listenAddr string, cache job.JobCache, db job.JobDB, stats *job.StatsManager) error {
 	r := mux.NewRouter()
 	SetupApiRoutes(r, cache, db, stats)
 	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log})

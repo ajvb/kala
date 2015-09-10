@@ -75,7 +75,7 @@ type Job struct {
 
 	lock sync.RWMutex
 
-	statsManager *JobStatsManager
+	statsManager *StatsManager
 }
 
 type Metadata struct {
@@ -112,7 +112,7 @@ func NewFromBytes(b []byte) (*Job, error) {
 
 // Init fills in the protected fields and parses the iso8601 notation.
 // It also adds the job to the Cache
-func (j *Job) Init(cache JobCache, stats *JobStatsManager) error {
+func (j *Job) Init(cache JobCache, stats *StatsManager) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
