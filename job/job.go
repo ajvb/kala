@@ -342,12 +342,16 @@ func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
 func (j *Job) Run(cache JobCache) {
 	// TODO: Use a job scheduler
 	// Schedule next run
+	j.lock.Lock()
 	if j.timesToRepeat != 0 {
 		j.timesToRepeat--
 		go j.StartWaiting(cache)
 	}
+	j.lock.Unlock()
 
+	j.lock.RLock()
 	jobRunner := &JobRunner{job: j, meta: j.Metadata}
+	j.lock.RUnlock()
 	newStat, newMeta, err := jobRunner.Run(cache)
 	if err != nil {
 		log.Error("Error running job: %s", err)
@@ -359,7 +363,6 @@ func (j *Job) Run(cache JobCache) {
 	}
 
 	j.lock.Lock()
-	defer j.lock.Unlock()
-
 	j.Metadata = newMeta
+	j.lock.Unlock()
 }

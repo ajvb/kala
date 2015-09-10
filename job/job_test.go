@@ -175,8 +175,10 @@ func TestJobRunAndRepeat(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		time.Sleep(time.Second)
 		now := time.Now()
+		j.lock.RLock()
 		assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
 		assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)
+		j.lock.RUnlock()
 	}
 
 }
@@ -197,9 +199,11 @@ func TestJobEpsilon(t *testing.T) {
 
 	assert.Equal(t, j.Metadata.SuccessCount, uint(0))
 	assert.Equal(t, j.Metadata.ErrorCount, uint(2))
+	j.lock.RLock()
 	assert.WithinDuration(t, j.Metadata.LastError, now, 4*time.Second)
 	assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 4*time.Second)
 	assert.True(t, j.Metadata.LastSuccess.IsZero())
+	j.lock.RUnlock()
 }
 
 func TestOneOffJobs(t *testing.T) {
@@ -207,22 +211,26 @@ func TestOneOffJobs(t *testing.T) {
 
 	j := GetMockJob()
 
+	j.lock.RLock()
 	assert.Equal(t, j.Metadata.SuccessCount, uint(0))
 	assert.Equal(t, j.Metadata.ErrorCount, uint(0))
 	assert.Equal(t, j.Metadata.LastSuccess, time.Time{})
 	assert.Equal(t, j.Metadata.LastError, time.Time{})
 	assert.Equal(t, j.Metadata.LastAttemptedRun, time.Time{})
+	j.lock.RUnlock()
 
 	j.Init(cache, nil)
 	// Find a better way to test a goroutine
 	time.Sleep(time.Second)
 	now := time.Now()
 
+	j.lock.RLock()
 	assert.Equal(t, j.Metadata.SuccessCount, uint(1))
 	assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
 	assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)
 	assert.Equal(t, j.scheduleTime, time.Time{})
 	assert.Nil(t, j.jobTimer)
+	j.lock.RUnlock()
 }
 
 //
@@ -747,7 +755,9 @@ func TestDependentJobsChildGetsDeleted(t *testing.T) {
 	assert.Equal(t, err, JobDoesntExistErr)
 
 	// Check to make sure its gone from the parent job.
+	mockJob.lock.RLock()
 	assert.True(t, len(mockJob.DependentJobs) == 0)
+	mockJob.lock.RUnlock()
 }
 
 // Child gets disabled
@@ -828,7 +838,9 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 	// Check to make sure mockChildJboWithBackup is not deleted
 	j, err := cache.Get(mockChildJobWithBackup.Id)
 	assert.NoError(t, err)
+
+	j.lock.RLock()
 	assert.Equal(t, j.ParentJobs[0], mockJobBackup.Id)
 	assert.True(t, len(j.ParentJobs) == 1)
-
+	j.lock.RUnlock()
 }
