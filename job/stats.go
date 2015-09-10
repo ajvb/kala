@@ -1,6 +1,7 @@
 package job
 
 import (
+	"sync"
 	"time"
 )
 
@@ -52,15 +53,15 @@ func NewKalaStats(cache JobCache) *KalaStats {
 		}
 
 		if lastRun.IsZero() {
-			if !job.LastAttemptedRun.IsZero() {
-				lastRun = job.LastAttemptedRun
+			if !job.Metadata.LastAttemptedRun.IsZero() {
+				lastRun = job.Metadata.LastAttemptedRun
 			}
-		} else if (lastRun.UnixNano() - job.LastAttemptedRun.UnixNano()) < 0 {
-			lastRun = job.LastAttemptedRun
+		} else if (lastRun.UnixNano() - job.Metadata.LastAttemptedRun.UnixNano()) < 0 {
+			lastRun = job.Metadata.LastAttemptedRun
 		}
 
-		ks.ErrorCount += job.ErrorCount
-		ks.SuccessCount += job.SuccessCount
+		ks.ErrorCount += job.Metadata.ErrorCount
+		ks.SuccessCount += job.Metadata.SuccessCount
 	}
 	ks.NextRunAt = nextRun
 	ks.LastAttemptedRun = lastRun
@@ -82,4 +83,41 @@ func NewJobStat(id string) *JobStat {
 		JobId: id,
 		RanAt: time.Now(),
 	}
+}
+
+type StatsMap struct {
+	// Job.Id's to there job stats
+	Stats map[string][]*JobStat
+	Lock  sync.RWMutex
+}
+
+type JobStatsManager struct {
+	stats *StatsMap
+}
+
+func NewJobStatsManager() *JobStatsManager {
+	return &JobStatsManager{
+		stats: &StatsMap{
+			Stats: map[string][]*JobStat{},
+		},
+	}
+}
+
+func (jsm *JobStatsManager) AddStat(stat *JobStat) {
+	jsm.stats.Lock.Lock()
+	defer jsm.stats.Lock.Unlock()
+
+	if jsm.stats.Stats[stat.JobId] == nil {
+		jsm.stats.Stats[stat.JobId] = []*JobStat{stat}
+	} else {
+		jsm.stats.Stats[stat.JobId] = append(jsm.stats.Stats[stat.JobId], stat)
+	}
+}
+
+func (jsm *JobStatsManager) GetAllStats() *StatsMap {
+	return jsm.stats
+}
+
+func (jsm *JobStatsManager) GetStats(id string) []*JobStat {
+	return jsm.stats.Stats[id]
 }

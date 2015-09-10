@@ -56,23 +56,17 @@ type ListJobStatsResponse struct {
 
 // HandleListJobStatsRequest is the handler for getting job-specific stats
 // /api/v1/job/stats/{id}
-func HandleListJobStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
+func HandleListJobStatsRequest(stats *job.JobStatsManager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
-		j, err := cache.Get(id)
-		if err != nil {
-			log.Error("Error occured when trying to get the job you requested.")
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		if j == nil {
+		jobStats := stats.GetStats(id)
+		if len(jobStats) == 0 {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
 		resp := &ListJobStatsResponse{
-			JobStats: j.Stats,
+			JobStats: jobStats,
 		}
 
 		w.Header().Set(contentType, jsonContentType)
@@ -133,7 +127,7 @@ func unmarshalNewJob(r *http.Request) (*job.Job, error) {
 
 // HandleAddJob takes a job object and unmarshals it to a Job type,
 // and then throws the job in the schedulers.
-func HandleAddJob(cache job.JobCache) func(http.ResponseWriter, *http.Request) {
+func HandleAddJob(cache job.JobCache, stats *job.JobStatsManager) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		newJob, err := unmarshalNewJob(r)
 		if err != nil {
@@ -141,7 +135,7 @@ func HandleAddJob(cache job.JobCache) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		err = newJob.Init(cache)
+		err = newJob.Init(cache, stats)
 		if err != nil {
 			errStr := "Error occured when initializing the job"
 			log.Error(errStr+": %s", err)
@@ -221,6 +215,7 @@ func HandleStartJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *ht
 			return
 		}
 
+		// TODO: Stop job timer as well.
 		j.Run(cache)
 
 		w.WriteHeader(http.StatusNoContent)
@@ -228,16 +223,16 @@ func HandleStartJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *ht
 }
 
 // SetupApiRoutes is used within main to initialize all of the routes
-func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB) {
+func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB, stats *job.JobStatsManager) {
 	// Route for creating a job
-	r.HandleFunc(ApiJobPath, HandleAddJob(cache)).Methods("POST")
-	r.HandleFunc(ApiUrlPrefix+"job", HandleAddJob(cache)).Methods("POST")
+	r.HandleFunc(ApiJobPath, HandleAddJob(cache, stats)).Methods("POST")
+	r.HandleFunc(ApiUrlPrefix+"job", HandleAddJob(cache, stats)).Methods("POST")
 	// Route for deleting and getting a job
 	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
 	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
 	// Route for getting job stats
-	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest(cache)).Methods("GET")
-	r.HandleFunc(ApiJobPath+"stats/{id}/", HandleListJobStatsRequest(cache)).Methods("GET")
+	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest(stats)).Methods("GET")
+	r.HandleFunc(ApiJobPath+"stats/{id}/", HandleListJobStatsRequest(stats)).Methods("GET")
 	// Route for listing all jops
 	r.HandleFunc(ApiJobPath, HandleListJobsRequest(cache)).Methods("GET")
 	r.HandleFunc(ApiUrlPrefix+"job", HandleListJobsRequest(cache)).Methods("GET")
@@ -249,9 +244,9 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB) {
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
 }
 
-func StartServer(listenAddr string, cache job.JobCache, db job.JobDB) error {
+func StartServer(listenAddr string, cache job.JobCache, db job.JobDB, stats *job.JobStatsManager) error {
 	r := mux.NewRouter()
-	SetupApiRoutes(r, cache, db)
+	SetupApiRoutes(r, cache, db, stats)
 	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log})
 	n.UseHandler(r)
 	return http.ListenAndServe(listenAddr, n)
