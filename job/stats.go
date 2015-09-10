@@ -115,9 +115,15 @@ func (jsm *JobStatsManager) AddStat(stat *JobStat) {
 }
 
 func (jsm *JobStatsManager) GetAllStats() *StatsMap {
+	jsm.stats.Lock.RLock()
+	defer jsm.stats.Lock.RUnlock()
+
 	return jsm.stats
 }
 
 func (jsm *JobStatsManager) GetStats(id string) []*JobStat {
+	jsm.stats.Lock.RLock()
+	defer jsm.stats.Lock.RUnlock()
+
 	return jsm.stats.Stats[id]
 }
