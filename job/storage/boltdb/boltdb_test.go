@@ -29,11 +29,11 @@ func TestSaveAndGetJob(t *testing.T) {
 	setupTest(t)
 
 	db := GetBoltDB(testDbPath)
-	cache := job.NewMemoryJobCache(db, time.Second*60)
+	cache := job.NewMemoryJobCache(db)
 	defer db.Close()
 
 	genericMockJob := job.GetMockJobWithGenericSchedule()
-	genericMockJob.Init(cache)
+	genericMockJob.Init(cache, nil)
 	db.Save(genericMockJob)
 
 	j, err := db.Get(genericMockJob.Id)
@@ -45,18 +45,18 @@ func TestSaveAndGetJob(t *testing.T) {
 	assert.Equal(t, j.Command, genericMockJob.Command)
 	assert.Equal(t, j.Schedule, genericMockJob.Schedule)
 	assert.Equal(t, j.Owner, genericMockJob.Owner)
-	assert.Equal(t, j.SuccessCount, genericMockJob.SuccessCount)
+	assert.Equal(t, j.Metadata.SuccessCount, genericMockJob.Metadata.SuccessCount)
 }
 
 func TestDeleteJob(t *testing.T) {
 	setupTest(t)
 
 	db := GetBoltDB(testDbPath)
-	cache := job.NewMemoryJobCache(db, time.Second*60)
+	cache := job.NewMemoryJobCache(db)
 	defer db.Close()
 
 	genericMockJob := job.GetMockJobWithGenericSchedule()
-	genericMockJob.Init(cache)
+	genericMockJob.Init(cache, nil)
 	db.Save(genericMockJob)
 
 	// Make sure its there
@@ -84,16 +84,16 @@ func TestSaveAndGetAllJobs(t *testing.T) {
 	setupTest(t)
 
 	db := GetBoltDB(testDbPath)
-	cache := job.NewMemoryJobCache(db, time.Second*60)
+	cache := job.NewMemoryJobCache(db)
 	defer db.Close()
 
 	genericMockJobOne := job.GetMockJobWithGenericSchedule()
-	genericMockJobOne.Init(cache)
+	genericMockJobOne.Init(cache, nil)
 	err := db.Save(genericMockJobOne)
 	assert.NoError(t, err)
 
 	genericMockJobTwo := job.GetMockJobWithGenericSchedule()
-	genericMockJobTwo.Init(cache)
+	genericMockJobTwo.Init(cache, nil)
 	err = db.Save(genericMockJobTwo)
 	assert.NoError(t, err)
 

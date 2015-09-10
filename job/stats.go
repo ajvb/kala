@@ -93,6 +93,7 @@ type StatsMap struct {
 
 type StatsManager struct {
 	stats *StatsMap
+	db    JobDB
 }
 
 func NewStatsManager() *StatsManager {
@@ -126,4 +127,24 @@ func (jsm *StatsManager) GetStats(id string) []*JobStat {
 	defer jsm.stats.Lock.RUnlock()
 
 	return jsm.stats.Stats[id]
+}
+
+// TODO
+func (jsm *StatsManager) Persist() error {
+	jsm.stats.Lock.RLock()
+	defer jsm.stats.Lock.RUnlock()
+
+	return nil
+}
+
+func (jsm *StatsManager) PersistEvery(persistWaitTime time.Duration) {
+	wait := time.Tick(persistWaitTime)
+	var err error
+	for {
+		<-wait
+		err = jsm.Persist()
+		if err != nil {
+			log.Error("Error occured persisting the database. Err: %s", err)
+		}
+	}
 }

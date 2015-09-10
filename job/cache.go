@@ -16,7 +16,7 @@ type JobCache interface {
 	Get(id string) (*Job, error)
 	GetAll() *JobsMap
 	Set(j *Job) error
-	Delete(id string)
+	Delete(id string) error
 	Persist() error
 }
 
@@ -35,23 +35,22 @@ func NewJobsMap() *JobsMap {
 type MemoryJobCache struct {
 	// Jobs is a map from Job id's to pointers to the jobs.
 	// Used as the main "data store" within this cache implementation.
-	jobs            *JobsMap
-	jobDB           JobDB
-	persistWaitTime time.Duration
+	jobs  *JobsMap
+	jobDB JobDB
 }
 
-func NewMemoryJobCache(jobDB JobDB, persistWaitTime time.Duration) *MemoryJobCache {
+func NewMemoryJobCache(jobDB JobDB) *MemoryJobCache {
+	return &MemoryJobCache{
+		jobs:  NewJobsMap(),
+		jobDB: jobDB,
+	}
+}
+
+func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 	if persistWaitTime == 0 {
 		persistWaitTime = 5 * time.Second
 	}
-	return &MemoryJobCache{
-		jobs:            NewJobsMap(),
-		jobDB:           jobDB,
-		persistWaitTime: persistWaitTime,
-	}
-}
 
-func (c *MemoryJobCache) Start() {
 	// Prep cache
 	allJobs, err := c.jobDB.GetAll()
 	if err != nil {
@@ -63,7 +62,7 @@ func (c *MemoryJobCache) Start() {
 	}
 
 	// Occasionally, save items in cache to db.
-	go c.PersistEvery()
+	go c.PersistEvery(persistWaitTime)
 
 	// Process-level defer for shutting down the db.
 	ch := make(chan os.Signal)
@@ -111,15 +110,13 @@ func (c *MemoryJobCache) Set(j *Job) error {
 	return nil
 }
 
-func (c *MemoryJobCache) Delete(id string) {
+func (c *MemoryJobCache) Delete(id string) error {
 	c.jobs.Lock.Lock()
 	defer c.jobs.Lock.Unlock()
 
 	j := c.jobs.Jobs[id]
 	if j == nil {
-		// TODO
-		//return JobDoesntExistErr
-		return
+		return JobDoesntExistErr
 	}
 
 	j.Disable()
@@ -131,6 +128,8 @@ func (c *MemoryJobCache) Delete(id string) {
 	go j.DeleteFromDependentJobs(c)
 
 	delete(c.jobs.Jobs, id)
+
+	return nil
 }
 
 func (c *MemoryJobCache) Persist() error {
@@ -146,8 +145,8 @@ func (c *MemoryJobCache) Persist() error {
 	return nil
 }
 
-func (c *MemoryJobCache) PersistEvery() {
-	wait := time.Tick(c.persistWaitTime)
+func (c *MemoryJobCache) PersistEvery(persistWaitTime time.Duration) {
+	wait := time.Tick(persistWaitTime)
 	var err error
 	for {
 		<-wait

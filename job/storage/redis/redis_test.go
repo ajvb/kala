@@ -18,7 +18,7 @@ type testJob struct {
 var (
 	conn     = redigomock.NewConn()
 	db       = mockRedisDB()
-	cache    = job.NewMemoryJobCache(db, time.Second*60)
+	cache    = job.NewMemoryJobCache(db)
 	testJobs = initTestJobs(3)
 )
 
@@ -35,7 +35,7 @@ func initTestJobs(n int) []testJob {
 
 	for i := 0; i < n; i++ {
 		j := job.GetMockJobWithGenericSchedule()
-		j.Init(cache)
+		j.Init(cache, nil)
 
 		bytes, err := j.Bytes()
 		if err != nil {
@@ -87,7 +87,7 @@ func TestGetJob(t *testing.T) {
 	assert.Equal(t, testJob.Job.Command, storedJob.Command)
 	assert.Equal(t, testJob.Job.Schedule, storedJob.Schedule)
 	assert.Equal(t, testJob.Job.Owner, storedJob.Owner)
-	assert.Equal(t, testJob.Job.SuccessCount, storedJob.SuccessCount)
+	assert.Equal(t, testJob.Job.Metadata.SuccessCount, storedJob.Metadata.SuccessCount)
 
 	// Test error handling
 	conn.Command("HGET", HashKey, testJob.Job.Id).
@@ -136,7 +136,7 @@ func TestGetAllJobs(t *testing.T) {
 		assert.Equal(t, testJobs[i].Job.Command, j.Command)
 		assert.Equal(t, testJobs[i].Job.Schedule, j.Schedule)
 		assert.Equal(t, testJobs[i].Job.Owner, j.Owner)
-		assert.Equal(t, testJobs[i].Job.SuccessCount, j.SuccessCount)
+		assert.Equal(t, testJobs[i].Job.Metadata.SuccessCount, j.Metadata.SuccessCount)
 	}
 
 	// Test erorr handling

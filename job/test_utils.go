@@ -24,7 +24,7 @@ func (m *MockDB) Close() error {
 }
 
 func NewMockCache() *MemoryJobCache {
-	return NewMemoryJobCache(&MockDB{}, time.Hour*5)
+	return NewMemoryJobCache(&MockDB{})
 }
 
 func GetMockJob() *Job {

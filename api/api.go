@@ -174,8 +174,12 @@ func HandleJobRequest(cache job.JobCache, db job.JobDB) func(w http.ResponseWrit
 		}
 
 		if r.Method == "DELETE" {
-			j.Delete(cache, db)
-			w.WriteHeader(http.StatusNoContent)
+			err = j.Delete(cache, db)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusNoContent)
+			}
 		} else if r.Method == "GET" {
 			handleGetJob(w, r, j)
 		}

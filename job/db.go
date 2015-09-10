@@ -17,8 +17,18 @@ type JobDB interface {
 	Close() error
 }
 
-func (j *Job) Delete(cache JobCache, db JobDB) {
+func (j *Job) Delete(cache JobCache, db JobDB) error {
+	var err error
 	j.Disable()
-	cache.Delete(j.Id)
-	db.Delete(j.Id)
+	errOne := cache.Delete(j.Id)
+	if errOne != nil {
+		log.Error("Error occured while trying to delete job from cache: %s", errOne)
+		err = errOne
+	}
+	errTwo := db.Delete(j.Id)
+	if errTwo != nil {
+		log.Error("Error occured while trying to delete job from db: %s", errTwo)
+		err = errTwo
+	}
+	return err
 }
