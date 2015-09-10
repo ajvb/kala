@@ -18,8 +18,7 @@ func NewTestServer() *httptest.Server {
 	r := mux.NewRouter()
 	db := &job.MockDB{}
 	cache := job.NewMemoryJobCache(db)
-	stats := job.NewStatsManager()
-	api.SetupApiRoutes(r, cache, db, stats)
+	api.SetupApiRoutes(r, cache, db)
 	return httptest.NewServer(r)
 }
 

@@ -17,7 +17,7 @@ func TestScheduleParsing(t *testing.T) {
 
 	genericMockJob := GetMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
 
-	genericMockJob.Init(cache, nil)
+	genericMockJob.Init(cache)
 
 	assert.WithinDuration(
 		t, genericMockJob.scheduleTime, fiveMinutesFromNow,
@@ -31,7 +31,7 @@ func TestBrokenSchedule(t *testing.T) {
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Schedule = "hfhgasyuweu123"
 
-	err := mockJob.Init(cache, nil)
+	err := mockJob.Init(cache)
 
 	assert.Error(t, err)
 	assert.Nil(t, mockJob.jobTimer)
@@ -43,7 +43,7 @@ func TestBrokenEpsilon(t *testing.T) {
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Epsilon = "asdasd"
 
-	err := mockJob.Init(cache, nil)
+	err := mockJob.Init(cache)
 
 	assert.Error(t, err)
 	assert.Nil(t, mockJob.jobTimer)
@@ -56,7 +56,7 @@ func TestBrokenScheduleTimeHasAlreadyPassed(t *testing.T) {
 	time.Sleep(time.Millisecond * 30)
 	mockJob := GetMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
 
-	err := mockJob.Init(cache, nil)
+	err := mockJob.Init(cache)
 
 	assert.Error(t, err)
 	assert.Nil(t, mockJob.jobTimer)
@@ -68,7 +68,7 @@ func TestBrokenScheduleBrokenRepeat(t *testing.T) {
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Schedule = strings.Replace(mockJob.Schedule, "R2", "RRR", 1)
 
-	err := mockJob.Init(cache, nil)
+	err := mockJob.Init(cache)
 
 	assert.Error(t, err)
 	assert.Nil(t, mockJob.jobTimer)
@@ -80,7 +80,7 @@ func TestBrokenScheduleBrokenInitialScheduleTime(t *testing.T) {
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Schedule = "R0/hfhgasyuweu123/PT10S"
 
-	err := mockJob.Init(cache, nil)
+	err := mockJob.Init(cache)
 
 	assert.Error(t, err)
 	assert.Nil(t, mockJob.jobTimer)
@@ -102,7 +102,7 @@ func TestDelayParsing(t *testing.T) {
 	for _, delayTest := range delayParsingTests {
 		cache := NewMockCache()
 		genericMockJob := GetMockJobWithSchedule(1, testTime, delayTest.intervalStr)
-		genericMockJob.Init(cache, nil)
+		genericMockJob.Init(cache)
 		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.ToDuration(), "Parsed duration was incorrect")
 	}
 }
@@ -119,7 +119,7 @@ func TestBrokenDelayHandling(t *testing.T) {
 		cache := NewMockCache()
 
 		genericMockJob := GetMockJobWithSchedule(1, testTime, intervalTest)
-		err := genericMockJob.Init(cache, nil)
+		err := genericMockJob.Init(cache)
 
 		assert.Error(t, err)
 		assert.Nil(t, genericMockJob.jobTimer)
@@ -131,7 +131,7 @@ func TestJobInit(t *testing.T) {
 
 	genericMockJob := GetMockJobWithGenericSchedule()
 
-	err := genericMockJob.Init(cache, nil)
+	err := genericMockJob.Init(cache)
 	assert.Nil(t, err, "err should be nil")
 
 	assert.NotEmpty(t, genericMockJob.Id, "Job.Id should not be empty")
@@ -142,7 +142,7 @@ func TestJobDisable(t *testing.T) {
 	cache := NewMockCache()
 
 	genericMockJob := GetMockJobWithGenericSchedule()
-	genericMockJob.Init(cache, nil)
+	genericMockJob.Init(cache)
 
 	assert.False(t, genericMockJob.Disabled, "Job should start with disabled == false")
 
@@ -155,7 +155,7 @@ func TestJobRun(t *testing.T) {
 	cache := NewMockCache()
 
 	j := GetMockJobWithGenericSchedule()
-	j.Init(cache, nil)
+	j.Init(cache)
 	j.Run(cache)
 
 	now := time.Now()
@@ -170,7 +170,7 @@ func TestJobRunAndRepeat(t *testing.T) {
 
 	oneSecondFromNow := time.Now().Add(time.Second)
 	j := GetMockJobWithSchedule(2, oneSecondFromNow, "PT1S")
-	j.Init(cache, nil)
+	j.Init(cache)
 
 	for i := 0; i < 3; i++ {
 		time.Sleep(time.Second)
@@ -191,7 +191,7 @@ func TestJobEpsilon(t *testing.T) {
 	j.Epsilon = "PT2S"
 	j.Command = "bash -c 'sleep 1 && cd /etc && touch l'"
 	j.Retries = 200
-	j.Init(cache, nil)
+	j.Init(cache)
 
 	time.Sleep(time.Second * 4)
 
@@ -219,7 +219,7 @@ func TestOneOffJobs(t *testing.T) {
 	assert.Equal(t, j.Metadata.LastAttemptedRun, time.Time{})
 	j.lock.RUnlock()
 
-	j.Init(cache, nil)
+	j.Init(cache)
 	// Find a better way to test a goroutine
 	time.Sleep(time.Second)
 	now := time.Now()
@@ -241,13 +241,13 @@ func TestDependentJobsSimple(t *testing.T) {
 
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Name = "mock_parent_job"
-	mockJob.Init(cache, nil)
+	mockJob.Init(cache)
 
 	mockChildJob := GetMockJob()
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJob.Init(cache, nil)
+	mockChildJob.Init(cache)
 
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
 	assert.True(t, len(mockJob.DependentJobs) == 1)
@@ -276,7 +276,7 @@ func TestDependentJobsParentDoesNotExist(t *testing.T) {
 	mockChildJob.ParentJobs = []string{
 		"not-a-real-id",
 	}
-	err := mockChildJob.Init(cache, nil)
+	err := mockChildJob.Init(cache)
 	assert.Error(t, err)
 	assert.Equal(t, err, JobDoesntExistErr)
 }
@@ -287,21 +287,21 @@ func TestDependentJobsTwoChilds(t *testing.T) {
 
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Name = "mock_parent_job"
-	mockJob.Init(cache, nil)
+	mockJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
 	mockChildJobOne.Name = "mock_child_one"
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJobOne.Init(cache, nil)
+	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
 	mockChildJobTwo.Name = "mock_child_two"
 	mockChildJobTwo.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJobTwo.Init(cache, nil)
+	mockChildJobTwo.Init(cache)
 
 	// Check that it gets placed in the array.
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJobOne.Id)
@@ -336,28 +336,28 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Name = "mock_parent_job"
-	mockJob.Init(cache, nil)
+	mockJob.Init(cache)
 
 	mockChildJob := GetMockJob()
 	mockChildJob.Name = "mock_child_job"
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJob.Init(cache, nil)
+	mockChildJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
 	mockChildJobOne.Name = "mock_child_one"
 	mockChildJobOne.ParentJobs = []string{
 		mockChildJob.Id,
 	}
-	mockChildJobOne.Init(cache, nil)
+	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
 	mockChildJobTwo.Name = "mock_child_two"
 	mockChildJobTwo.ParentJobs = []string{
 		mockChildJob.Id,
 	}
-	mockChildJobTwo.Init(cache, nil)
+	mockChildJobTwo.Init(cache)
 
 	// Check that it gets placed in the array.
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
@@ -405,42 +405,42 @@ func TestDependentJobsFiveChain(t *testing.T) {
 
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Name = "mock_parent_job"
-	mockJob.Init(cache, nil)
+	mockJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
 	mockChildJobOne.Name = "mock_child_one"
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJobOne.Init(cache, nil)
+	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
 	mockChildJobTwo.Name = "mock_child_two"
 	mockChildJobTwo.ParentJobs = []string{
 		mockChildJobOne.Id,
 	}
-	mockChildJobTwo.Init(cache, nil)
+	mockChildJobTwo.Init(cache)
 
 	mockChildJobThree := GetMockJob()
 	mockChildJobThree.Name = "mock_child_three"
 	mockChildJobThree.ParentJobs = []string{
 		mockChildJobTwo.Id,
 	}
-	mockChildJobThree.Init(cache, nil)
+	mockChildJobThree.Init(cache)
 
 	mockChildJobFour := GetMockJob()
 	mockChildJobFour.Name = "mock_child_four"
 	mockChildJobFour.ParentJobs = []string{
 		mockChildJobThree.Id,
 	}
-	mockChildJobFour.Init(cache, nil)
+	mockChildJobFour.Init(cache)
 
 	mockChildJobFive := GetMockJob()
 	mockChildJobFive.Name = "mock_child_five"
 	mockChildJobFive.ParentJobs = []string{
 		mockChildJobFour.Id,
 	}
-	mockChildJobFive.Init(cache, nil)
+	mockChildJobFive.Init(cache)
 
 	// Check that it gets placed in the array.
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJobOne.Id)
@@ -504,7 +504,7 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Name = "mock_parent_job"
-	mockJob.Init(cache, nil)
+	mockJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
 	mockChildJobOne.Name = "mock_child_one"
@@ -513,21 +513,21 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJobOne.Init(cache, nil)
+	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
 	mockChildJobTwo.Name = "mock_child_two"
 	mockChildJobTwo.ParentJobs = []string{
 		mockChildJobOne.Id,
 	}
-	mockChildJobTwo.Init(cache, nil)
+	mockChildJobTwo.Init(cache)
 
 	mockChildJobThree := GetMockJob()
 	mockChildJobThree.Name = "mock_child_three"
 	mockChildJobThree.ParentJobs = []string{
 		mockChildJobTwo.Id,
 	}
-	mockChildJobThree.Init(cache, nil)
+	mockChildJobThree.Init(cache)
 
 	// Check that it gets placed in the array.
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJobOne.Id)
@@ -572,7 +572,7 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Name = "mock_parent_job"
-	mockJob.Init(cache, nil)
+	mockJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
 	mockChildJobOne.Name = "mock_child_one"
@@ -581,35 +581,35 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJobOne.Init(cache, nil)
+	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
 	mockChildJobTwo.Name = "mock_child_two"
 	mockChildJobTwo.ParentJobs = []string{
 		mockChildJobOne.Id,
 	}
-	mockChildJobTwo.Init(cache, nil)
+	mockChildJobTwo.Init(cache)
 
 	mockChildJobThree := GetMockJob()
 	mockChildJobThree.Name = "mock_child_three"
 	mockChildJobThree.ParentJobs = []string{
 		mockChildJobTwo.Id,
 	}
-	mockChildJobThree.Init(cache, nil)
+	mockChildJobThree.Init(cache)
 
 	mockChildJobFour := GetMockJob()
 	mockChildJobFour.Name = "mock_child_four"
 	mockChildJobFour.ParentJobs = []string{
 		mockChildJobThree.Id,
 	}
-	mockChildJobFour.Init(cache, nil)
+	mockChildJobFour.Init(cache)
 
 	mockChildJobFive := GetMockJob()
 	mockChildJobFive.Name = "mock_child_five"
 	mockChildJobFive.ParentJobs = []string{
 		mockChildJobFour.Id,
 	}
-	mockChildJobFive.Init(cache, nil)
+	mockChildJobFive.Init(cache)
 
 	// Check that it gets placed in the array.
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJobOne.Id)
@@ -673,11 +673,11 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 
 	mockJobOne := GetMockJobWithGenericSchedule()
 	mockJobOne.Name = "mock_parent_one"
-	mockJobOne.Init(cache, nil)
+	mockJobOne.Init(cache)
 
 	mockJobTwo := GetMockJobWithGenericSchedule()
 	mockJobTwo.Name = "mock_parent_two"
-	mockJobTwo.Init(cache, nil)
+	mockJobTwo.Init(cache)
 
 	mockChildJob := GetMockJob()
 	mockChildJob.Name = "mock_child"
@@ -685,7 +685,7 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 		mockJobOne.Id,
 		mockJobTwo.Id,
 	}
-	mockChildJob.Init(cache, nil)
+	mockChildJob.Init(cache)
 
 	// Check that it gets placed in the array.
 	assert.Equal(t, mockJobOne.DependentJobs[0], mockChildJob.Id)
@@ -735,13 +735,13 @@ func TestDependentJobsChildGetsDeleted(t *testing.T) {
 
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Name = "mock_parent_job"
-	mockJob.Init(cache, nil)
+	mockJob.Init(cache)
 
 	mockChildJob := GetMockJob()
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJob.Init(cache, nil)
+	mockChildJob.Init(cache)
 
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
 	assert.True(t, len(mockJob.DependentJobs) == 1)
@@ -766,13 +766,13 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Name = "mock_parent_job"
-	mockJob.Init(cache, nil)
+	mockJob.Init(cache)
 
 	mockChildJob := GetMockJob()
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJob.Init(cache, nil)
+	mockChildJob.Init(cache)
 
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
 	assert.True(t, len(mockJob.DependentJobs) == 1)
@@ -797,24 +797,24 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Name = "mock_parent_job"
-	mockJob.Init(cache, nil)
+	mockJob.Init(cache)
 
 	mockJobBackup := GetMockJobWithGenericSchedule()
 	mockJobBackup.Name = "mock_parent_job_backup"
-	mockJobBackup.Init(cache, nil)
+	mockJobBackup.Init(cache)
 
 	mockChildJobWithNoBackup := GetMockJob()
 	mockChildJobWithNoBackup.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJobWithNoBackup.Init(cache, nil)
+	mockChildJobWithNoBackup.Init(cache)
 
 	mockChildJobWithBackup := GetMockJob()
 	mockChildJobWithBackup.ParentJobs = []string{
 		mockJob.Id,
 		mockJobBackup.Id,
 	}
-	mockChildJobWithBackup.Init(cache, nil)
+	mockChildJobWithBackup.Init(cache)
 
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJobWithNoBackup.Id)
 	assert.Equal(t, mockJob.DependentJobs[1], mockChildJobWithBackup.Id)

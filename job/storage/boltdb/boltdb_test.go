@@ -33,7 +33,7 @@ func TestSaveAndGetJob(t *testing.T) {
 	defer db.Close()
 
 	genericMockJob := job.GetMockJobWithGenericSchedule()
-	genericMockJob.Init(cache, nil)
+	genericMockJob.Init(cache)
 	db.Save(genericMockJob)
 
 	j, err := db.Get(genericMockJob.Id)
@@ -56,7 +56,7 @@ func TestDeleteJob(t *testing.T) {
 	defer db.Close()
 
 	genericMockJob := job.GetMockJobWithGenericSchedule()
-	genericMockJob.Init(cache, nil)
+	genericMockJob.Init(cache)
 	db.Save(genericMockJob)
 
 	// Make sure its there
@@ -88,12 +88,12 @@ func TestSaveAndGetAllJobs(t *testing.T) {
 	defer db.Close()
 
 	genericMockJobOne := job.GetMockJobWithGenericSchedule()
-	genericMockJobOne.Init(cache, nil)
+	genericMockJobOne.Init(cache)
 	err := db.Save(genericMockJobOne)
 	assert.NoError(t, err)
 
 	genericMockJobTwo := job.GetMockJobWithGenericSchedule()
-	genericMockJobTwo.Init(cache, nil)
+	genericMockJobTwo.Init(cache)
 	err = db.Save(genericMockJobTwo)
 	assert.NoError(t, err)
 

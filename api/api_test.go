@@ -32,12 +32,11 @@ func generateNewJobMap() map[string]string {
 		"owner":    "aj@ajvb.me",
 	}
 }
-func generateJobAndCache() (*job.MemoryJobCache, *job.Job, *job.StatsManager) {
+func generateJobAndCache() (*job.MemoryJobCache, *job.Job) {
 	cache := job.NewMockCache()
-	stats := job.NewStatsManager()
 	j := job.GetMockJobWithGenericSchedule()
-	j.Init(cache, stats)
-	return cache, j, stats
+	j.Init(cache)
+	return cache, j
 }
 
 type ApiTestSuite struct {
@@ -52,7 +51,7 @@ func (a *ApiTestSuite) TestHandleAddJob() {
 	t := a.T()
 	cache := job.NewMockCache()
 	jobMap := generateNewJobMap()
-	handler := HandleAddJob(cache, nil)
+	handler := HandleAddJob(cache)
 
 	jsonJobMap, err := json.Marshal(jobMap)
 	a.NoError(err)
@@ -71,7 +70,7 @@ func (a *ApiTestSuite) TestHandleAddJob() {
 func (a *ApiTestSuite) TestHandleAddJobFailureBadJson() {
 	t := a.T()
 	cache := job.NewMockCache()
-	handler := HandleAddJob(cache, nil)
+	handler := HandleAddJob(cache)
 
 	w, req := setupTestReq(t, "POST", ApiJobPath, []byte("asd"))
 	handler(w, req)
@@ -81,7 +80,7 @@ func (a *ApiTestSuite) TestHandleAddJobFailureBadSchedule() {
 	t := a.T()
 	cache := job.NewMockCache()
 	jobMap := generateNewJobMap()
-	handler := HandleAddJob(cache, nil)
+	handler := HandleAddJob(cache)
 
 	// Mess up schedule
 	jobMap["schedule"] = "asdf"
@@ -97,7 +96,7 @@ func (a *ApiTestSuite) TestHandleAddJobFailureBadSchedule() {
 func (a *ApiTestSuite) TestDeleteJobSuccess() {
 	t := a.T()
 	db := &job.MockDB{}
-	cache, job, _ := generateJobAndCache()
+	cache, job := generateJobAndCache()
 
 	r := mux.NewRouter()
 	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
@@ -134,7 +133,7 @@ func (a *ApiTestSuite) TestHandleJobRequestJobDoesNotExist() {
 func (a *ApiTestSuite) TestGetJobSuccess() {
 	t := a.T()
 	db := &job.MockDB{}
-	cache, job, _ := generateJobAndCache()
+	cache, job := generateJobAndCache()
 
 	r := mux.NewRouter()
 	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
@@ -159,11 +158,11 @@ func (a *ApiTestSuite) TestGetJobSuccess() {
 }
 
 func (a *ApiTestSuite) TestHandleListJobStatsRequest() {
-	cache, job, stats := generateJobAndCache()
+	cache, job := generateJobAndCache()
 	job.Run(cache)
 
 	r := mux.NewRouter()
-	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest(stats)).Methods("GET")
+	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest(cache)).Methods("GET")
 	ts := httptest.NewServer(r)
 
 	_, req := setupTestReq(a.T(), "GET", ts.URL+ApiJobPath+"stats/"+job.Id, nil)
@@ -185,10 +184,10 @@ func (a *ApiTestSuite) TestHandleListJobStatsRequest() {
 	a.True(jobStatsResp.JobStats[0].Success)
 }
 func (a *ApiTestSuite) TestHandleListJobStatsRequestNotFound() {
+	cache, _ := generateJobAndCache()
 	r := mux.NewRouter()
-	stats := job.NewStatsManager()
 
-	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest(stats)).Methods("GET")
+	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest(cache)).Methods("GET")
 	ts := httptest.NewServer(r)
 
 	_, req := setupTestReq(a.T(), "GET", ts.URL+ApiJobPath+"stats/not-a-real-id", nil)
@@ -201,9 +200,9 @@ func (a *ApiTestSuite) TestHandleListJobStatsRequestNotFound() {
 }
 
 func (a *ApiTestSuite) TestHandleListJobsRequest() {
-	cache, jobOne, stats := generateJobAndCache()
+	cache, jobOne := generateJobAndCache()
 	jobTwo := job.GetMockJobWithGenericSchedule()
-	jobTwo.Init(cache, stats)
+	jobTwo.Init(cache)
 
 	r := mux.NewRouter()
 	r.HandleFunc(ApiJobPath, HandleListJobsRequest(cache)).Methods("GET")
@@ -232,7 +231,7 @@ func (a *ApiTestSuite) TestHandleListJobsRequest() {
 
 func (a *ApiTestSuite) TestHandleStartJobRequest() {
 	t := a.T()
-	cache, job, _ := generateJobAndCache()
+	cache, job := generateJobAndCache()
 	r := mux.NewRouter()
 	r.HandleFunc(ApiJobPath+"start/{id}", HandleStartJobRequest(cache)).Methods("POST")
 	ts := httptest.NewServer(r)
@@ -261,9 +260,9 @@ func (a *ApiTestSuite) TestHandleStartJobRequestNotFound() {
 }
 
 func (a *ApiTestSuite) TestHandleKalaStatsRequest() {
-	cache, _, stats := generateJobAndCache()
+	cache, _ := generateJobAndCache()
 	jobTwo := job.GetMockJobWithGenericSchedule()
-	jobTwo.Init(cache, stats)
+	jobTwo.Init(cache)
 	jobTwo.Run(cache)
 
 	r := mux.NewRouter()
@@ -295,10 +294,9 @@ func (a *ApiTestSuite) TestHandleKalaStatsRequest() {
 func (a *ApiTestSuite) TestSetupApiRoutes() {
 	db := &job.MockDB{}
 	cache := job.NewMockCache()
-	stats := job.NewStatsManager()
 	r := mux.NewRouter()
 
-	SetupApiRoutes(r, cache, db, stats)
+	SetupApiRoutes(r, cache, db)
 
 	a.NotNil(r)
 	a.IsType(r, mux.NewRouter())

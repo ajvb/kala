@@ -35,7 +35,7 @@ func initTestJobs(n int) []testJob {
 
 	for i := 0; i < n; i++ {
 		j := job.GetMockJobWithGenericSchedule()
-		j.Init(cache, nil)
+		j.Init(cache)
 
 		bytes, err := j.Bytes()
 		if err != nil {

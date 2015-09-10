@@ -1,7 +1,6 @@
 package job
 
 import (
-	"sync"
 	"time"
 )
 
@@ -82,69 +81,5 @@ func NewJobStat(id string) *JobStat {
 	return &JobStat{
 		JobId: id,
 		RanAt: time.Now(),
-	}
-}
-
-type StatsMap struct {
-	// Job.Id's to there job stats
-	Stats map[string][]*JobStat
-	Lock  sync.RWMutex
-}
-
-type StatsManager struct {
-	stats *StatsMap
-	db    JobDB
-}
-
-func NewStatsManager() *StatsManager {
-	return &StatsManager{
-		stats: &StatsMap{
-			Stats: map[string][]*JobStat{},
-		},
-	}
-}
-
-func (jsm *StatsManager) AddStat(stat *JobStat) {
-	jsm.stats.Lock.Lock()
-	defer jsm.stats.Lock.Unlock()
-
-	if jsm.stats.Stats[stat.JobId] == nil {
-		jsm.stats.Stats[stat.JobId] = []*JobStat{stat}
-	} else {
-		jsm.stats.Stats[stat.JobId] = append(jsm.stats.Stats[stat.JobId], stat)
-	}
-}
-
-func (jsm *StatsManager) GetAllStats() *StatsMap {
-	jsm.stats.Lock.RLock()
-	defer jsm.stats.Lock.RUnlock()
-
-	return jsm.stats
-}
-
-func (jsm *StatsManager) GetStats(id string) []*JobStat {
-	jsm.stats.Lock.RLock()
-	defer jsm.stats.Lock.RUnlock()
-
-	return jsm.stats.Stats[id]
-}
-
-// TODO
-func (jsm *StatsManager) Persist() error {
-	jsm.stats.Lock.RLock()
-	defer jsm.stats.Lock.RUnlock()
-
-	return nil
-}
-
-func (jsm *StatsManager) PersistEvery(persistWaitTime time.Duration) {
-	wait := time.Tick(persistWaitTime)
-	var err error
-	for {
-		<-wait
-		err = jsm.Persist()
-		if err != nil {
-			log.Error("Error occured persisting the database. Err: %s", err)
-		}
 	}
 }

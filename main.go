@@ -89,10 +89,8 @@ func main() {
 				cache := job.NewMemoryJobCache(db)
 				cache.Start(DefaultPersistEvery)
 
-				statsManager := job.NewStatsManager()
-
 				log.Info("Starting server on port %s...", connectionString)
-				log.Fatal(api.StartServer(connectionString, cache, db, statsManager))
+				log.Fatal(api.StartServer(connectionString, cache, db))
 			},
 		},
 	}

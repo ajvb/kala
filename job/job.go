@@ -73,9 +73,10 @@ type Job struct {
 	// Meta data about successful and failed runs.
 	Metadata Metadata
 
-	lock sync.RWMutex
+	// Collection of Job Stats
+	Stats []*JobStat
 
-	statsManager *StatsManager
+	lock sync.RWMutex
 }
 
 type Metadata struct {
@@ -112,7 +113,7 @@ func NewFromBytes(b []byte) (*Job, error) {
 
 // Init fills in the protected fields and parses the iso8601 notation.
 // It also adds the job to the Cache
-func (j *Job) Init(cache JobCache, stats *StatsManager) error {
+func (j *Job) Init(cache JobCache) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
@@ -155,8 +156,6 @@ func (j *Job) Init(cache JobCache, stats *StatsManager) error {
 	if err != nil {
 		return err
 	}
-
-	j.statsManager = stats
 
 	j.lock.Unlock()
 	j.StartWaiting(cache)
@@ -357,12 +356,8 @@ func (j *Job) Run(cache JobCache) {
 		log.Error("Error running job: %s", err)
 	}
 
-	// TODO: Make sure this is thread safe.
-	if j.statsManager != nil { // TODO: remove / add proper logging.
-		j.statsManager.AddStat(newStat)
-	}
-
 	j.lock.Lock()
 	j.Metadata = newMeta
+	j.Stats = append(j.Stats, newStat)
 	j.lock.Unlock()
 }

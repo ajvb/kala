@@ -9,37 +9,33 @@ import (
 
 func TestJobStats(t *testing.T) {
 	cache := NewMockCache()
-	statsManager := NewStatsManager()
 
 	j := GetMockJobWithGenericSchedule()
-	j.Init(cache, statsManager)
+	j.Init(cache)
 
 	j.Run(cache)
 	now := time.Now()
 
-	stats := j.statsManager.GetStats(j.Id)
-
-	assert.NotNil(t, stats[0])
-	assert.Equal(t, stats[0].JobId, j.Id)
-	assert.WithinDuration(t, stats[0].RanAt, now, time.Second)
-	assert.Equal(t, stats[0].NumberOfRetries, uint(0))
-	assert.True(t, stats[0].Success)
-	assert.NotNil(t, stats[0].ExecutionDuration)
+	assert.NotNil(t, j.Stats[0])
+	assert.Equal(t, j.Stats[0].JobId, j.Id)
+	assert.WithinDuration(t, j.Stats[0].RanAt, now, time.Second)
+	assert.Equal(t, j.Stats[0].NumberOfRetries, uint(0))
+	assert.True(t, j.Stats[0].Success)
+	assert.NotNil(t, j.Stats[0].ExecutionDuration)
 }
 
 func TestKalaStats(t *testing.T) {
 	cache := NewMockCache()
-	stats := NewStatsManager()
 
 	for i := 0; i < 5; i++ {
 		j := GetMockJobWithGenericSchedule()
-		j.Init(cache, stats)
+		j.Init(cache)
 		j.Run(cache)
 	}
 	now := time.Now()
 	for i := 0; i < 5; i++ {
 		j := GetMockJobWithGenericSchedule()
-		j.Init(cache, stats)
+		j.Init(cache)
 		j.Disable()
 	}
 
