@@ -361,3 +361,12 @@ func (j *Job) Run(cache JobCache) {
 	j.Stats = append(j.Stats, newStat)
 	j.lock.Unlock()
 }
+
+func (j *Job) StopTimer() {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	if j.jobTimer != nil {
+		j.jobTimer.Stop()
+	}
+}

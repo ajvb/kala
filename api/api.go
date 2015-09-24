@@ -219,7 +219,7 @@ func HandleStartJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *ht
 			return
 		}
 
-		// TODO: Stop job timer as well.
+		j.StopTimer()
 		j.Run(cache)
 
 		w.WriteHeader(http.StatusNoContent)
