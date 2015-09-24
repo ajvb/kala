@@ -16,7 +16,8 @@ type JobRunner struct {
 }
 
 var (
-	JobDisabledErr = errors.New("Job cannot run, as it is disabled")
+	ErrJobDisabled = errors.New("Job cannot run, as it is disabled")
+	ErrCmdIsEmpty  = errors.New("Job Command is empity.")
 )
 
 // Run executes the Job's command, collects metadata around the success
@@ -27,7 +28,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 
 	if j.job.Disabled {
 		log.Info("Job %s tried to run, but exited early because its disabled.", j.job.Name)
-		return nil, j.meta, JobDisabledErr
+		return nil, j.meta, ErrJobDisabled
 	}
 
 	log.Info("Job %s running", j.job.Name)
@@ -88,6 +89,9 @@ func (j *JobRunner) runCmd() error {
 	if err != nil {
 		return err
 	}
+	if len(args) == 0 {
+		return ErrCmdIsEmpty
+	}
 	cmd := exec.Command(args[0], args[1:]...)
 	return cmd.Run()
 }
@@ -123,9 +127,7 @@ func (j *JobRunner) runSetup() {
 }
 
 func (j *JobRunner) collectStats(success bool) {
-	j.currentStat.ExecutionDuration = time.Duration(
-		time.Now().UnixNano() - j.currentStat.RanAt.UnixNano(),
-	)
+	j.currentStat.ExecutionDuration = time.Now().Sub(j.currentStat.RanAt)
 	j.currentStat.Success = true
 	j.currentStat.NumberOfRetries = j.job.Retries - j.currentRetries
 }

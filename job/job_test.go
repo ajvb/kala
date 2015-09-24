@@ -278,7 +278,7 @@ func TestDependentJobsParentDoesNotExist(t *testing.T) {
 	}
 	err := mockChildJob.Init(cache)
 	assert.Error(t, err)
-	assert.Equal(t, err, JobDoesntExistErr)
+	assert.Equal(t, err, ErrJobDoesntExist)
 }
 
 // Parent with two childs
@@ -752,7 +752,7 @@ func TestDependentJobsChildGetsDeleted(t *testing.T) {
 	// Check to make sure its deleted
 	_, err := cache.Get(mockChildJob.Id)
 	assert.Error(t, err)
-	assert.Equal(t, err, JobDoesntExistErr)
+	assert.Equal(t, err, ErrJobDoesntExist)
 
 	// Check to make sure its gone from the parent job.
 	mockJob.lock.RLock()
@@ -828,12 +828,12 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 	// Make sure it is deleted
 	_, err := cache.Get(mockJob.Id)
 	assert.Error(t, err)
-	assert.Equal(t, JobDoesntExistErr, err)
+	assert.Equal(t, ErrJobDoesntExist, err)
 
 	// Check if mockChildJobWithNoBackup is deleted
 	_, err = cache.Get(mockChildJobWithNoBackup.Id)
 	assert.Error(t, err)
-	assert.Equal(t, JobDoesntExistErr, err)
+	assert.Equal(t, ErrJobDoesntExist, err)
 
 	// Check to make sure mockChildJboWithBackup is not deleted
 	j, err := cache.Get(mockChildJobWithBackup.Id)
