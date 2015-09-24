@@ -71,10 +71,10 @@ type Job struct {
 	NextRunAt time.Time `json:"next_run_at"`
 
 	// Meta data about successful and failed runs.
-	Metadata Metadata
+	Metadata Metadata `json:"metadata"`
 
 	// Collection of Job Stats
-	Stats []*JobStat
+	Stats []*JobStat `json:"stats"`
 
 	lock sync.RWMutex
 }
@@ -273,30 +273,29 @@ func (j *Job) DeleteFromParentJobs(cache JobCache) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
-	if len(j.ParentJobs) != 0 {
-		for _, p := range j.ParentJobs {
-			parentJob, err := cache.Get(p)
+	for _, p := range j.ParentJobs {
+		parentJob, err := cache.Get(p)
 
-			if err != nil {
-				return err
-			}
-
-			parentJob.lock.Lock()
-
-			ndx := 0
-			for i, id := range parentJob.DependentJobs {
-				if id == j.Id {
-					ndx = i
-					break
-				}
-			}
-			parentJob.DependentJobs = append(
-				parentJob.DependentJobs[:ndx], parentJob.DependentJobs[ndx+1:]...,
-			)
-
-			parentJob.lock.Unlock()
+		if err != nil {
+			return err
 		}
+
+		parentJob.lock.Lock()
+
+		ndx := 0
+		for i, id := range parentJob.DependentJobs {
+			if id == j.Id {
+				ndx = i
+				break
+			}
+		}
+		parentJob.DependentJobs = append(
+			parentJob.DependentJobs[:ndx], parentJob.DependentJobs[ndx+1:]...,
+		)
+
+		parentJob.lock.Unlock()
 	}
+
 	return nil
 }
 
@@ -305,36 +304,35 @@ func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 
-	if len(j.DependentJobs) != 0 {
-		for _, id := range j.DependentJobs {
-			childJob, err := cache.Get(id)
-			if err != nil {
-				return err
-			}
-
-			// If there are no other parent jobs, delete this job.
-			if len(childJob.ParentJobs) == 1 {
-				cache.Delete(childJob.Id)
-				continue
-			}
-
-			childJob.lock.Lock()
-
-			ndx := 0
-			for i, id := range childJob.ParentJobs {
-				if id == j.Id {
-					ndx = i
-					break
-				}
-			}
-			childJob.ParentJobs = append(
-				childJob.ParentJobs[:ndx], childJob.ParentJobs[ndx+1:]...,
-			)
-
-			childJob.lock.Unlock()
-
+	for _, id := range j.DependentJobs {
+		childJob, err := cache.Get(id)
+		if err != nil {
+			return err
 		}
+
+		// If there are no other parent jobs, delete this job.
+		if len(childJob.ParentJobs) == 1 {
+			cache.Delete(childJob.Id)
+			continue
+		}
+
+		childJob.lock.Lock()
+
+		ndx := 0
+		for i, id := range childJob.ParentJobs {
+			if id == j.Id {
+				ndx = i
+				break
+			}
+		}
+		childJob.ParentJobs = append(
+			childJob.ParentJobs[:ndx], childJob.ParentJobs[ndx+1:]...,
+		)
+
+		childJob.lock.Unlock()
+
 	}
+
 	return nil
 }
 

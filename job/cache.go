@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	JobDoesntExistErr = errors.New("The job you requested does not exist")
+	ErrJobDoesntExist = errors.New("The job you requested does not exist")
 )
 
 type JobCache interface {
@@ -88,7 +88,7 @@ func (c *MemoryJobCache) Get(id string) (*Job, error) {
 
 	j := c.jobs.Jobs[id]
 	if j == nil {
-		return nil, JobDoesntExistErr
+		return nil, ErrJobDoesntExist
 	}
 
 	return j, nil
@@ -116,7 +116,7 @@ func (c *MemoryJobCache) Delete(id string) error {
 
 	j := c.jobs.Jobs[id]
 	if j == nil {
-		return JobDoesntExistErr
+		return ErrJobDoesntExist
 	}
 
 	j.Disable()

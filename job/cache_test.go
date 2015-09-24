@@ -15,7 +15,7 @@ func TestCacheStart(t *testing.T) {
 func TestCacheDeleteJobNotFound(t *testing.T) {
 	cache := NewMockCache()
 	err := cache.Delete("not-a-real-id")
-	assert.Equal(t, JobDoesntExistErr, err)
+	assert.Equal(t, ErrJobDoesntExist, err)
 }
 
 func TestCachePersist(t *testing.T) {

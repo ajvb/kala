@@ -6,17 +6,17 @@ import (
 
 // KalaStats is the struct for storing app-level metrics
 type KalaStats struct {
-	ActiveJobs   int
-	DisabledJobs int
-	Jobs         int
+	ActiveJobs   int `json:"active_jobs"`
+	DisabledJobs int `json:"disabled_jobs"`
+	Jobs         int `json:"jobs"`
 
-	ErrorCount   uint
-	SuccessCount uint
+	ErrorCount   uint `json:"error_count"`
+	SuccessCount uint `json:"success_count"`
 
-	NextRunAt        time.Time
-	LastAttemptedRun time.Time
+	NextRunAt        time.Time `json:"next_run_at"`
+	LastAttemptedRun time.Time `json:"last_attempted_run"`
 
-	CreatedAt time.Time
+	CreatedAt time.Time `json:"created"`
 }
 
 // NewKalaStats is used to easily generate a current app-level metrics report.
@@ -70,11 +70,11 @@ func NewKalaStats(cache JobCache) *KalaStats {
 
 // JobStat is used to store metrics about a specific Job .Run()
 type JobStat struct {
-	JobId             string
-	RanAt             time.Time
-	NumberOfRetries   uint
-	Success           bool
-	ExecutionDuration time.Duration
+	JobId             string        `json:"job_id"`
+	RanAt             time.Time     `json:"ran_at"`
+	NumberOfRetries   uint          `json:"number_of_retries"`
+	Success           bool          `json:"success"`
+	ExecutionDuration time.Duration `json:"execution_duration"`
 }
 
 func NewJobStat(id string) *JobStat {
