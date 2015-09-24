@@ -34,9 +34,9 @@ func generateNewJobMap() map[string]string {
 }
 func generateJobAndCache() (*job.MemoryJobCache, *job.Job) {
 	cache := job.NewMockCache()
-	job := job.GetMockJobWithGenericSchedule()
-	job.Init(cache)
-	return cache, job
+	j := job.GetMockJobWithGenericSchedule()
+	j.Init(cache)
+	return cache, j
 }
 
 type ApiTestSuite struct {
@@ -184,8 +184,9 @@ func (a *ApiTestSuite) TestHandleListJobStatsRequest() {
 	a.True(jobStatsResp.JobStats[0].Success)
 }
 func (a *ApiTestSuite) TestHandleListJobStatsRequestNotFound() {
-	cache := job.NewMockCache()
+	cache, _ := generateJobAndCache()
 	r := mux.NewRouter()
+
 	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest(cache)).Methods("GET")
 	ts := httptest.NewServer(r)
 
@@ -245,9 +246,9 @@ func (a *ApiTestSuite) TestHandleStartJobRequest() {
 
 	a.Equal(resp.StatusCode, http.StatusNoContent)
 
-	a.Equal(job.SuccessCount, uint(1))
-	a.WithinDuration(job.LastSuccess, now, 2*time.Second)
-	a.WithinDuration(job.LastAttemptedRun, now, 2*time.Second)
+	a.Equal(job.Metadata.SuccessCount, uint(1))
+	a.WithinDuration(job.Metadata.LastSuccess, now, 2*time.Second)
+	a.WithinDuration(job.Metadata.LastAttemptedRun, now, 2*time.Second)
 }
 func (a *ApiTestSuite) TestHandleStartJobRequestNotFound() {
 	t := a.T()

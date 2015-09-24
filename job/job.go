@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
@@ -62,29 +61,30 @@ type Job struct {
 	timesToRepeat int64
 
 	// Number of times to retry on failed attempt for each run.
-	Retries        uint `json:"retries"`
-	currentRetries uint
+	Retries uint `json:"retries"`
 
 	// Duration in which it is safe to retry the Job.
 	Epsilon         string `json:"epsilon"`
 	epsilonDuration *iso8601.Duration
 
+	jobTimer  *time.Timer
+	NextRunAt time.Time `json:"next_run_at"`
+
 	// Meta data about successful and failed runs.
+	Metadata Metadata
+
+	// Collection of Job Stats
+	Stats []*JobStat
+
+	lock sync.RWMutex
+}
+
+type Metadata struct {
 	SuccessCount     uint      `json:"success_count"`
 	LastSuccess      time.Time `json:"last_success"`
 	ErrorCount       uint      `json:"error_count"`
 	LastError        time.Time `json:"last_error"`
 	LastAttemptedRun time.Time `json:"last_attempted_run"`
-
-	jobTimer  *time.Timer
-	NextRunAt time.Time `json:"next_run_at"`
-
-	currentStat *JobStat
-	Stats       []*JobStat `json:"-"`
-
-	lock sync.Mutex
-
-	numberOfAttempts uint
 }
 
 // Bytes returns the byte representation of the Job.
@@ -143,6 +143,7 @@ func (j *Job) Init(cache JobCache) error {
 		return nil
 	}
 
+	// TODO: Delete from cache after running.
 	if j.Schedule == "" {
 		// If schedule is empty, its a one-off job.
 		go j.Run(cache)
@@ -156,7 +157,9 @@ func (j *Job) Init(cache JobCache) error {
 		return err
 	}
 
+	j.lock.Unlock()
 	j.StartWaiting(cache)
+	j.lock.Lock()
 
 	return nil
 }
@@ -220,22 +223,37 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 
 // StartWaiting begins a timer for when it should execute the Jobs .Run() method.
 func (j *Job) StartWaiting(cache JobCache) {
+	waitDuration := j.GetWaitDuration()
+
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	log.Info("Job Scheduled to run in: %s", waitDuration)
+
+	j.NextRunAt = time.Now().Add(waitDuration)
+
+	jobRun := func() { j.Run(cache) }
+	j.jobTimer = time.AfterFunc(waitDuration, jobRun)
+}
+
+func (j *Job) GetWaitDuration() time.Duration {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+
 	waitDuration := time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())
-	log.Debug("Wait Duration initial: %s", waitDuration)
+
 	if waitDuration < 0 {
 		// Needs to be recalculated each time because of Months.
-		if j.LastAttemptedRun.IsZero() {
+		if j.Metadata.LastAttemptedRun.IsZero() {
 			waitDuration = j.delayDuration.ToDuration()
 		} else {
-			lastRun := j.LastAttemptedRun
+			lastRun := j.Metadata.LastAttemptedRun
 			lastRun = lastRun.Add(j.delayDuration.ToDuration())
 			waitDuration = lastRun.Sub(time.Now())
 		}
 	}
-	log.Info("Job Scheduled to run in: %s", waitDuration)
-	j.NextRunAt = time.Now().Add(waitDuration)
-	jobRun := func() { j.Run(cache) }
-	j.jobTimer = time.AfterFunc(waitDuration, jobRun)
+
+	return waitDuration
 }
 
 // Disable stops the job from running by stopping its jobTimer. It also sets Job.Disabled to true,
@@ -258,12 +276,12 @@ func (j *Job) DeleteFromParentJobs(cache JobCache) error {
 	if len(j.ParentJobs) != 0 {
 		for _, p := range j.ParentJobs {
 			parentJob, err := cache.Get(p)
+
 			if err != nil {
 				return err
 			}
 
 			parentJob.lock.Lock()
-			defer parentJob.lock.Unlock()
 
 			ndx := 0
 			for i, id := range parentJob.DependentJobs {
@@ -275,21 +293,29 @@ func (j *Job) DeleteFromParentJobs(cache JobCache) error {
 			parentJob.DependentJobs = append(
 				parentJob.DependentJobs[:ndx], parentJob.DependentJobs[ndx+1:]...,
 			)
+
+			parentJob.lock.Unlock()
 		}
 	}
 	return nil
 }
 
+// DeleteFromDependentJobs
 func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
-	j.lock.Lock()
-	defer j.lock.Unlock()
+	j.lock.RLock()
+	defer j.lock.RUnlock()
 
 	if len(j.DependentJobs) != 0 {
 		for _, id := range j.DependentJobs {
 			childJob, err := cache.Get(id)
-
 			if err != nil {
 				return err
+			}
+
+			// If there are no other parent jobs, delete this job.
+			if len(childJob.ParentJobs) == 1 {
+				cache.Delete(childJob.Id)
+				continue
 			}
 
 			childJob.lock.Lock()
@@ -307,131 +333,40 @@ func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
 
 			childJob.lock.Unlock()
 
-			// If there are no other parent jobs, delete this job.
-			if len(childJob.ParentJobs) == 0 {
-				cache.Delete(childJob.Id)
-			}
-
 		}
 	}
 	return nil
 }
 
-// Run executes the Job's command, collects metadata around the success
-// or failure of the Job's execution, and schedules the next run.
 func (j *Job) Run(cache JobCache) {
-	if j.Disabled {
-		log.Info("Job %s tried to run, but exited early because its disabled.", j.Name)
-		return
-	}
-
-	log.Info("Job %s running", j.Name)
-
-	j.lock.Lock()
-	defer j.lock.Unlock()
-
-	j.runSetup(cache)
-
-	for {
-		err := j.runCmd()
-		if err != nil {
-			// Log Error in Metadata
-			// TODO - Error Reporting, email error
-			log.Error("Run Command got an Error: %s", err)
-
-			// Handle retrying
-			if j.shouldRetry() {
-				j.currentRetries--
-				continue
-			}
-
-			j.ErrorCount++
-			j.LastError = time.Now()
-
-			// If it doesn't retry, cleanup and exit.
-			j.runCleanup()
-			return
-		}
-		break
-	}
-
-	log.Info("%s was successful!", j.Name)
-	j.SuccessCount++
-	j.LastSuccess = time.Now()
-
-	// Get Execution Duration
-	j.currentStat.ExecutionDuration = time.Duration(
-		j.LastSuccess.UnixNano() - j.currentStat.RanAt.UnixNano(),
-	)
-	j.currentStat.Success = true
-	j.currentStat.NumberOfRetries = j.Retries - j.currentRetries
-
-	// Run Dependent Jobs
-	if len(j.DependentJobs) != 0 {
-		for _, id := range j.DependentJobs {
-			newJob, err := cache.Get(id)
-			if err != nil {
-				log.Error("Error retrieving dependent job with id of %s", id)
-			} else {
-				newJob.Run(cache)
-			}
-		}
-	}
-
-	j.runCleanup()
-	return
-}
-
-func (j *Job) runCmd() error {
-	j.numberOfAttempts++
-
-	// Execute command
-	args, err := shParser.Parse(j.Command)
-	if err != nil {
-		return err
-	}
-	cmd := exec.Command(args[0], args[1:]...)
-	return cmd.Run()
-}
-
-func (j *Job) shouldRetry() bool {
-	// Check number of retries left
-	if j.currentRetries == 0 {
-		return false
-	}
-
-	// Check Epsilon
-	if j.Epsilon != "" {
-		if j.epsilonDuration.ToDuration() == 0 {
-			timeSinceStart := time.Now().Sub(j.NextRunAt)
-			timeLeftToRetry := j.epsilonDuration.ToDuration() - timeSinceStart
-			if timeLeftToRetry < 0 {
-				return false
-			}
-		}
-	}
-
-	return true
-}
-
-func (j *Job) runSetup(cache JobCache) {
-	// Setup Job Stat
-	j.currentStat = NewJobStat(j.Id)
-
+	// TODO: Use a job scheduler
 	// Schedule next run
+	j.lock.Lock()
 	if j.timesToRepeat != 0 {
 		j.timesToRepeat--
 		go j.StartWaiting(cache)
 	}
+	j.lock.Unlock()
 
-	j.LastAttemptedRun = time.Now()
+	j.lock.RLock()
+	jobRunner := &JobRunner{job: j, meta: j.Metadata}
+	j.lock.RUnlock()
+	newStat, newMeta, err := jobRunner.Run(cache)
+	if err != nil {
+		log.Error("Error running job: %s", err)
+	}
 
-	// Init retries
-	j.currentRetries = j.Retries
+	j.lock.Lock()
+	j.Metadata = newMeta
+	j.Stats = append(j.Stats, newStat)
+	j.lock.Unlock()
 }
 
-func (j *Job) runCleanup() {
-	j.Stats = append(j.Stats, j.currentStat)
-	j.currentStat = nil
-	j.currentRetries = 0
+func (j *Job) StopTimer() {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	if j.jobTimer != nil {
+		j.jobTimer.Stop()
+	}
 }

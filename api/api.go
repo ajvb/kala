@@ -61,12 +61,6 @@ func HandleListJobStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r
 		id := mux.Vars(r)["id"]
 		j, err := cache.Get(id)
 		if err != nil {
-			log.Error("Error occured when trying to get the job you requested.")
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		if j == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -180,8 +174,12 @@ func HandleJobRequest(cache job.JobCache, db job.JobDB) func(w http.ResponseWrit
 		}
 
 		if r.Method == "DELETE" {
-			j.Delete(cache, db)
-			w.WriteHeader(http.StatusNoContent)
+			err = j.Delete(cache, db)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusNoContent)
+			}
 		} else if r.Method == "GET" {
 			handleGetJob(w, r, j)
 		}
@@ -221,6 +219,7 @@ func HandleStartJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *ht
 			return
 		}
 
+		j.StopTimer()
 		j.Run(cache)
 
 		w.WriteHeader(http.StatusNoContent)

@@ -17,7 +17,7 @@ import (
 func NewTestServer() *httptest.Server {
 	r := mux.NewRouter()
 	db := &job.MockDB{}
-	cache := job.NewMemoryJobCache(db, time.Hour)
+	cache := job.NewMemoryJobCache(db)
 	api.SetupApiRoutes(r, cache, db)
 	return httptest.NewServer(r)
 }
@@ -227,9 +227,9 @@ func TestStartJob(t *testing.T) {
 
 	respJob, err := kc.GetJob(id)
 	assert.NoError(t, err)
-	assert.Equal(t, uint(1), respJob.SuccessCount)
-	assert.WithinDuration(t, now, respJob.LastSuccess, time.Second*2)
-	assert.WithinDuration(t, now, respJob.LastAttemptedRun, time.Second*2)
+	assert.Equal(t, uint(1), respJob.Metadata.SuccessCount)
+	assert.WithinDuration(t, now, respJob.Metadata.LastSuccess, time.Second*2)
+	assert.WithinDuration(t, now, respJob.Metadata.LastAttemptedRun, time.Second*2)
 
 	cleanUp()
 }

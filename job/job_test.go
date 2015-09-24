@@ -160,9 +160,9 @@ func TestJobRun(t *testing.T) {
 
 	now := time.Now()
 
-	assert.Equal(t, j.SuccessCount, uint(1))
-	assert.WithinDuration(t, j.LastSuccess, now, 2*time.Second)
-	assert.WithinDuration(t, j.LastAttemptedRun, now, 2*time.Second)
+	assert.Equal(t, j.Metadata.SuccessCount, uint(1))
+	assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
+	assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)
 }
 
 func TestJobRunAndRepeat(t *testing.T) {
@@ -175,9 +175,10 @@ func TestJobRunAndRepeat(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		time.Sleep(time.Second)
 		now := time.Now()
-		assert.Equal(t, j.SuccessCount, uint(i+1))
-		assert.WithinDuration(t, j.LastSuccess, now, 3*time.Second)
-		assert.WithinDuration(t, j.LastAttemptedRun, now, 3*time.Second)
+		j.lock.RLock()
+		assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
+		assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)
+		j.lock.RUnlock()
 	}
 
 }
@@ -187,21 +188,22 @@ func TestJobEpsilon(t *testing.T) {
 
 	oneSecondFromNow := time.Now().Add(time.Second)
 	j := GetMockJobWithSchedule(0, oneSecondFromNow, "P1DT1S")
-	j.Epsilon = "PT1S"
-	j.Command = "bash -c 'cd /etc && touch l'"
-	j.Retries = 2
+	j.Epsilon = "PT2S"
+	j.Command = "bash -c 'sleep 1 && cd /etc && touch l'"
+	j.Retries = 200
 	j.Init(cache)
 
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 4)
 
 	now := time.Now()
 
-	assert.Equal(t, j.SuccessCount, uint(0))
-	assert.Equal(t, j.ErrorCount, uint(1))
-	assert.Equal(t, j.numberOfAttempts, uint(3))
-	assert.WithinDuration(t, j.LastError, now, 3*time.Second)
-	assert.WithinDuration(t, j.LastAttemptedRun, now, 3*time.Second)
-	assert.True(t, j.LastSuccess.IsZero())
+	assert.Equal(t, j.Metadata.SuccessCount, uint(0))
+	assert.Equal(t, j.Metadata.ErrorCount, uint(2))
+	j.lock.RLock()
+	assert.WithinDuration(t, j.Metadata.LastError, now, 4*time.Second)
+	assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 4*time.Second)
+	assert.True(t, j.Metadata.LastSuccess.IsZero())
+	j.lock.RUnlock()
 }
 
 func TestOneOffJobs(t *testing.T) {
@@ -209,28 +211,31 @@ func TestOneOffJobs(t *testing.T) {
 
 	j := GetMockJob()
 
-	assert.Equal(t, j.SuccessCount, uint(0))
-	assert.Equal(t, j.ErrorCount, uint(0))
-	assert.Equal(t, j.LastSuccess, time.Time{})
-	assert.Equal(t, j.LastError, time.Time{})
-	assert.Equal(t, j.LastAttemptedRun, time.Time{})
+	j.lock.RLock()
+	assert.Equal(t, j.Metadata.SuccessCount, uint(0))
+	assert.Equal(t, j.Metadata.ErrorCount, uint(0))
+	assert.Equal(t, j.Metadata.LastSuccess, time.Time{})
+	assert.Equal(t, j.Metadata.LastError, time.Time{})
+	assert.Equal(t, j.Metadata.LastAttemptedRun, time.Time{})
+	j.lock.RUnlock()
 
 	j.Init(cache)
 	// Find a better way to test a goroutine
 	time.Sleep(time.Second)
 	now := time.Now()
 
-	assert.Equal(t, j.SuccessCount, uint(1))
-	assert.WithinDuration(t, j.LastSuccess, now, 2*time.Second)
-	assert.WithinDuration(t, j.LastAttemptedRun, now, 2*time.Second)
+	j.lock.RLock()
+	assert.Equal(t, j.Metadata.SuccessCount, uint(1))
+	assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
+	assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)
 	assert.Equal(t, j.scheduleTime, time.Time{})
 	assert.Nil(t, j.jobTimer)
+	j.lock.RUnlock()
 }
 
 //
 // Dependent Job Tests
 //
-
 func TestDependentJobsSimple(t *testing.T) {
 	cache := NewMockCache()
 
@@ -248,7 +253,6 @@ func TestDependentJobsSimple(t *testing.T) {
 	assert.True(t, len(mockJob.DependentJobs) == 1)
 
 	j, err := cache.Get(mockJob.Id)
-
 	assert.NoError(t, err)
 
 	assert.Equal(t, j.DependentJobs[0], mockChildJob.Id)
@@ -257,8 +261,11 @@ func TestDependentJobsSimple(t *testing.T) {
 	time.Sleep(time.Second * 2)
 	n := time.Now()
 
-	assert.WithinDuration(t, mockChildJob.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJob.LastSuccess, n, 4*time.Second)
+	mcj, err := cache.Get(mockChildJob.Id)
+	assert.NoError(t, err)
+
+	assert.WithinDuration(t, mcj.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mcj.Metadata.LastSuccess, n, 4*time.Second)
 }
 
 // Parent doesn't exist
@@ -314,13 +321,13 @@ func TestDependentJobsTwoChilds(t *testing.T) {
 	n := time.Now()
 
 	// TODO use abtime
-	assert.WithinDuration(t, mockChildJobOne.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobOne.LastSuccess, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobTwo.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobTwo.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobOne.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobOne.Metadata.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.Metadata.LastSuccess, n, 4*time.Second)
 
 	// Test the fact that the dependent jobs follow a rule of FIFO
-	assert.True(t, mockChildJobOne.LastAttemptedRun.UnixNano() < mockChildJobTwo.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobOne.Metadata.LastAttemptedRun.UnixNano() < mockChildJobTwo.Metadata.LastAttemptedRun.UnixNano())
 }
 
 // Parent with child with two childs.
@@ -377,19 +384,19 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 	n := time.Now()
 
 	// TODO use abtime
-	assert.WithinDuration(t, mockChildJob.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJob.LastSuccess, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobOne.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobOne.LastSuccess, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobTwo.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobTwo.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJob.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJob.Metadata.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobOne.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobOne.Metadata.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.Metadata.LastSuccess, n, 4*time.Second)
 
 	// Test the fact that the first child is ran before its childern
-	assert.True(t, mockChildJob.LastAttemptedRun.UnixNano() < mockChildJobOne.LastAttemptedRun.UnixNano())
-	assert.True(t, mockChildJob.LastAttemptedRun.UnixNano() < mockChildJobTwo.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJob.Metadata.LastAttemptedRun.UnixNano() < mockChildJobOne.Metadata.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJob.Metadata.LastAttemptedRun.UnixNano() < mockChildJobTwo.Metadata.LastAttemptedRun.UnixNano())
 
 	// Test the fact that the dependent jobs follow a rule of FIFO
-	assert.True(t, mockChildJobOne.LastAttemptedRun.UnixNano() < mockChildJobTwo.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobOne.Metadata.LastAttemptedRun.UnixNano() < mockChildJobTwo.Metadata.LastAttemptedRun.UnixNano())
 }
 
 // Parent with a chain of length 5
@@ -475,20 +482,20 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	n := time.Now()
 
 	// TODO use abtime
-	assert.WithinDuration(t, mockChildJobOne.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobOne.LastSuccess, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobTwo.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobTwo.LastSuccess, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobThree.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobThree.LastSuccess, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobFour.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobFour.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobOne.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobOne.Metadata.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.Metadata.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobThree.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobThree.Metadata.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobFour.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobFour.Metadata.LastSuccess, n, 4*time.Second)
 
 	// Test the fact that the first child is ran before its childern
-	assert.True(t, mockChildJobOne.LastAttemptedRun.UnixNano() < mockChildJobTwo.LastAttemptedRun.UnixNano())
-	assert.True(t, mockChildJobTwo.LastAttemptedRun.UnixNano() < mockChildJobThree.LastAttemptedRun.UnixNano())
-	assert.True(t, mockChildJobThree.LastAttemptedRun.UnixNano() < mockChildJobFour.LastAttemptedRun.UnixNano())
-	assert.True(t, mockChildJobFour.LastAttemptedRun.UnixNano() < mockChildJobFive.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobOne.Metadata.LastAttemptedRun.UnixNano() < mockChildJobTwo.Metadata.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobTwo.Metadata.LastAttemptedRun.UnixNano() < mockChildJobThree.Metadata.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobThree.Metadata.LastAttemptedRun.UnixNano() < mockChildJobFour.Metadata.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobFour.Metadata.LastAttemptedRun.UnixNano() < mockChildJobFive.Metadata.LastAttemptedRun.UnixNano())
 }
 
 // Link in the chain fails
@@ -550,12 +557,12 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 	n := time.Now()
 
 	// TODO use abtime
-	assert.WithinDuration(t, mockChildJobOne.LastAttemptedRun, n, 2*time.Second)
-	assert.True(t, mockChildJobOne.LastSuccess.IsZero())
-	assert.True(t, mockChildJobTwo.LastAttemptedRun.IsZero())
-	assert.True(t, mockChildJobTwo.LastSuccess.IsZero())
-	assert.True(t, mockChildJobThree.LastAttemptedRun.IsZero())
-	assert.True(t, mockChildJobThree.LastSuccess.IsZero())
+	assert.WithinDuration(t, mockChildJobOne.Metadata.LastAttemptedRun, n, 2*time.Second)
+	assert.True(t, mockChildJobOne.Metadata.LastSuccess.IsZero())
+	assert.True(t, mockChildJobTwo.Metadata.LastAttemptedRun.IsZero())
+	assert.True(t, mockChildJobTwo.Metadata.LastSuccess.IsZero())
+	assert.True(t, mockChildJobThree.Metadata.LastAttemptedRun.IsZero())
+	assert.True(t, mockChildJobThree.Metadata.LastSuccess.IsZero())
 }
 
 // TODO Use something like abtime - this test takes 5 seconds just in waiting....
@@ -644,20 +651,20 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	n := time.Now()
 
 	// TODO use abtime
-	assert.WithinDuration(t, mockChildJobOne.LastAttemptedRun, n, 6*time.Second)
-	assert.WithinDuration(t, mockChildJobOne.LastSuccess, n, 6*time.Second)
-	assert.WithinDuration(t, mockChildJobTwo.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobTwo.LastSuccess, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobThree.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobThree.LastSuccess, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobFour.LastAttemptedRun, n, 4*time.Second)
-	assert.WithinDuration(t, mockChildJobFour.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobOne.Metadata.LastAttemptedRun, n, 6*time.Second)
+	assert.WithinDuration(t, mockChildJobOne.Metadata.LastSuccess, n, 6*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobTwo.Metadata.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobThree.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobThree.Metadata.LastSuccess, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobFour.Metadata.LastAttemptedRun, n, 4*time.Second)
+	assert.WithinDuration(t, mockChildJobFour.Metadata.LastSuccess, n, 4*time.Second)
 
 	// Test the fact that the first child is ran before its childern
-	assert.True(t, mockChildJobOne.LastAttemptedRun.UnixNano() < mockChildJobTwo.LastAttemptedRun.UnixNano())
-	assert.True(t, mockChildJobTwo.LastAttemptedRun.UnixNano() < mockChildJobThree.LastAttemptedRun.UnixNano())
-	assert.True(t, mockChildJobThree.LastAttemptedRun.UnixNano() < mockChildJobFour.LastAttemptedRun.UnixNano())
-	assert.True(t, mockChildJobFour.LastAttemptedRun.UnixNano() < mockChildJobFive.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobOne.Metadata.LastAttemptedRun.UnixNano() < mockChildJobTwo.Metadata.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobTwo.Metadata.LastAttemptedRun.UnixNano() < mockChildJobThree.Metadata.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobThree.Metadata.LastAttemptedRun.UnixNano() < mockChildJobFour.Metadata.LastAttemptedRun.UnixNano())
+	assert.True(t, mockChildJobFour.Metadata.LastAttemptedRun.UnixNano() < mockChildJobFive.Metadata.LastAttemptedRun.UnixNano())
 }
 
 // Two Parents with the same child
@@ -702,12 +709,12 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 	n := time.Now()
 
 	// TODO use abtime
-	assert.WithinDuration(t, parentOne.LastAttemptedRun, n, 3*time.Second)
-	assert.WithinDuration(t, parentOne.LastSuccess, n, 3*time.Second)
-	assert.WithinDuration(t, mockChildJob.LastAttemptedRun, n, 3*time.Second)
-	assert.WithinDuration(t, mockChildJob.LastSuccess, n, 3*time.Second)
-	assert.True(t, parentTwo.LastAttemptedRun.IsZero())
-	assert.True(t, parentTwo.LastSuccess.IsZero())
+	assert.WithinDuration(t, parentOne.Metadata.LastAttemptedRun, n, 3*time.Second)
+	assert.WithinDuration(t, parentOne.Metadata.LastSuccess, n, 3*time.Second)
+	assert.WithinDuration(t, mockChildJob.Metadata.LastAttemptedRun, n, 3*time.Second)
+	assert.WithinDuration(t, mockChildJob.Metadata.LastSuccess, n, 3*time.Second)
+	assert.True(t, parentTwo.Metadata.LastAttemptedRun.IsZero())
+	assert.True(t, parentTwo.Metadata.LastSuccess.IsZero())
 
 	// TODO use abtime
 	time.Sleep(time.Second * 3)
@@ -716,10 +723,10 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 	n = time.Now()
 
 	// TODO use abtime
-	assert.WithinDuration(t, parentTwo.LastAttemptedRun, n, 3*time.Second)
-	assert.WithinDuration(t, parentTwo.LastSuccess, n, 3*time.Second)
-	assert.WithinDuration(t, mockChildJob.LastAttemptedRun, n, 3*time.Second)
-	assert.WithinDuration(t, mockChildJob.LastSuccess, n, 3*time.Second)
+	assert.WithinDuration(t, parentTwo.Metadata.LastAttemptedRun, n, 3*time.Second)
+	assert.WithinDuration(t, parentTwo.Metadata.LastSuccess, n, 3*time.Second)
+	assert.WithinDuration(t, mockChildJob.Metadata.LastAttemptedRun, n, 3*time.Second)
+	assert.WithinDuration(t, mockChildJob.Metadata.LastSuccess, n, 3*time.Second)
 }
 
 // Child gets deleted -- Make sure it is removed from its parent jobs.
@@ -748,7 +755,9 @@ func TestDependentJobsChildGetsDeleted(t *testing.T) {
 	assert.Equal(t, err, JobDoesntExistErr)
 
 	// Check to make sure its gone from the parent job.
+	mockJob.lock.RLock()
 	assert.True(t, len(mockJob.DependentJobs) == 0)
+	mockJob.lock.RUnlock()
 }
 
 // Child gets disabled
@@ -778,8 +787,8 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 	j.Run(cache)
 	time.Sleep(time.Second * 2)
 
-	assert.True(t, mockChildJob.LastAttemptedRun.IsZero())
-	assert.True(t, mockChildJob.LastSuccess.IsZero())
+	assert.True(t, mockChildJob.Metadata.LastAttemptedRun.IsZero())
+	assert.True(t, mockChildJob.Metadata.LastSuccess.IsZero())
 }
 
 // Parent gets deleted -- If a parent job is deleted, unless its child jobs have another parent, they will be deleted as well.
@@ -814,22 +823,24 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 	assert.True(t, len(mockJobBackup.DependentJobs) == 1)
 
 	cache.Delete(mockJob.Id)
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 2)
 
 	// Make sure it is deleted
 	_, err := cache.Get(mockJob.Id)
 	assert.Error(t, err)
-	assert.Equal(t, err, JobDoesntExistErr)
+	assert.Equal(t, JobDoesntExistErr, err)
 
 	// Check if mockChildJobWithNoBackup is deleted
 	_, err = cache.Get(mockChildJobWithNoBackup.Id)
 	assert.Error(t, err)
-	assert.Equal(t, err, JobDoesntExistErr)
+	assert.Equal(t, JobDoesntExistErr, err)
 
 	// Check to make sure mockChildJboWithBackup is not deleted
 	j, err := cache.Get(mockChildJobWithBackup.Id)
 	assert.NoError(t, err)
+
+	j.lock.RLock()
 	assert.Equal(t, j.ParentJobs[0], mockJobBackup.Id)
 	assert.True(t, len(j.ParentJobs) == 1)
-
+	j.lock.RUnlock()
 }

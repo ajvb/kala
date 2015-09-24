@@ -36,6 +36,9 @@ func NewKalaStats(cache JobCache) *KalaStats {
 	nextRun := time.Time{}
 	lastRun := time.Time{}
 	for _, job := range jobs.Jobs {
+		job.lock.RLock()
+		defer job.lock.RUnlock()
+
 		if job.Disabled {
 			ks.DisabledJobs += 1
 		} else {
@@ -49,15 +52,15 @@ func NewKalaStats(cache JobCache) *KalaStats {
 		}
 
 		if lastRun.IsZero() {
-			if !job.LastAttemptedRun.IsZero() {
-				lastRun = job.LastAttemptedRun
+			if !job.Metadata.LastAttemptedRun.IsZero() {
+				lastRun = job.Metadata.LastAttemptedRun
 			}
-		} else if (lastRun.UnixNano() - job.LastAttemptedRun.UnixNano()) < 0 {
-			lastRun = job.LastAttemptedRun
+		} else if (lastRun.UnixNano() - job.Metadata.LastAttemptedRun.UnixNano()) < 0 {
+			lastRun = job.Metadata.LastAttemptedRun
 		}
 
-		ks.ErrorCount += job.ErrorCount
-		ks.SuccessCount += job.SuccessCount
+		ks.ErrorCount += job.Metadata.ErrorCount
+		ks.SuccessCount += job.Metadata.SuccessCount
 	}
 	ks.NextRunAt = nextRun
 	ks.LastAttemptedRun = lastRun

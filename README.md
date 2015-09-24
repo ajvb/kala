@@ -7,8 +7,7 @@
 
 Kala is a simplistic, modern, and performant job scheduler written in Go. It lives in a single binary and does not have any dependencies.
 
-Kala was inspired by [Chronos](https://github.com/airbnb/chronos), developed by Airbnb, but the need for a Chronos for the rest of us. Chronos is built on top of Mesos, and
-is fault tolerant and distributed by design. These are two features which Kala does not have, as it was built for smaller deployments.
+Kala was inspired by the desire for a simpler [Chronos](https://github.com/airbnb/chronos) (developed by Airbnb). Kala is Chronos for the rest of us.
 
 It has a simple JSON over HTTP API, so it is language agnostic. It has Job Stats, Configurable Retries, uses ISO 8601 Date and Interval
 notation, Dependant Jobs, and is Persistent (using BoltDB). Eventually it will have a Web UI.
@@ -80,10 +79,10 @@ Once you have installed Kala onto the machine you would like to use, you can fol
 
 To Run Kala:
 ```bash
-ajvb$ kala run
+$ kala run
 2015/06/10 18:31:31 main.go:59:func·001 :: INFO 002 Starting server on port :8000...
 
-ajvb$ kala run -p 2222
+$ kala run -p 2222
 2015/06/10 18:31:31 main.go:59:func·001 :: INFO 002 Starting server on port :2222...
 ```
 
@@ -96,7 +95,7 @@ kala run --jobDB=redis --jobDBAddress=127.0.0.1:6379
 Kala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.
 
 ```bash
-ajvb$ curl http://127.0.0.1:8000/api/v1/stats/
+$ curl http://127.0.0.1:8000/api/v1/stats/
 {"Stats":{"ActiveJobs":2,"DisabledJobs":0,"Jobs":2,"ErrorCount":0,"SuccessCount":0,"NextRunAt":"2015-06-04T19:25:16.82873873-07:00","LastAttemptedRun":"0001-01-01T00:00:00Z","CreatedAt":"2015-06-03T19:58:21.433668791-07:00"}}
 ```
 
@@ -185,11 +184,11 @@ Performing a POST (with the correct JSON) will create a new Job.
 
 Example:
 ```bash
-ajvb$ curl http://127.0.0.1:8000/api/v1/job/
+$ curl http://127.0.0.1:8000/api/v1/job/
 {"jobs":{}}
-ajvb$ curl http://127.0.0.1:8000/api/v1/job/ -d '{"epsilon": "PT5S", "command": "bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh", "name": "test_job", "schedule": "R2/2015-06-04T19:25:16.828696-07:00/PT10S"}'
+$ curl http://127.0.0.1:8000/api/v1/job/ -d '{"epsilon": "PT5S", "command": "bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh", "name": "test_job", "schedule": "R2/2015-06-04T19:25:16.828696-07:00/PT10S"}'
 {"id":"93b65499-b211-49ce-57e0-19e735cc5abd"}
-ajvb$ curl http://127.0.0.1:8000/api/v1/job/
+$ curl http://127.0.0.1:8000/api/v1/job/
 {
     "jobs":{
         "93b65499-b211-49ce-57e0-19e735cc5abd":{
@@ -221,17 +220,17 @@ Performing a DELETE will delete the Job.
 
 Example:
 ```bash
-ajvb$ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd
+$ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd
 {"job":{"name":"test_job","id":"93b65499-b211-49ce-57e0-19e735cc5abd","command":"bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh","owner":"","disabled":false,"dependent_jobs":null,"parent_jobs":null,"schedule":"R2/2015-06-04T19:25:16.828696-07:00/PT10S","retries":0,"epsilon":"PT5S","success_count":0,"last_success":"0001-01-01T00:00:00Z","error_count":0,"last_error":"0001-01-01T00:00:00Z","last_attempted_run":"0001-01-01T00:00:00Z","next_run_at":"2015-06-04T19:25:16.828737931-07:00"}}
-ajvb$ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd -X DELETE
-ajvb$ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd
+$ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd -X DELETE
+$ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd
 ```
 
 ## /job/stats/{id}
 
 Example:
 ```bash
-ajvb$ curl http://127.0.0.1:8000/api/v1/job/stats/5d5be920-c716-4c99-60e1-055cad95b40f/
+$ curl http://127.0.0.1:8000/api/v1/job/stats/5d5be920-c716-4c99-60e1-055cad95b40f/
 {"job_stats":[{"JobId":"5d5be920-c716-4c99-60e1-055cad95b40f","RanAt":"2015-06-03T20:01:53.232919459-07:00","NumberOfRetries":0,"Success":true,"ExecutionDuration":4529133}]}
 ```
 
@@ -239,14 +238,14 @@ ajvb$ curl http://127.0.0.1:8000/api/v1/job/stats/5d5be920-c716-4c99-60e1-055cad
 
 Example:
 ```bash
-ajvb$ curl http://127.0.0.1:8000/api/v1/job/start/5d5be920-c716-4c99-60e1-055cad95b40f/ -X POST
+$ curl http://127.0.0.1:8000/api/v1/job/start/5d5be920-c716-4c99-60e1-055cad95b40f/ -X POST
 ```
 
 ## /stats
 
 Example:
 ```bash
-ajvb$ curl http://127.0.0.1:8000/api/v1/stats/
+$ curl http://127.0.0.1:8000/api/v1/stats/
 {"Stats":{"ActiveJobs":2,"DisabledJobs":0,"Jobs":2,"ErrorCount":0,"SuccessCount":0,"NextRunAt":"2015-06-04T19:25:16.82873873-07:00","LastAttemptedRun":"0001-01-01T00:00:00Z","CreatedAt":"2015-06-03T19:58:21.433668791-07:00"}}
 ```
 
