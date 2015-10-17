@@ -246,11 +246,11 @@ func (j *Job) GetWaitDuration() time.Duration {
 	waitDuration := time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())
 
 	if waitDuration < 0 {
-		// Needs to be recalculated each time because of Months.
 		if j.Metadata.LastAttemptedRun.IsZero() {
 			waitDuration = j.delayDuration.ToDuration()
 		} else {
 			lastRun := j.Metadata.LastAttemptedRun
+			// Needs to be recalculated each time because of Months.
 			lastRun = lastRun.Add(j.delayDuration.ToDuration())
 			waitDuration = lastRun.Sub(time.Now())
 		}
@@ -340,15 +340,7 @@ func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
 }
 
 func (j *Job) Run(cache JobCache) {
-	// TODO: Use a job scheduler
 	// Schedule next run
-	j.lock.Lock()
-	if j.timesToRepeat != 0 {
-		j.timesToRepeat--
-		go j.StartWaiting(cache)
-	}
-	j.lock.Unlock()
-
 	j.lock.RLock()
 	jobRunner := &JobRunner{job: j, meta: j.Metadata}
 	j.lock.RUnlock()
@@ -360,6 +352,10 @@ func (j *Job) Run(cache JobCache) {
 	j.lock.Lock()
 	j.Metadata = newMeta
 	j.Stats = append(j.Stats, newStat)
+	if j.timesToRepeat != 0 {
+		j.timesToRepeat--
+		go j.StartWaiting(cache)
+	}
 	j.lock.Unlock()
 }
 
