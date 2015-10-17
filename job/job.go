@@ -154,6 +154,7 @@ func (j *Job) Init(cache JobCache) error {
 	err = j.InitDelayDuration(true)
 	j.lock.Lock()
 	if err != nil {
+		cache.Delete(j.Id)
 		return err
 	}
 
