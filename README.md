@@ -35,8 +35,8 @@ I recommend checking out [Chronos](https://github.com/airbnb/chronos). This is d
 1. Get Kala
 
 	```
-go get github.com/ajvb/kala
-```
+	go get github.com/ajvb/kala
+	```
 
 2. Run Kala
 
@@ -52,25 +52,31 @@ go get github.com/ajvb/kala
 	cd $GOPATH/src/github.com/ajvb/kala
 	```
 
-2. Restore Godeps
+2. Install godep command
+
+	```
+	go get github.com/tools/godep
+	```
+
+3. Restore Godeps
 
 	```
 	godep restore
 	```
 
-3. Build the local Kala binary
+4. Build the local Kala binary
 
 	```
 	go build
 	```
 
-4. Run local Kala
+5. Run local Kala
 
 	```
 	./kala run
 	```
 
-5. **Optional:** Replace the preinstalled Kala with local Kala
+6. **Optional:** Replace the preinstalled Kala with local Kala
 
 	```
 	go install
