@@ -3,6 +3,10 @@
 [![Circle CI](https://circleci.com/gh/ajvb/kala.svg?style=svg)](https://circleci.com/gh/ajvb/kala)
 [![Coverage Status](https://coveralls.io/repos/ajvb/kala/badge.svg?branch=master&service=github)](https://coveralls.io/github/ajvb/kala?branch=master)
 
+#### Donate
+
+[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=ajvb&url=https://github.com/ajvb/kala&title=Kala&language=&tags=github&category=software)
+
 #### Currently in Alpha stage. Do not use in production environments.
 
 Kala is a simplistic, modern, and performant job scheduler written in Go. It lives in a single binary and does not have any dependencies.
