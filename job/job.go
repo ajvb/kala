@@ -20,6 +20,8 @@ var (
 	log = logging.GetLogger("kala.job")
 
 	shParser = shellwords.NewParser()
+
+	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
 )
 
 func init() {
@@ -196,8 +198,11 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 
 	j.scheduleTime, err = time.Parse(time.RFC3339, splitTime[1])
 	if err != nil {
-		log.Error("Error converting scheduleTime to a time.Time: %s", err)
-		return err
+		j.scheduleTime, err = time.Parse(RFC3339WithoutTimezone, splitTime[1])
+		if err != nil {
+			log.Error("Error converting scheduleTime to a time.Time: %s", err)
+			return err
+		}
 	}
 	if checkTime {
 		if (time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())) < 0 {
