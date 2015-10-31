@@ -213,6 +213,7 @@ This is the datetime for the first time the job should run.
 Kala will return an error if the start datetime has already passed.
 
 Examples:
+
 * `2015-06-04T19:25:16`
 * `2015-06-04T19:25:16.828696`
 * `2015-06-04T19:25:16.828696-07:00`
