@@ -267,6 +267,8 @@ Examples:
 This route accepts both a GET and a POST. Performing a GET request will return a list of all currently running jobs.
 Performing a POST (with the correct JSON) will create a new Job.
 
+Note: When creating a Job, the only fields that are required are the `Name` and the `Command` field. But, if you omit the `Schedule` field, the job will be ran immediately.
+
 Example:
 ```bash
 $ curl http://127.0.0.1:8000/api/v1/job/

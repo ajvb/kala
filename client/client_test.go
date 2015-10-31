@@ -39,18 +39,18 @@ func cleanUp() {
 	}
 }
 
-func NewJobMap() map[string]string {
+func NewJobMap() *job.Job {
 	scheduleTime := time.Now().Add(time.Minute * 5)
 	repeat := 1
 	delay := "P1DT10M10S"
 	parsedTime := scheduleTime.Format(time.RFC3339)
 	scheduleStr := fmt.Sprintf("R%d/%s/%s", repeat, parsedTime, delay)
 
-	return map[string]string{
-		"schedule": scheduleStr,
-		"name":     "mock_job",
-		"command":  "bash -c 'date'",
-		"owner":    "aj@ajvb.me",
+	return &job.Job{
+		Schedule: scheduleStr,
+		Name:     "mock_job",
+		Command:  "bash -c 'date'",
+		Owner:    "aj@ajvb.me",
 	}
 }
 
@@ -66,10 +66,10 @@ func TestCreateGetDeleteJob(t *testing.T) {
 
 	respJob, err := kc.GetJob(id)
 	assert.NoError(t, err)
-	assert.Equal(t, j["schedule"], respJob.Schedule)
-	assert.Equal(t, j["name"], respJob.Name)
-	assert.Equal(t, j["command"], respJob.Command)
-	assert.Equal(t, j["owner"], respJob.Owner)
+	assert.Equal(t, j.Schedule, respJob.Schedule)
+	assert.Equal(t, j.Name, respJob.Name)
+	assert.Equal(t, j.Command, respJob.Command)
+	assert.Equal(t, j.Owner, respJob.Owner)
 
 	ok, err := kc.DeleteJob(id)
 	assert.NoError(t, err)
@@ -84,7 +84,7 @@ func TestCreateJobError(t *testing.T) {
 	kc := New(ts.URL)
 	j := NewJobMap()
 
-	j["schedule"] = "bbbbbbbbbbbbbbb"
+	j.Schedule = "bbbbbbbbbbbbbbb"
 
 	id, err := kc.CreateJob(j)
 	assert.Error(t, err)
@@ -129,10 +129,10 @@ func TestGetAllJobs(t *testing.T) {
 	jobs, err := kc.GetAllJobs()
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(jobs))
-	assert.Equal(t, j["schedule"], jobs[id].Schedule)
-	assert.Equal(t, j["name"], jobs[id].Name)
-	assert.Equal(t, j["command"], jobs[id].Command)
-	assert.Equal(t, j["owner"], jobs[id].Owner)
+	assert.Equal(t, j.Schedule, jobs[id].Schedule)
+	assert.Equal(t, j.Name, jobs[id].Name)
+	assert.Equal(t, j.Command, jobs[id].Command)
+	assert.Equal(t, j.Owner, jobs[id].Owner)
 
 	cleanUp()
 }

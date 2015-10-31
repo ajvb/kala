@@ -3,6 +3,7 @@ package job
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -22,6 +23,8 @@ var (
 	shParser = shellwords.NewParser()
 
 	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
+
+	ErrInvalidJob = errors.New("Invalid Job. Job's must contain a Name and a Command field")
 )
 
 func init() {
@@ -118,6 +121,13 @@ func NewFromBytes(b []byte) (*Job, error) {
 func (j *Job) Init(cache JobCache) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
+
+	// Job Validation
+	// TODO: Move this to a seperated method?
+	if j.Name == "" || j.Command == "" {
+		log.Error(ErrInvalidJob.Error())
+		return ErrInvalidJob
+	}
 
 	u4, err := uuid.NewV4()
 	if err != nil {
