@@ -39,17 +39,17 @@ func New(apiEndpoint string) *KalaClient {
 	}
 }
 
-// CreateJob is used for creating a new job within Kala. It uses a map of
-// strings to strings.
+// CreateJob is used for creating a new job within Kala. Note that the
+// Name and Command fields are the only ones that are required.
 // Example:
 // 		c := New("http://127.0.0.1:8000")
-// 		body := map[string]string{
-//			"schedule": "R2/2015-06-04T19:25:16.828696-07:00/PT10S",
-//			"name":		"test_job",
-//			"command": 	"bash -c 'date'",
+// 		body := &job.Job{
+//			Schedule: "R2/2015-06-04T19:25:16.828696-07:00/PT10S",
+//			Name:	  "test_job",
+//			Command:  "bash -c 'date'",
 //		}
 //		id, err := c.CreateJob(body)
-func (kc *KalaClient) CreateJob(body map[string]string) (string, error) {
+func (kc *KalaClient) CreateJob(body *job.Job) (string, error) {
 	id := &api.AddJobResponse{}
 	resp, err := kc.requester.New().Post(api.JobPath).BodyJSON(body).ReceiveSuccess(id)
 	if err != nil {
