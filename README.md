@@ -254,13 +254,13 @@ Examples:
 
 | Task | Method | Route |
 | --- | --- | --- |
-|Creating a Job | POST | /job |
-|Getting a list of all Jobs | GET | /job |
-|Getting a Job | GET | /job/{id} |
-|Deleting a Job | DELETE | /job/{id} |
-|Getting metrics about a certain Job | GET | /job/stats/{id} |
-|Starting a Job manually | POST | /job/start/{id} |
-|Getting app-level metrics | GET | /stats |
+|Creating a Job | POST | /api/v1/job/ |
+|Getting a list of all Jobs | GET | /api/v1/job/ |
+|Getting a Job | GET | /api/v1/job/{id}/ |
+|Deleting a Job | DELETE | /api/v1/job/{id}/ |
+|Getting metrics about a certain Job | GET | /api/v1/job/stats/{id}/ |
+|Starting a Job manually | POST | /api/v1/job/start/{id}/ |
+|Getting app-level metrics | GET | /api/v1/stats/ |
 
 ## /job
 
