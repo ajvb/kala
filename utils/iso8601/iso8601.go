@@ -1,7 +1,3 @@
-//
-// TODO - Months are not currently properly handled
-//
-
 package iso8601
 
 import (
@@ -21,9 +17,6 @@ var (
 
 	// ErrBadFormat is returned when parsing fails
 	ErrBadFormat = errors.New("bad format string")
-
-	// ErrNoMonth is raised when a month is in the format string
-	ErrNoMonth = errors.New("no months allowed")
 
 	tmpl = template.Must(template.New("duration").Parse(`P{{if .Years}}{{.Years}}Y{{end}}{{if .Months}}{{.Months}}M{{end}}{{if .Weeks}}{{.Weeks}}W{{end}}{{if .Days}}{{.Days}}D{{end}}{{if .HasTimePart}}T{{end }}{{if .Hours}}{{.Hours}}H{{end}}{{if .Minutes}}{{.Minutes}}M{{end}}{{if .Seconds}}{{.Seconds}}S{{end}}`))
 

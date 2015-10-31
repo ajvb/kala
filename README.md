@@ -129,7 +129,7 @@ stdout_logfile=/var/log/kala.stdout.log
 stderr_logfile=/var/log/kala.stderr.log
 ```
 
-### Docker 
+### Docker
 
 If you have docker installed, you can build the dockerfile in this directory with
 ```docker build -t kala .```
@@ -151,6 +151,13 @@ Install using:
 ## Job Data Struct
 
 [Docs can be found here](http://godoc.org/github.com/ajvb/kala/job#Job)
+
+## Things to Note
+
+* Currently, daylight savings time is not supported in the interval format.
+* Currently, leap years are not supported in the interval format.
+* If schedule is omitted, the job will run immediately.
+
 
 ## Job JSON Example
 
@@ -174,6 +181,71 @@ Install using:
         "next_run_at":"2015-06-04T19:25:16.828794572-07:00"
 }
 ```
+
+## Breakdown of schedule string. (ISO 8601 Notation)
+
+Example `schedule` string:
+
+```
+R2/2015-06-04T19:25:16.828696-07:00/PT10S
+```
+
+This string can be split into three parts:
+
+```
+Number of times to repeat/Start Datetime/Interval Between Runs
+```
+
+#### Number of times to repeat
+
+This is designated with a number, prefixed with an `R`. Leave out the number if it should repeat forever.
+
+Examples:
+`R` - Will repeat forever
+`R1` - Will repeat once
+`R231` - Will repeat 231 times.
+
+#### Start Datetime
+
+This is the datetime for the first time the job should run.
+
+Kala will return an error if the start datetime has already passed.
+
+Examples:
+`2015-06-04T19:25:16`
+`2015-06-04T19:25:16.828696`
+`2015-06-04T19:25:16.828696-07:00`
+`2015-06-04T19:25:16-07:00`
+
+*To Note: It is recommend to include timezone.*
+
+#### Interval Between Runs
+
+This is defined by the [ISO8601 Interval Notation](https://en.wikipedia.org/wiki/ISO_8601#Time_intervals).
+
+It starts with a `P`, then you can specify years, months, or days, then a `T`, preceded by hours, minutes, and seconds.
+
+Lets break down a long interval: `P1Y2M10DT2H30M15S`
+
+`P` - Starts the notation
+`1Y` - One year
+`2M` - Two months
+`10D` - Ten days
+`T` - Starts the time second
+`2H` - Two hours
+`30M` - Thirty minutes
+`15S` - Fifteen seconds
+
+Now, there is one alternative. You can optionally use just weeks. When you use the week operator, you only get that. An example of using the week operator for an interval of every two weeks is `P2W`.
+
+Examples:
+`P1DT1M` - Interval of one day and one minute
+`P1W` - Interval of one week
+`PT1H` - Interval of one hour.
+
+### More Information on ISO8601
+
+* [Wikipedia's Article](https://en.wikipedia.org/wiki/ISO_8601)
 
 ## Overview of routes
 
