@@ -230,26 +230,22 @@ func HandleStartJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *ht
 func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB) {
 	// Route for creating a job
 	r.HandleFunc(ApiJobPath, HandleAddJob(cache)).Methods("POST")
-	r.HandleFunc(ApiUrlPrefix+"job", HandleAddJob(cache)).Methods("POST")
 	// Route for deleting and getting a job
-	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
 	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
 	// Route for getting job stats
-	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest(cache)).Methods("GET")
 	r.HandleFunc(ApiJobPath+"stats/{id}/", HandleListJobStatsRequest(cache)).Methods("GET")
 	// Route for listing all jops
 	r.HandleFunc(ApiJobPath, HandleListJobsRequest(cache)).Methods("GET")
-	r.HandleFunc(ApiUrlPrefix+"job", HandleListJobsRequest(cache)).Methods("GET")
 	// Route for manually start a job
-	r.HandleFunc(ApiJobPath+"start/{id}", HandleStartJobRequest(cache)).Methods("POST")
 	r.HandleFunc(ApiJobPath+"start/{id}/", HandleStartJobRequest(cache)).Methods("POST")
 	// Route for getting app-level metrics
-	r.HandleFunc(ApiUrlPrefix+"stats", HandleKalaStatsRequest(cache)).Methods("GET")
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
 }
 
 func StartServer(listenAddr string, cache job.JobCache, db job.JobDB) error {
 	r := mux.NewRouter()
+	// Allows for the use for /job as well as /job/
+	r.StrictSlash(true)
 	SetupApiRoutes(r, cache, db)
 	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log})
 	n.UseHandler(r)

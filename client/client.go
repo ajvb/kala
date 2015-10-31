@@ -68,7 +68,7 @@ func (kc *KalaClient) CreateJob(body map[string]string) (string, error) {
 //		job, err := c.GetJob(id)
 func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 	j := &api.JobResponse{}
-	resp, err := kc.requester.New().Get(api.JobPath + id).ReceiveSuccess(j)
+	resp, err := kc.requester.New().Get(api.JobPath + id + "/").ReceiveSuccess(j)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 //		ok, err := c.DeleteJob(id)
 func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 	// nil is completely safe to use, as it is simply ignored in the sling library.
-	resp, err := kc.requester.New().Delete(api.JobPath + id).ReceiveSuccess(nil)
+	resp, err := kc.requester.New().Delete(api.JobPath + id + "/").ReceiveSuccess(nil)
 	if err != nil {
 		return false, err
 	}
@@ -119,7 +119,7 @@ func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 //		stats, err := c.GetJobStats(id)
 func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 	js := &api.ListJobStatsResponse{}
-	resp, err := kc.requester.New().Get(api.JobPath+"stats/"+id).Receive(js, nil)
+	resp, err := kc.requester.New().Get(api.JobPath+"stats/"+id+"/").Receive(js, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 //		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
 //		ok, err := c.StartJob(id)
 func (kc *KalaClient) StartJob(id string) (bool, error) {
-	resp, err := kc.requester.New().Post(api.JobPath+"start/"+id).Receive(nil, nil)
+	resp, err := kc.requester.New().Post(api.JobPath+"start/"+id+"/").Receive(nil, nil)
 	if err != nil {
 		return false, err
 	}
@@ -151,7 +151,7 @@ func (kc *KalaClient) StartJob(id string) (bool, error) {
 //		stats, err := c.GetKalaStats()
 func (kc *KalaClient) GetKalaStats() (*job.KalaStats, error) {
 	ks := &api.KalaStatsResponse{}
-	resp, err := kc.requester.New().Get("stats").Receive(ks, nil)
+	resp, err := kc.requester.New().Get("stats/").Receive(ks, nil)
 	if err != nil {
 		return nil, err
 	}
