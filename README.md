@@ -109,11 +109,11 @@ $ curl http://127.0.0.1:8000/api/v1/stats/
 {"Stats":{"ActiveJobs":2,"DisabledJobs":0,"Jobs":2,"ErrorCount":0,"SuccessCount":0,"NextRunAt":"2015-06-04T19:25:16.82873873-07:00","LastAttemptedRun":"0001-01-01T00:00:00Z","CreatedAt":"2015-06-03T19:58:21.433668791-07:00"}}
 ```
 
-Once its up in running, you can utilize curl or the official go client to interact with Kala. Also check out the examples directory.
+Once it's up in running, you can utilize curl or the official go client to interact with Kala. Also check out the examples directory.
 
 ### Examples of Usage
 
-There are more examples in the examples directory within this repo. Currently its pretty messy. Feel free to submit a new example if you have one.
+There are more examples in the [examples directory](https://github.com/ajvb/kala/tree/master/examples) within this repo. Currently its pretty messy. Feel free to submit a new example if you have one.
 
 # Deployment
 
