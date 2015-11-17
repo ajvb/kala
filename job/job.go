@@ -286,6 +286,16 @@ func (j *Job) Disable() {
 	j.Disabled = true
 }
 
+func (j *Job) Enable(cache JobCache) {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	if j.jobTimer != nil && j.Disabled {
+		go j.StartWaiting(cache)
+	}
+	j.Disabled = false
+}
+
 // DeleteFromParentJobs goes through and deletes the current job from any parent jobs.
 func (j *Job) DeleteFromParentJobs(cache JobCache) error {
 	j.lock.Lock()

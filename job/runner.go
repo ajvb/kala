@@ -128,6 +128,6 @@ func (j *JobRunner) runSetup() {
 
 func (j *JobRunner) collectStats(success bool) {
 	j.currentStat.ExecutionDuration = time.Now().Sub(j.currentStat.RanAt)
-	j.currentStat.Success = true
+	j.currentStat.Success = success
 	j.currentStat.NumberOfRetries = j.job.Retries - j.currentRetries
 }

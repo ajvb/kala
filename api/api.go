@@ -226,6 +226,50 @@ func HandleStartJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *ht
 	}
 }
 
+// HandleDisableJobRequest is the handler for mdisabling jobs
+// /api/v1/job/disable/{id}
+func HandleDisableJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := mux.Vars(r)["id"]
+		j, err := cache.Get(id)
+		if err != nil {
+			log.Error("Error occured when trying to get the job you requested.")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if j == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		j.Disable()
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// HandleEnableJobRequest is the handler for enable jobs
+// /api/v1/job/enable/{id}
+func HandleEnableJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := mux.Vars(r)["id"]
+		j, err := cache.Get(id)
+		if err != nil {
+			log.Error("Error occured when trying to get the job you requested.")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if j == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		j.Enable(cache)
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
 // SetupApiRoutes is used within main to initialize all of the routes
 func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB) {
 	// Route for creating a job
@@ -238,6 +282,10 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB) {
 	r.HandleFunc(ApiJobPath, HandleListJobsRequest(cache)).Methods("GET")
 	// Route for manually start a job
 	r.HandleFunc(ApiJobPath+"start/{id}/", HandleStartJobRequest(cache)).Methods("POST")
+	// Route for manually start a job
+	r.HandleFunc(ApiJobPath+"enable/{id}/", HandleEnableJobRequest(cache)).Methods("POST")
+	// Route for manually start a job
+	r.HandleFunc(ApiJobPath+"disable/{id}/", HandleDisableJobRequest(cache)).Methods("POST")
 	// Route for getting app-level metrics
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
 }
