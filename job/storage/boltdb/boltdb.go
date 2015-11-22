@@ -7,14 +7,12 @@ import (
 	"time"
 
 	"github.com/ajvb/kala/job"
-	"github.com/ajvb/kala/utils/logging"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
 )
 
 var (
-	log = logging.GetLogger("kala.job.storage")
-
 	jobBucket = []byte("jobs")
 )
 

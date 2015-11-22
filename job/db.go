@@ -1,6 +1,9 @@
 package job
 
-import "fmt"
+import (
+	"fmt"
+	log "github.com/Sirupsen/logrus"
+)
 
 // ErrJobNotFound is raised when a Job is able to be found within a database.
 type ErrJobNotFound string
@@ -22,12 +25,12 @@ func (j *Job) Delete(cache JobCache, db JobDB) error {
 	j.Disable()
 	errOne := cache.Delete(j.Id)
 	if errOne != nil {
-		log.Error("Error occured while trying to delete job from cache: %s", errOne)
+		log.Errorf("Error occured while trying to delete job from cache: %s", errOne)
 		err = errOne
 	}
 	errTwo := db.Delete(j.Id)
 	if errTwo != nil {
-		log.Error("Error occured while trying to delete job from db: %s", errTwo)
+		log.Errorf("Error occured while trying to delete job from db: %s", errTwo)
 		err = errTwo
 	}
 	return err

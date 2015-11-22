@@ -4,7 +4,9 @@ package job
 import (
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+
 	"testing"
 )
 
@@ -61,7 +63,7 @@ func TestGetWatiDuration(t *testing.T) {
 		err := testStruct.Job.InitDelayDuration(false)
 		assert.NoError(t, err)
 		actualDuration := testStruct.Job.GetWaitDuration()
-		log.Warning("LastAttempted: %s", testStruct.Job.Metadata.LastAttemptedRun)
+		log.Warnf("LastAttempted: %s", testStruct.Job.Metadata.LastAttemptedRun)
 		assert.InDelta(t, float64(testStruct.ExpectedDuration), float64(actualDuration), float64(time.Millisecond*50), "Test of "+testStruct.Name)
 	}
 }

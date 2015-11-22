@@ -11,15 +11,13 @@ import (
 	"time"
 
 	"github.com/ajvb/kala/utils/iso8601"
-	"github.com/ajvb/kala/utils/logging"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/mattn/go-shellwords"
 	"github.com/nu7hatch/gouuid"
 )
 
 var (
-	log = logging.GetLogger("kala.job")
-
 	shParser = shellwords.NewParser()
 
 	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
@@ -125,13 +123,13 @@ func (j *Job) Init(cache JobCache) error {
 	// Job Validation
 	// TODO: Move this to a seperated method?
 	if j.Name == "" || j.Command == "" {
-		log.Error(ErrInvalidJob.Error())
+		log.Errorf(ErrInvalidJob.Error())
 		return ErrInvalidJob
 	}
 
 	u4, err := uuid.NewV4()
 	if err != nil {
-		log.Error("Error occured when generating uuid: %s", err)
+		log.Errorf("Error occured when generating uuid: %s", err)
 		return err
 	}
 	j.Id = u4.String()
@@ -200,17 +198,17 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 	} else {
 		j.timesToRepeat, err = strconv.ParseInt(strings.Split(splitTime[0], "R")[1], 10, 0)
 		if err != nil {
-			log.Error("Error converting timesToRepeat to an int: %s", err)
+			log.Errorf("Error converting timesToRepeat to an int: %s", err)
 			return err
 		}
 	}
-	log.Debug("timesToRepeat: %d", j.timesToRepeat)
+	log.Debugf("timesToRepeat: %d", j.timesToRepeat)
 
 	j.scheduleTime, err = time.Parse(time.RFC3339, splitTime[1])
 	if err != nil {
 		j.scheduleTime, err = time.Parse(RFC3339WithoutTimezone, splitTime[1])
 		if err != nil {
-			log.Error("Error converting scheduleTime to a time.Time: %s", err)
+			log.Errorf("Error converting scheduleTime to a time.Time: %s", err)
 			return err
 		}
 	}
@@ -219,19 +217,19 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 			return fmt.Errorf("Schedule time has passed on Job with id of %s", j.Id)
 		}
 	}
-	log.Debug("Schedule Time: %s", j.scheduleTime)
+	log.Debugf("Schedule Time: %s", j.scheduleTime)
 
 	j.delayDuration, err = iso8601.FromString(splitTime[2])
 	if err != nil {
-		log.Error("Error converting delayDuration to a iso8601.Duration: %s", err)
+		log.Errorf("Error converting delayDuration to a iso8601.Duration: %s", err)
 		return err
 	}
-	log.Debug("Delay Duration: %s", j.delayDuration.ToDuration())
+	log.Debugf("Delay Duration: %s", j.delayDuration.ToDuration())
 
 	if j.Epsilon != "" {
 		j.epsilonDuration, err = iso8601.FromString(j.Epsilon)
 		if err != nil {
-			log.Error("Error converting j.Epsilon to iso8601.Duration: %s", err)
+			log.Errorf("Error converting j.Epsilon to iso8601.Duration: %s", err)
 			return err
 		}
 	}
@@ -246,7 +244,7 @@ func (j *Job) StartWaiting(cache JobCache) {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
-	log.Info("Job Scheduled to run in: %s", waitDuration)
+	log.Infof("Job Scheduled to run in: %s", waitDuration)
 
 	j.NextRunAt = time.Now().Add(waitDuration)
 
@@ -371,7 +369,7 @@ func (j *Job) Run(cache JobCache) {
 	j.lock.RUnlock()
 	newStat, newMeta, err := jobRunner.Run(cache)
 	if err != nil {
-		log.Error("Error running job: %s", err)
+		log.Errorf("Error running job: %s", err)
 	}
 
 	j.lock.Lock()

@@ -10,16 +10,19 @@ import (
 	"github.com/ajvb/kala/job"
 	"github.com/ajvb/kala/job/storage/boltdb"
 	"github.com/ajvb/kala/job/storage/redis"
-	"github.com/ajvb/kala/utils/logging"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 )
+
+func init() {
+	log.SetLevel(log.WarnLevel)
+}
 
 var (
 	DefaultPersistEvery = 5 * time.Second
 
-	db  job.JobDB
-	log = logging.GetLogger("kala")
+	db job.JobDB
 )
 
 func main() {
@@ -59,8 +62,16 @@ func main() {
 					Value: "127.0.0.1:6379",
 					Usage: "Network address for the job database, in 'host:port' format.",
 				},
+				cli.BoolFlag{
+					Name:  "verbose, v",
+					Usage: "Set for verbose logging.",
+				},
 			},
 			Action: func(c *cli.Context) {
+				if c.Bool("v") {
+					log.SetLevel(log.DebugLevel)
+				}
+
 				var parsedPort string
 				port := c.Int("port")
 				if port != 0 {
@@ -89,7 +100,7 @@ func main() {
 				cache := job.NewMemoryJobCache(db)
 				cache.Start(DefaultPersistEvery)
 
-				log.Info("Starting server on port %s...", connectionString)
+				log.Infof("Starting server on port %s...", connectionString)
 				log.Fatal(api.StartServer(connectionString, cache, db))
 			},
 		},

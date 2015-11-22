@@ -1,15 +1,13 @@
 package redis
 
 import (
-	"github.com/garyburd/redigo/redis"
-
 	"github.com/ajvb/kala/job"
-	"github.com/ajvb/kala/utils/logging"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/garyburd/redigo/redis"
 )
 
 var (
-	log = logging.GetLogger("kala.job.storage")
-
 	// HashKey is the hash key where jobs are persisted.
 	HashKey = "kala:jobs"
 )
