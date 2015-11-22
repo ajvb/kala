@@ -52,6 +52,11 @@ func main() {
 					Usage: "Interface to listen on, default is all.",
 				},
 				cli.StringFlag{
+					Name:  "default-owner, do",
+					Value: "",
+					Usage: "Default owner. The inputted email will be attached to any job missing an owner",
+				},
+				cli.StringFlag{
 					Name:  "jobDB",
 					Value: "boltdb",
 					Usage: "Implementation of job database, either 'boltdb' or 'redis'.",
@@ -109,7 +114,7 @@ func main() {
 				cache.Start(DefaultPersistEvery)
 
 				log.Infof("Starting server on port %s...", connectionString)
-				log.Fatal(api.StartServer(connectionString, cache, db))
+				log.Fatal(api.StartServer(connectionString, cache, db, c.String("default-owner")))
 			},
 		},
 	}
