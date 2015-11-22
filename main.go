@@ -42,6 +42,10 @@ func main() {
 					Value: 8000,
 					Usage: "Port for Kala to run on.",
 				},
+				cli.BoolFlag{
+					Name:  "dont-persist, d",
+					Usage: "Don't Persist Mode - In this mode no data will be saved to the database. Perfect for testing.",
+				},
 				cli.StringFlag{
 					Name:  "interface, i",
 					Value: "",
@@ -94,6 +98,10 @@ func main() {
 					db = redis.New(c.String("jobDBAddress"))
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
+				}
+
+				if c.Bool("dont-persist") {
+					db = &job.MockDB{}
 				}
 
 				// Create cache
