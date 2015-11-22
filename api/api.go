@@ -8,8 +8,8 @@ import (
 
 	"github.com/ajvb/kala/api/middleware"
 	"github.com/ajvb/kala/job"
-	"github.com/ajvb/kala/utils/logging"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
 )
@@ -23,10 +23,6 @@ const (
 
 	contentType     = "Content-Type"
 	jsonContentType = "application/json;charset=UTF-8"
-)
-
-var (
-	log = logging.GetLogger("kala.api")
 )
 
 type KalaStatsResponse struct {
@@ -44,7 +40,7 @@ func HandleKalaStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r *h
 		w.Header().Set(contentType, jsonContentType)
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Error("Error occured when marshalling response: %s", err)
+			log.Errorf("Error occured when marshalling response: %s", err)
 			return
 		}
 	}
@@ -72,7 +68,7 @@ func HandleListJobStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r
 		w.Header().Set(contentType, jsonContentType)
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Error("Error occured when marshalling response: %s", err)
+			log.Errorf("Error occured when marshalling response: %s", err)
 			return
 		}
 	}
@@ -97,7 +93,7 @@ func HandleListJobsRequest(cache job.JobCache) func(w http.ResponseWriter, r *ht
 		w.Header().Set(contentType, jsonContentType)
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Error("Error occured when marshalling response: %s", err)
+			log.Errorf("Error occured when marshalling response: %s", err)
 			return
 		}
 	}
@@ -112,13 +108,13 @@ func unmarshalNewJob(r *http.Request) (*job.Job, error) {
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
-		log.Error("Error occured when reading r.Body: %s", err)
+		log.Errorf("Error occured when reading r.Body: %s", err)
 		return nil, err
 	}
 	defer r.Body.Close()
 
 	if err := json.Unmarshal(body, newJob); err != nil {
-		log.Error("Error occured when unmarshalling data: %s", err)
+		log.Errorf("Error occured when unmarshalling data: %s", err)
 		return nil, err
 	}
 
@@ -138,7 +134,7 @@ func HandleAddJob(cache job.JobCache) func(http.ResponseWriter, *http.Request) {
 		err = newJob.Init(cache)
 		if err != nil {
 			errStr := "Error occured when initializing the job"
-			log.Error(errStr+": %s", err)
+			log.Errorf(errStr+": %s", err)
 			http.Error(w, errStr, http.StatusBadRequest)
 			return
 		}
@@ -150,7 +146,7 @@ func HandleAddJob(cache job.JobCache) func(http.ResponseWriter, *http.Request) {
 		w.Header().Set(contentType, jsonContentType)
 		w.WriteHeader(http.StatusCreated)
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Error("Error occured when marshalling response: %s", err)
+			log.Errorf("Error occured when marshalling response: %s", err)
 			return
 		}
 	}
@@ -164,7 +160,7 @@ func HandleJobRequest(cache job.JobCache, db job.JobDB) func(w http.ResponseWrit
 
 		j, err := cache.Get(id)
 		if err != nil {
-			log.Error("Error occured when trying to get the job you requested.")
+			log.Errorf("Error occured when trying to get the job you requested.")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -198,7 +194,7 @@ func handleGetJob(w http.ResponseWriter, r *http.Request, j *job.Job) {
 	w.Header().Set(contentType, jsonContentType)
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		log.Error("Error occured when marshalling response: %s", err)
+		log.Errorf("Error occured when marshalling response: %s", err)
 		return
 	}
 }
@@ -210,7 +206,7 @@ func HandleStartJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *ht
 		id := mux.Vars(r)["id"]
 		j, err := cache.Get(id)
 		if err != nil {
-			log.Error("Error occured when trying to get the job you requested.")
+			log.Errorf("Error occured when trying to get the job you requested.")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -233,7 +229,7 @@ func HandleDisableJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *
 		id := mux.Vars(r)["id"]
 		j, err := cache.Get(id)
 		if err != nil {
-			log.Error("Error occured when trying to get the job you requested.")
+			log.Errorf("Error occured when trying to get the job you requested.")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -255,7 +251,7 @@ func HandleEnableJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *h
 		id := mux.Vars(r)["id"]
 		j, err := cache.Get(id)
 		if err != nil {
-			log.Error("Error occured when trying to get the job you requested.")
+			log.Errorf("Error occured when trying to get the job you requested.")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -295,7 +291,7 @@ func StartServer(listenAddr string, cache job.JobCache, db job.JobDB) error {
 	// Allows for the use for /job as well as /job/
 	r.StrictSlash(true)
 	SetupApiRoutes(r, cache, db)
-	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log})
+	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log.Logger{}})
 	n.UseHandler(r)
 	return http.ListenAndServe(listenAddr, n)
 }

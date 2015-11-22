@@ -8,13 +8,9 @@ import (
 	"strconv"
 	"text/template"
 	"time"
-
-	"github.com/ajvb/kala/utils/logging"
 )
 
 var (
-	log = logging.GetLogger("iso8601")
-
 	// ErrBadFormat is returned when parsing fails
 	ErrBadFormat = errors.New("bad format string")
 

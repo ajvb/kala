@@ -6,6 +6,8 @@ import (
 	"os/signal"
 	"sync"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
@@ -69,8 +71,8 @@ func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 	signal.Notify(ch, os.Interrupt, os.Kill)
 	go func() {
 		s := <-ch
-		log.Info("Process got signal: %s", s)
-		log.Info("Shutting down....")
+		log.Infof("Process got signal: %s", s)
+		log.Infof("Shutting down....")
 
 		// Persist all jobs to database
 		c.Persist()
@@ -152,7 +154,7 @@ func (c *MemoryJobCache) PersistEvery(persistWaitTime time.Duration) {
 		<-wait
 		err = c.Persist()
 		if err != nil {
-			log.Error("Error occured persisting the database. Err: %s", err)
+			log.Errorf("Error occured persisting the database. Err: %s", err)
 		}
 	}
 }

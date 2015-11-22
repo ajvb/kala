@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os/exec"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type JobRunner struct {
@@ -27,11 +29,11 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 	defer j.job.lock.RUnlock()
 
 	if j.job.Disabled {
-		log.Info("Job %s tried to run, but exited early because its disabled.", j.job.Name)
+		log.Infof("Job %s tried to run, but exited early because its disabled.", j.job.Name)
 		return nil, j.meta, ErrJobDisabled
 	}
 
-	log.Info("Job %s running", j.job.Name)
+	log.Infof("Job %s running", j.job.Name)
 
 	j.runSetup()
 
@@ -40,7 +42,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 		if err != nil {
 			// Log Error in Metadata
 			// TODO - Error Reporting, email error
-			log.Error("Run Command got an Error: %s", err)
+			log.Errorf("Run Command got an Error: %s", err)
 
 			j.meta.ErrorCount++
 			j.meta.LastError = time.Now()
@@ -60,7 +62,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 		}
 	}
 
-	log.Info("%s was successful!", j.job.Name)
+	log.Infof("%s was successful!", j.job.Name)
 	j.meta.SuccessCount++
 	j.meta.LastSuccess = time.Now()
 
@@ -71,7 +73,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 		for _, id := range j.job.DependentJobs {
 			newJob, err := cache.Get(id)
 			if err != nil {
-				log.Error("Error retrieving dependent job with id of %s", id)
+				log.Errorf("Error retrieving dependent job with id of %s", id)
 			} else {
 				newJob.Run(cache)
 			}
