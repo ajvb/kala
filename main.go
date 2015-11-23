@@ -42,10 +42,19 @@ func main() {
 					Value: 8000,
 					Usage: "Port for Kala to run on.",
 				},
+				cli.BoolFlag{
+					Name:  "dont-persist, d",
+					Usage: "Don't Persist Mode - In this mode no data will be saved to the database. Perfect for testing.",
+				},
 				cli.StringFlag{
 					Name:  "interface, i",
 					Value: "",
 					Usage: "Interface to listen on, default is all.",
+				},
+				cli.StringFlag{
+					Name:  "default-owner, do",
+					Value: "",
+					Usage: "Default owner. The inputted email will be attached to any job missing an owner",
 				},
 				cli.StringFlag{
 					Name:  "jobDB",
@@ -96,12 +105,16 @@ func main() {
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}
 
+				if c.Bool("dont-persist") {
+					db = &job.MockDB{}
+				}
+
 				// Create cache
 				cache := job.NewMemoryJobCache(db)
 				cache.Start(DefaultPersistEvery)
 
 				log.Infof("Starting server on port %s...", connectionString)
-				log.Fatal(api.StartServer(connectionString, cache, db))
+				log.Fatal(api.StartServer(connectionString, cache, db, c.String("default-owner")))
 			},
 		},
 	}

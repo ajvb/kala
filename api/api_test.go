@@ -51,7 +51,9 @@ func (a *ApiTestSuite) TestHandleAddJob() {
 	t := a.T()
 	cache := job.NewMockCache()
 	jobMap := generateNewJobMap()
-	handler := HandleAddJob(cache)
+	jobMap["owner"] = ""
+	defaultOwner := "aj+tester@ajvb.me"
+	handler := HandleAddJob(cache, defaultOwner)
 
 	jsonJobMap, err := json.Marshal(jobMap)
 	a.NoError(err)
@@ -64,13 +66,14 @@ func (a *ApiTestSuite) TestHandleAddJob() {
 	retrievedJob, err := cache.Get(addJobResp.Id)
 	a.NoError(err)
 	a.Equal(jobMap["name"], retrievedJob.Name)
-	a.Equal(jobMap["owner"], retrievedJob.Owner)
+	a.NotEqual(jobMap["owner"], retrievedJob.Owner)
+	a.Equal(defaultOwner, retrievedJob.Owner)
 	a.Equal(w.Code, http.StatusCreated)
 }
 func (a *ApiTestSuite) TestHandleAddJobFailureBadJson() {
 	t := a.T()
 	cache := job.NewMockCache()
-	handler := HandleAddJob(cache)
+	handler := HandleAddJob(cache, "")
 
 	w, req := setupTestReq(t, "POST", ApiJobPath, []byte("asd"))
 	handler(w, req)
@@ -80,7 +83,7 @@ func (a *ApiTestSuite) TestHandleAddJobFailureBadSchedule() {
 	t := a.T()
 	cache := job.NewMockCache()
 	jobMap := generateNewJobMap()
-	handler := HandleAddJob(cache)
+	handler := HandleAddJob(cache, "")
 
 	// Mess up schedule
 	jobMap["schedule"] = "asdf"
@@ -296,7 +299,7 @@ func (a *ApiTestSuite) TestSetupApiRoutes() {
 	cache := job.NewMockCache()
 	r := mux.NewRouter()
 
-	SetupApiRoutes(r, cache, db)
+	SetupApiRoutes(r, cache, db, "")
 
 	a.NotNil(r)
 	a.IsType(r, mux.NewRouter())

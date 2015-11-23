@@ -123,12 +123,16 @@ func unmarshalNewJob(r *http.Request) (*job.Job, error) {
 
 // HandleAddJob takes a job object and unmarshals it to a Job type,
 // and then throws the job in the schedulers.
-func HandleAddJob(cache job.JobCache) func(http.ResponseWriter, *http.Request) {
+func HandleAddJob(cache job.JobCache, defaultOwner string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		newJob, err := unmarshalNewJob(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
+		}
+
+		if defaultOwner != "" && newJob.Owner == "" {
+			newJob.Owner = defaultOwner
 		}
 
 		err = newJob.Init(cache)
@@ -267,9 +271,9 @@ func HandleEnableJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *h
 }
 
 // SetupApiRoutes is used within main to initialize all of the routes
-func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB) {
+func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB, defaultOwner string) {
 	// Route for creating a job
-	r.HandleFunc(ApiJobPath, HandleAddJob(cache)).Methods("POST")
+	r.HandleFunc(ApiJobPath, HandleAddJob(cache, defaultOwner)).Methods("POST")
 	// Route for deleting and getting a job
 	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
 	// Route for getting job stats
@@ -286,11 +290,11 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB) {
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
 }
 
-func StartServer(listenAddr string, cache job.JobCache, db job.JobDB) error {
+func StartServer(listenAddr string, cache job.JobCache, db job.JobDB, defaultOwner string) error {
 	r := mux.NewRouter()
 	// Allows for the use for /job as well as /job/
 	r.StrictSlash(true)
-	SetupApiRoutes(r, cache, db)
+	SetupApiRoutes(r, cache, db, defaultOwner)
 	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log.Logger{}})
 	n.UseHandler(r)
 	return http.ListenAndServe(listenAddr, n)
