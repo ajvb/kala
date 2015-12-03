@@ -3,7 +3,7 @@ require 'time'
 require 'json'
 
 class Kala
-  API_URL = 'http://127.0.0.1:8000/api/v1/job'
+  API_URL = 'http://127.0.0.1:8000/api/v1/job/'
 
   def post(data)
     req = Net::HTTP::Post.new(uri.path)
@@ -12,12 +12,12 @@ class Kala
   end
 
   def get(id)
-    req = Net::HTTP::Get.new("#{uri.path}/#{id}")
+    req = Net::HTTP::Get.new("#{uri.path}#{id}/")
     call(req)
   end
 
   def delete(id)
-    req = Net::HTTP::Delete.new("#{uri.path}/#{id}")
+      req = Net::HTTP::Delete.new("#{uri.path}#{id}/")
     call(req)
   end
 
