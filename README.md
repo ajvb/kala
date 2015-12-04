@@ -340,6 +340,17 @@ $ curl http://127.0.0.1:8000/api/v1/stats/
 
 [Contributor Documentation can be found here](http://godoc.org/github.com/ajvb/kala)
 
+## Debugging Jobs
+
+There is now a command within Kala called `run_command` which will immediately run a command as Kala would run it live, and then gives you a response on whether it was successful or not. Allows for easier and quicker debugging of commands.
+
+```bash
+$ kala run_command "ruby /home/user/ruby/my_ruby_script.rb"
+Command Succeeded!
+$ kala run_command "ruby /home/user/other_dir/broken_script.rb"
+FATA[0000] Command Failed with err: exit status 1
+```
+
 ## Dependent Jobs
 
 ### How to add a dependent job
