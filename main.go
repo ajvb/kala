@@ -34,6 +34,30 @@ func main() {
 	app.Version = "0.1"
 	app.Commands = []cli.Command{
 		{
+			Name:  "run_command",
+			Usage: "Run a command as if it was being run by Kala",
+			Action: func(c *cli.Context) {
+				if len(c.Args()) == 0 {
+					log.Fatal("Must include a command")
+				} else if len(c.Args()) > 1 {
+					log.Fatal("Must only include a command")
+				}
+
+				cmd := c.Args()[0]
+
+				j := &job.Job{
+					Command: cmd,
+				}
+
+				err := j.RunCmd()
+				if err != nil {
+					log.Fatalf("Command Failed with err: %s", err)
+				} else {
+					fmt.Println("Command Succeeded!")
+				}
+			},
+		},
+		{
 			Name:  "run",
 			Usage: "run kala",
 			Flags: []cli.Flag{
