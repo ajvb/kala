@@ -43,8 +43,8 @@ func main() {
 					Usage: "Port for Kala to run on.",
 				},
 				cli.BoolFlag{
-					Name:  "dont-persist, d",
-					Usage: "Don't Persist Mode - In this mode no data will be saved to the database. Perfect for testing.",
+					Name:  "no-persist, np",
+					Usage: "No Persistence Mode - In this mode no data will be saved to the database. Perfect for testing.",
 				},
 				cli.StringFlag{
 					Name:  "interface, i",
@@ -105,7 +105,7 @@ func main() {
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}
 
-				if c.Bool("dont-persist") {
+				if c.Bool("no-persist") {
 					db = &job.MockDB{}
 				}
 
