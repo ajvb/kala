@@ -392,3 +392,11 @@ func (j *Job) StopTimer() {
 		j.jobTimer.Stop()
 	}
 }
+
+func (j *Job) RunCmd() error {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+
+	jobRunner := &JobRunner{job: j}
+	return jobRunner.runCmd()
+}
