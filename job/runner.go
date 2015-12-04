@@ -28,6 +28,8 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 	j.job.lock.RLock()
 	defer j.job.lock.RUnlock()
 
+	j.meta.LastAttemptedRun = time.Now()
+
 	if j.job.Disabled {
 		log.Infof("Job %s tried to run, but exited early because its disabled.", j.job.Name)
 		return nil, j.meta, ErrJobDisabled
@@ -121,8 +123,6 @@ func (j *JobRunner) shouldRetry() bool {
 func (j *JobRunner) runSetup() {
 	// Setup Job Stat
 	j.currentStat = NewJobStat(j.job.Id)
-
-	j.meta.LastAttemptedRun = time.Now()
 
 	// Init retries
 	j.currentRetries = j.job.Retries

@@ -374,7 +374,9 @@ func (j *Job) Run(cache JobCache) {
 
 	j.lock.Lock()
 	j.Metadata = newMeta
-	j.Stats = append(j.Stats, newStat)
+	if newStat != nil {
+		j.Stats = append(j.Stats, newStat)
+	}
 	if j.timesToRepeat != 0 {
 		j.timesToRepeat--
 		go j.StartWaiting(cache)

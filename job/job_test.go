@@ -787,7 +787,6 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 	j.Run(cache)
 	time.Sleep(time.Second * 2)
 
-	assert.True(t, mockChildJob.Metadata.LastAttemptedRun.IsZero())
 	assert.True(t, mockChildJob.Metadata.LastSuccess.IsZero())
 }
 
