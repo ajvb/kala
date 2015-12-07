@@ -784,10 +784,13 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, j.DependentJobs[0], mockChildJob.Id)
 
+	n := time.Now()
 	j.Run(cache)
 	time.Sleep(time.Second * 2)
 
 	assert.True(t, mockChildJob.Metadata.LastSuccess.IsZero())
+	assert.False(t, mockChildJob.Metadata.LastAttemptedRun.IsZero())
+	assert.WithinDuration(t, mockChildJob.Metadata.LastAttemptedRun, n, time.Duration(time.Second))
 }
 
 // Parent gets deleted -- If a parent job is deleted, unless its child jobs have another parent, they will be deleted as well.
