@@ -13,6 +13,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/seriallink/kala/job/storage/orm"
 )
 
 func init() {
@@ -125,6 +126,8 @@ func main() {
 					db = boltdb.GetBoltDB(c.String("boltpath"))
 				case "redis":
 					db = redis.New(c.String("jobDBAddress"))
+				case "postgres","mysql":
+					db = orm.New(c.String("jobDB"),c.String("jobDBAddress"))
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}
