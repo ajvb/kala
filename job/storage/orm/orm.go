@@ -6,13 +6,16 @@ import (
 
     "github.com/ajvb/kala/job"
 
-    _"github.com/go-sql-driver/mysql"
-    _"github.com/lib/pq"
+   _"github.com/go-sql-driver/mysql"
+   _"github.com/lib/pq"
 
     "github.com/jinzhu/gorm"
     "github.com/Sirupsen/logrus"
 
     "github.com/davecgh/go-spew/spew"
+//    "github.com/jinzhu/copier"
+    "github.com/ulule/deepcopier"
+    "encoding/json"
 )
 
 // orm for sql abstraction
@@ -22,19 +25,19 @@ type ORM struct {
 
 // table where jobs are persisted
 type Job struct {
-    Id              string      `gorm:"column:id;primary_key"   sql:"type:uuid"             json:"id"`
-    Name            string      `gorm:"column:name"             sql:"unique_index;not null" json:"name"`
-    Command         string      `gorm:"column:command"          sql:"type:text;not null"    json:"command"`
-    Owner           string      `gorm:"column:owner"                                        json:"owner"`
-    Disabled        bool        `gorm:"column:disabled"                                     json:"disabled"`
-    DependentJobs   []string    `gorm:"column:dependent_jobs"   sql:"type:uuid[]"           json:"dependent_jobs"`
-    ParentJobs      []string    `gorm:"column:parent_jobs"      sql:"type:uuid[]"           json:"parent_jobs"`
-    Schedule        string      `gorm:"column:schedule"                                     json:"schedule"`
-    Retries         uint        `gorm:"column:retries"                                      json:"retries"`
-    Epsilon         string      `gorm:"column:epsilon"                                      json:"epsilon"`
-    NextRunAt       time.Time   `gorm:"column:next_run_at"                                  json:"next_run_at"`
-    Metadata        Metadata    `gorm:"column:metadata"         sql:"type:json"             json:"metadata"`
-    Stats           []JobStat   `gorm:"column:stats"            sql:"type:json"             json:"stats"`
+    Id              string          `gorm:"column:id;primary_key"   sql:"type:varchar(38)"             json:"id"`
+    Name            string          `gorm:"column:name"             sql:"unique_index;not null" json:"name"`
+    Command         string          `gorm:"column:command"          sql:"type:text;not null"    json:"command"`
+    Owner           string          `gorm:"column:owner"                                        json:"owner"`
+    Disabled        bool            `gorm:"column:disabled"                                     json:"disabled"`
+    DependentJobs   []string        `gorm:"column:dependent_jobs"   sql:"type:varchar()"           json:"dependent_jobs"`
+    ParentJobs      []string        `gorm:"column:parent_jobs"      sql:"type:varchar"           json:"parent_jobs"`
+    Schedule        string          `gorm:"column:schedule"                                     json:"schedule"`
+    Retries         uint            `gorm:"column:retries"                                      json:"retries"`
+    Epsilon         string          `gorm:"column:epsilon"                                      json:"epsilon"`
+    NextRunAt       time.Time       `gorm:"column:next_run_at"                                  json:"next_run_at"`
+    Metadata        json.RawMessage `gorm:"column:metadata"         sql:"type:json"             json:"metadata"`
+    Stats           json.RawMessage `gorm:"column:stats"            sql:"type:json"             json:"stats"`
 }
 
 type Metadata struct {
@@ -57,8 +60,8 @@ func (* Job) TableName() string {
     return "kala"
 }
 
-// open database connection
-func New(driver, address string) *ORM {
+// Open opens a database connection
+func Open(driver, address string) *ORM {
 
     var (
         db gorm.DB
@@ -72,27 +75,35 @@ func New(driver, address string) *ORM {
     }
 
     if db, err = gorm.Open(driver,dsn); err == nil {
-        err = db.DB().Ping()
+        if err = db.DB().Ping(); err == nil {
+            if !db.HasTable(&Job{}) {
+                err = db.Debug().CreateTable(&Job{}).Error
+            }
+        }
     }
 
     if err != nil {
-        logrus.Fatal(err)
+        logrus.Fatal(dsn,err)
     }
 
     return &ORM{db:&db}
 }
 
-// GetAll returns all persisted Jobs.
+// GetAll returns all Jobs stored in database
 func (this ORM) GetAll() ([]*job.Job, error) {
 
     jobs := []*job.Job{}
+    dbjobs := []Job{}
 
-    if !this.db.HasTable(&Job{}) {
-        if err := this.db.Debug().CreateTable(&Job{}).Error; err != nil {
-            logrus.Fatal(err)
-        }
+    if err := this.db.Debug().Find(&dbjobs).Error; err != nil {
+        logrus.Fatal(err)
     }
-    spew.Dump(jobs)
+
+//    for _, j := range dbjobs {
+//        jobs = append(jobs,&j)
+//    }
+
+    spew.Dump(dbjobs,jobs)
 
 //    vals, err := d.conn.Do("HVALS", HashKey)
 //    if err != nil {
@@ -141,22 +152,25 @@ func (this ORM) Delete(id string) error {
     return nil
 }
 
-// Save persists a Job.
+// Save inserts a Job in database
 func (this ORM) Save(j *job.Job) error {
-//    bytes, err := j.Bytes()
-//    if err != nil {
-//        return err
-//    }
-//
-//    _, err = d.conn.Do("HSET", HashKey, j.Id, bytes)
-//    if err != nil {
-//        return err
-//    }
 
-    return nil
+    var (
+        job Job
+        err error
+    )
+
+    if err = deepcopier.Copy(j).To(&job); err == nil {
+
+        spew.Dump(j,job)
+
+        err = this.db.Debug().FirstOrCreate(&job).Error
+    }
+
+    return err
 }
 
-// Close closes the connection to Redis.
+// Close closes the connection to database
 func (this ORM) Close() error {
     err := this.db.Close()
     if err != nil {

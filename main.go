@@ -127,7 +127,7 @@ func main() {
 				case "redis":
 					db = redis.New(c.String("jobDBAddress"))
 				case "postgres","mysql":
-					db = orm.New(c.String("jobDB"),c.String("jobDBAddress"))
+					db = orm.Open(c.String("jobDB"),c.String("jobDBAddress"))
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}
