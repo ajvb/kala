@@ -9,11 +9,11 @@ import (
 	"github.com/ajvb/kala/api"
 	"github.com/ajvb/kala/job"
 	"github.com/ajvb/kala/job/storage/boltdb"
+	"github.com/ajvb/kala/job/storage/orm"
 	"github.com/ajvb/kala/job/storage/redis"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	"github.com/seriallink/kala/job/storage/orm"
 )
 
 func init() {
