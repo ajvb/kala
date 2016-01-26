@@ -2,183 +2,149 @@ package orm
 
 import (
     "fmt"
-//    "errors"
     "testing"
-//    "time"
-
+    "time"
     "github.com/ajvb/kala/job"
     "github.com/stretchr/testify/assert"
 )
 
-type testJob struct {
-    Job   *job.Job
-    Bytes []byte
-}
-
 var (
-    mysql, postgres *ORM
-    cache []testJob
+    postgres, mysql *ORM
+    mockPostgres, mockMySQL *job.Job
 )
 
 func init() {
 
-    // this db is hosted on heroku for testing (PostgreSQL 9.4.5)
-    user := "whadsrtbjomjqg"
-    pass := "pZqpD9-1VGO843dNDsSTw_GMEF"
-    host := "ec2-54-83-204-228.compute-1.amazonaws.com"
+    // tested with PostgreSQL 9.4.5
+    user := "user"
+    pass := "pass"
+    host := "127.0.0.1"
     port := "5432"
-    database := "d3d2vce93prhk7"
+    database := "kala"
     postgres = Open("postgres",fmt.Sprintf("%s:%s@%s:%s/%s",user,pass,host,port,database))
+    postgres.db.LogMode(false)
 
-    // this db is hosted on heroku for testing (MySQL 5.4.5)
-    user = "ro7lqhta7ef33p13"
-    pass = "ifn1cgf5spi5hvkf"
-    host = "tviw6wn55xwxejwj.cbetxkdyhwsb.us-east-1.rds.amazonaws.com"
+    cachePostgres := job.NewMemoryJobCache(postgres)
+    mockPostgres = job.GetMockJobWithGenericSchedule()
+    mockPostgres.Init(cachePostgres)
+
+    // tested with MySQL 5.7.10
+    user = "user"
+    pass = "pass"
+    host = "127.0.0.1"
     port = "3306"
-    database = "mhkb1rv7ionjkjrh"
-    mysql = Open("mysql",fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",user,pass,host,port,database))
+    database = "kala"
+    mysql = Open("mysql",fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",user,pass,host,port,database))
+    mysql.db.LogMode(true)
+
+    cacheMySQL := job.NewMemoryJobCache(mysql)
+    mockMySQL = job.GetMockJobWithGenericSchedule()
+    mockMySQL.Init(cacheMySQL)
 
 }
 
-func TestSaveJob(t *testing.T) {
+func TestSaveJobPostgres(t *testing.T) {
+    err := postgres.Save(mockPostgres)
+    assert.NoError(t, err)
+}
+
+func TestSaveJobMySQL(t *testing.T) {
+    err := mysql.Save(mockMySQL)
+    assert.NoError(t, err)
+}
+
+func TestGetJobPostgres(t *testing.T) {
+
+    dbjob, err := postgres.Get(mockPostgres.Id)
+    assert.Nil(t, err)
+
+    assert.WithinDuration(t, dbjob.NextRunAt, mockPostgres.NextRunAt, 100*time.Microsecond)
+    assert.Equal(t, mockPostgres.Name, dbjob.Name)
+    assert.Equal(t, mockPostgres.Id, dbjob.Id)
+    assert.Equal(t, mockPostgres.Command, dbjob.Command)
+    assert.Equal(t, mockPostgres.Schedule, dbjob.Schedule)
+    assert.Equal(t, mockPostgres.Owner, dbjob.Owner)
+    assert.Equal(t, mockPostgres.Metadata.SuccessCount, dbjob.Metadata.SuccessCount)
+
+}
+
+func TestGetJobMySQL(t *testing.T) {
+
+    dbjob, err := mysql.Get(mockMySQL.Id)
+    assert.Nil(t, err)
+
+    assert.WithinDuration(t, dbjob.NextRunAt, mockMySQL.NextRunAt, 100*time.Microsecond)
+    assert.Equal(t, mockMySQL.Name, dbjob.Name)
+    assert.Equal(t, mockMySQL.Id, dbjob.Id)
+    assert.Equal(t, mockMySQL.Command, dbjob.Command)
+    assert.Equal(t, mockMySQL.Schedule, dbjob.Schedule)
+    assert.Equal(t, mockMySQL.Owner, dbjob.Owner)
+    assert.Equal(t, mockMySQL.Metadata.SuccessCount, dbjob.Metadata.SuccessCount)
+
+}
+
+func TestDeleteJobPostgres(t *testing.T) {
+
+    err := postgres.Delete(mockPostgres.Id)
+    assert.NoError(t, err)
+
+    _, err = postgres.Get(mockPostgres.Id)
+    assert.Error(t, err)
+
+}
+
+func TestDeleteJobMySQL(t *testing.T) {
+
+    err := mysql.Delete(mockMySQL.Id)
+    assert.NoError(t, err)
+
+    _, err = mysql.Get(mockMySQL.Id)
+    assert.Error(t, err)
+
+}
+
+func TestGetAllJobsPostgres(t *testing.T) {
 
     cache := job.NewMemoryJobCache(postgres)
-    genericMockJob := job.GetMockJobWithGenericSchedule()
-    genericMockJob.Init(cache)
 
-    err := postgres.Save(genericMockJob)
-    assert.NotNil(t, err)
+    for i:=1; i<4; i++{
+        theMockJob := job.GetMockJobWithGenericSchedule()
+        theMockJob.Init(cache)
+        theMockJob.Name = fmt.Sprintf("Mock Job %d",i)
+        err := postgres.Save(theMockJob)
+        assert.NoError(t, err)
+    }
+
+    jobs, err := postgres.GetAll()
+    assert.Nil(t, err)
+    assert.Equal(t, len(jobs), 3)
 
 }
 
-// testJobs initializes n testJobs
-//func initTestJobs(n int) []testJob {
-//    testJobs := []testJob{}
-//
-//    for i := 0; i < n; i++ {
-//        j := job.GetMockJobWithGenericSchedule()
-//        j.Init(cache)
-//
-//        bytes, err := j.Bytes()
-//        if err != nil {
-//            panic(err)
-//        }
-//        t := testJob{
-//            Job:   j,
-//            Bytes: bytes,
-//        }
-//
-//        testJobs = append(testJobs, t)
-//    }
-//
-//    return testJobs
-//}
+func TestGetAllJobsMySQL(t *testing.T) {
 
-//
-//func TestGetJob(t *testing.T) {
-//    testJob := testJobs[0]
-//
-//    // Expect a HGET operation to be preformed with the job hash key and job ID
-//    conn.Command("HGET", HashKey, testJob.Job.Id).
-//    Expect(testJob.Bytes).
-//    ExpectError(nil)
-//
-//    storedJob, err := db.Get(testJob.Job.Id)
-//    assert.Nil(t, err)
-//
-//    assert.WithinDuration(t, storedJob.NextRunAt, testJob.Job.NextRunAt, 100*time.Microsecond)
-//    assert.Equal(t, testJob.Job.Name, storedJob.Name)
-//    assert.Equal(t, testJob.Job.Id, storedJob.Id)
-//    assert.Equal(t, testJob.Job.Command, storedJob.Command)
-//    assert.Equal(t, testJob.Job.Schedule, storedJob.Schedule)
-//    assert.Equal(t, testJob.Job.Owner, storedJob.Owner)
-//    assert.Equal(t, testJob.Job.Metadata.SuccessCount, storedJob.Metadata.SuccessCount)
-//
-//    // Test error handling
-//    conn.Command("HGET", HashKey, testJob.Job.Id).
-//    ExpectError(errors.New("Redis error"))
-//
-//    storedJob, err = db.Get(testJob.Job.Id)
-//    assert.NotNil(t, err)
-//}
-//
-//func TestDeleteJob(t *testing.T) {
-//    testJob := testJobs[0]
-//
-//    // Expect a HDEL operation to be preformed with the job ID
-//    conn.Command("HDEL", testJob.Job.Id).
-//    Expect("ok").
-//    ExpectError(nil)
-//
-//    err := db.Delete(testJob.Job.Id)
-//    assert.Nil(t, err)
-//
-//    // Test error handling
-//    conn.Command("HDEL", testJob.Job.Id).
-//    ExpectError(errors.New("Redis error"))
-//
-//    err = db.Delete(testJob.Job.Id)
-//    assert.NotNil(t, err)
-//}
-//
-//func TestGetAllJobs(t *testing.T) {
-//    // Expect a HVALS operation to be preformed with the job hash key
-//    conn.Command("HVALS", HashKey).
-//    Expect([]interface{}{
-//        testJobs[0].Bytes,
-//        testJobs[1].Bytes,
-//        testJobs[2].Bytes,
-//    }).
-//    ExpectError(nil)
-//
-//    jobs, err := db.GetAll()
-//    assert.Nil(t, err)
-//
-//    for i, j := range jobs {
-//        assert.WithinDuration(t, testJobs[i].Job.NextRunAt, j.NextRunAt, 100*time.Microsecond)
-//        assert.Equal(t, testJobs[i].Job.Name, j.Name)
-//        assert.Equal(t, testJobs[i].Job.Id, j.Id)
-//        assert.Equal(t, testJobs[i].Job.Command, j.Command)
-//        assert.Equal(t, testJobs[i].Job.Schedule, j.Schedule)
-//        assert.Equal(t, testJobs[i].Job.Owner, j.Owner)
-//        assert.Equal(t, testJobs[i].Job.Metadata.SuccessCount, j.Metadata.SuccessCount)
-//    }
-//
-//    // Test erorr handling
-//    conn.Command("HVALS", HashKey).
-//    ExpectError(errors.New("Redis error"))
-//
-//    jobs, err = db.GetAll()
-//    assert.NotNil(t, err)
-//}
-//
-//func TestNew(t *testing.T) {
-//
-//}
-//
-//func TestClose(t *testing.T) {
-//    closedConn := false
-//
-//    conn.CloseMock = func() error {
-//        closedConn = true
-//        return nil
-//    }
-//
-//    err := db.Close()
-//
-//    assert.Nil(t, err)
-//    assert.True(t, closedConn)
-//
-//    // Reset closedConn
-//    closedConn = false
-//
-//    conn.CloseMock = func() error {
-//        closedConn = false
-//        return errors.New("Error closing connection")
-//    }
-//
-//    err = db.Close()
-//
-//    assert.NotNil(t, err)
-//    assert.False(t, closedConn)
-//}
+    cache := job.NewMemoryJobCache(mysql)
+
+    for i:=1; i<4; i++{
+        theMockJob := job.GetMockJobWithGenericSchedule()
+        theMockJob.Init(cache)
+        theMockJob.Name = fmt.Sprintf("Mock Job %d",i)
+        err := mysql.Save(theMockJob)
+        assert.NoError(t, err)
+    }
+
+    jobs, err := mysql.GetAll()
+    assert.Nil(t, err)
+    assert.Equal(t, len(jobs), 3)
+
+}
+
+func TestClosePostgres(t *testing.T) {
+    err := postgres.Close()
+    assert.Nil(t, err)
+}
+
+func TestCloseMySQL(t *testing.T) {
+    err := mysql.Close()
+    assert.Nil(t, err)
+}

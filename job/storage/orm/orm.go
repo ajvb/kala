@@ -1,6 +1,8 @@
 package orm
 
 import (
+    "database/sql"
+    "encoding/json"
     "fmt"
     "time"
 
@@ -11,53 +13,114 @@ import (
 
     "github.com/jinzhu/gorm"
     "github.com/Sirupsen/logrus"
-
-    "github.com/davecgh/go-spew/spew"
-//    "github.com/jinzhu/copier"
-    "github.com/ulule/deepcopier"
-    "encoding/json"
 )
 
 // orm for sql abstraction
 type ORM struct {
-    db  *gorm.DB
+    db *gorm.DB
 }
 
-// table where jobs are persisted
-type Job struct {
-    Id              string          `gorm:"column:id;primary_key"   sql:"type:varchar(38)"             json:"id"`
+// Model where jobs are stored
+type Model struct {
+    Id              string          `gorm:"column:id;primary_key"   sql:"type:varchar(36)"      json:"id"`
     Name            string          `gorm:"column:name"             sql:"unique_index;not null" json:"name"`
     Command         string          `gorm:"column:command"          sql:"type:text;not null"    json:"command"`
     Owner           string          `gorm:"column:owner"                                        json:"owner"`
     Disabled        bool            `gorm:"column:disabled"                                     json:"disabled"`
-    DependentJobs   []string        `gorm:"column:dependent_jobs"   sql:"type:varchar()"           json:"dependent_jobs"`
-    ParentJobs      []string        `gorm:"column:parent_jobs"      sql:"type:varchar"           json:"parent_jobs"`
     Schedule        string          `gorm:"column:schedule"                                     json:"schedule"`
-    Retries         uint            `gorm:"column:retries"                                      json:"retries"`
+    Retries         uint            `gorm:"column:retries"          sql:"type:integer"          json:"retries"`
     Epsilon         string          `gorm:"column:epsilon"                                      json:"epsilon"`
     NextRunAt       time.Time       `gorm:"column:next_run_at"                                  json:"next_run_at"`
-    Metadata        json.RawMessage `gorm:"column:metadata"         sql:"type:json"             json:"metadata"`
-    Stats           json.RawMessage `gorm:"column:stats"            sql:"type:json"             json:"stats"`
+
+    JDependentJobs  sql.NullString  `gorm:"column:dependent_jobs"   sql:"type:text"             json:"-"`
+    JParentJobs     sql.NullString  `gorm:"column:parent_jobs"      sql:"type:text"             json:"-"`
+    JMetadata       sql.NullString  `gorm:"column:metadata"         sql:"type:text"             json:"-"`
+    JStats          sql.NullString  `gorm:"column:stats"            sql:"type:text"             json:"-"`
+
+    DependentJobs   []string        `sql:"-"                                                    json:"dependent_jobs"`
+    ParentJobs      []string        `sql:"-"                                                    json:"parent_jobs"`
+    Metadata        job.Metadata    `sql:"-"                                                    json:"metadata"`
+    Stats           []*job.JobStat  `sql:"-"                                                    json:"stats"`
 }
 
-type Metadata struct {
-    SuccessCount     uint      `json:"success_count"`
-    LastSuccess      time.Time `json:"last_success"`
-    ErrorCount       uint      `json:"error_count"`
-    LastError        time.Time `json:"last_error"`
-    LastAttemptedRun time.Time `json:"last_attempted_run"`
-}
-
-type JobStat struct {
-    JobId             string        `json:"job_id"`
-    RanAt             time.Time     `json:"ran_at"`
-    NumberOfRetries   uint          `json:"number_of_retries"`
-    Success           bool          `json:"success"`
-    ExecutionDuration time.Duration `json:"execution_duration"`
-}
-
-func (* Job) TableName() string {
+// table name
+func (this *Model) TableName() string {
     return "kala"
+}
+
+func (this *Model) BeforeCreate() error {
+    return parse(this)
+}
+
+func (this *Model) BeforeUpdate() error {
+    return parse(this)
+}
+
+func (this *Model) AfterFind() (err error) {
+
+    if this.JDependentJobs.Valid {
+        value, _ := this.JDependentJobs.Value()
+        err = json.Unmarshal([]byte(value.(string)),&this.DependentJobs)
+    }
+
+    if err == nil && this.JParentJobs.Valid {
+        value, _ := this.JParentJobs.Value()
+        err = json.Unmarshal([]byte(value.(string)),&this.ParentJobs)
+    }
+
+    if err == nil && this.JMetadata.Valid {
+        value, _ := this.JMetadata.Value()
+        err = json.Unmarshal([]byte(value.(string)),&this.Metadata)
+    }
+
+    if err == nil && this.JStats.Valid {
+        value, _ := this.JStats.Value()
+        err = json.Unmarshal([]byte(value.(string)),&this.Stats)
+    }
+
+    return
+}
+
+func cast(source interface{}, dest interface{}) (err error) {
+
+    var data []byte
+
+    if data, err = json.Marshal(source); err == nil {
+        err = json.Unmarshal(data,dest)
+    }
+
+    return err
+}
+
+func parse(this *Model) (err error) {
+
+    var data []byte
+
+    if len(this.DependentJobs) > 0 {
+        if data, err = json.Marshal(this.DependentJobs); err == nil {
+            this.JDependentJobs.Scan(string(data))
+        }
+    }
+
+    if err == nil && len(this.ParentJobs) > 0 {
+        if data, err = json.Marshal(this.ParentJobs); err == nil {
+            this.JParentJobs.Scan(string(data))
+        }
+    }
+
+    if err == nil {
+        if data, err = json.Marshal(this.Metadata); err == nil {
+            this.JMetadata.Scan(string(data))
+        }
+    }
+
+    if err == nil && len(this.Stats) > 0 {
+        if data, err = json.Marshal(this.Stats); err == nil {
+            this.JStats.Scan(string(data))
+        }
+    }
+
+    return
 }
 
 // Open opens a database connection
@@ -76,8 +139,8 @@ func Open(driver, address string) *ORM {
 
     if db, err = gorm.Open(driver,dsn); err == nil {
         if err = db.DB().Ping(); err == nil {
-            if !db.HasTable(&Job{}) {
-                err = db.Debug().CreateTable(&Job{}).Error
+            if !db.HasTable(&Model{}) {
+                err = db.CreateTable(&Model{}).Error
             }
         }
     }
@@ -90,81 +153,69 @@ func Open(driver, address string) *ORM {
 }
 
 // GetAll returns all Jobs stored in database
-func (this ORM) GetAll() ([]*job.Job, error) {
+func (this ORM) GetAll() (jobs []*job.Job, err error) {
 
-    jobs := []*job.Job{}
-    dbjobs := []Job{}
+    models := []Model{}
 
-    if err := this.db.Debug().Find(&dbjobs).Error; err != nil {
-        logrus.Fatal(err)
+    if err = this.db.Find(&models).Error; err == nil {
+
+        jobs = make([]*job.Job,len(models))
+
+        for i, model := range models {
+
+            if err = cast(&model,&jobs[i]); err != nil {
+                return
+            }
+
+        }
+
     }
-
-//    for _, j := range dbjobs {
-//        jobs = append(jobs,&j)
-//    }
-
-    spew.Dump(dbjobs,jobs)
-
-//    vals, err := d.conn.Do("HVALS", HashKey)
-//    if err != nil {
-//        return jobs, err
-//    }
-//
-//    for _, val := range vals.([]interface{}) {
-//        j, err := job.NewFromBytes(val.([]byte))
-//        if err != nil {
-//            return nil, err
-//        }
-//
-//        err = j.InitDelayDuration(false)
-//        if err != nil {
-//            return nil, err
-//        }
-//
-//        jobs = append(jobs, j)
-//    }
-
-    return jobs, nil
-}
-
-// Get returns a persisted Job.
-func (this ORM) Get(id string) (j *job.Job, e error) {
-//    val, err := d.conn.Do("HGET", HashKey, id)
-//    if err != nil {
-//        return nil, err
-//    }
-//    if val == nil {
-//        return nil, job.ErrJobNotFound(id)
-//    }
-//
-//    return job.NewFromBytes(val.([]byte))
 
     return
 }
 
-// Delete deletes a persisted Job.
-func (this ORM) Delete(id string) error {
-//    _, err := d.conn.Do("HDEL", id)
-//    if err != nil {
-//        return err
-//    }
+// Get selects a Job from database.
+func (this ORM) Get(id string) (*job.Job, error) {
 
-    return nil
+    jb := &job.Job{}
+    model := &Model{Id:id}
+
+    err := this.db.Find(model).Error; if err == nil {
+        err = cast(model,jb)
+    }
+
+    if err == gorm.RecordNotFound {
+        return jb, job.ErrJobNotFound(id)
+    }
+
+    return jb, err
 }
 
-// Save inserts a Job in database
-func (this ORM) Save(j *job.Job) error {
+// Delete deletes a Job from database.
+func (this ORM) Delete(id string) error {
+    return this.db.Unscoped().Delete(&Model{Id:id}).Error
+}
+
+// Save inserts or updates a Job in database
+func (this ORM) Save(jb *job.Job) error {
 
     var (
-        job Job
         err error
+        model Model
     )
 
-    if err = deepcopier.Copy(j).To(&job); err == nil {
+    q := this.db.Where("id=?",jb.Id).Or("name=?",jb.Name).Find(&model)
 
-        spew.Dump(j,job)
+    if q.Error != nil && q.Error != gorm.RecordNotFound {
+        return q.Error
+    }
 
-        err = this.db.Debug().FirstOrCreate(&job).Error
+    if err = cast(jb,&model); err == nil {
+        if q.RecordNotFound() {
+            err = this.db.Create(&model).Error
+        } else {
+            err = this.db.Save(&model).Error
+        }
     }
 
     return err
@@ -172,9 +223,5 @@ func (this ORM) Save(j *job.Job) error {
 
 // Close closes the connection to database
 func (this ORM) Close() error {
-    err := this.db.Close()
-    if err != nil {
-        return err
-    }
-    return nil
+    return this.db.Close()
 }
