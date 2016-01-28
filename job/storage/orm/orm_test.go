@@ -15,25 +15,25 @@ var (
 
 func init() {
 
-    // tested with PostgreSQL 9.4.5
-    user := "user"
-    pass := "pass"
-    host := "127.0.0.1"
+    // tested with PostgreSQL 9.4.5 (hosted on heroku for testing purposes)
+    user := "soufepkljhyieu"
+    pass := "UWRxXE_8fp6ICzS6_ABUf60cJ9"
+    host := "ec2-54-83-194-117.compute-1.amazonaws.com"
     port := "5432"
-    database := "kala"
+    database := "dd3dda1tlvvths"
     postgres = Open("postgres",fmt.Sprintf("%s:%s@%s:%s/%s",user,pass,host,port,database))
-    postgres.db.LogMode(false)
+    postgres.db.LogMode(true)
 
     cachePostgres := job.NewMemoryJobCache(postgres)
     mockPostgres = job.GetMockJobWithGenericSchedule()
     mockPostgres.Init(cachePostgres)
 
-    // tested with MySQL 5.7.10
-    user = "user"
-    pass = "pass"
-    host = "127.0.0.1"
+    // tested with MySQL 5.6.23 (hosted on heroku for testing purposes)
+    user = "ro7lqhta7ef33p13"
+    pass = "ifn1cgf5spi5hvkf"
+    host = "tviw6wn55xwxejwj.cbetxkdyhwsb.us-east-1.rds.amazonaws.com"
     port = "3306"
-    database = "kala"
+    database = "mhkb1rv7ionjkjrh"
     mysql = Open("mysql",fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",user,pass,host,port,database))
     mysql.db.LogMode(true)
 
@@ -119,6 +119,14 @@ func TestGetAllJobsPostgres(t *testing.T) {
     assert.Nil(t, err)
     assert.Equal(t, len(jobs), 3)
 
+    for _, j := range jobs {
+        postgres.Delete(j.Id)
+    }
+
+    jobs, err = postgres.GetAll()
+    assert.Nil(t, err)
+    assert.Equal(t, len(jobs), 0)
+
 }
 
 func TestGetAllJobsMySQL(t *testing.T) {
@@ -136,6 +144,14 @@ func TestGetAllJobsMySQL(t *testing.T) {
     jobs, err := mysql.GetAll()
     assert.Nil(t, err)
     assert.Equal(t, len(jobs), 3)
+
+    for _, j := range jobs {
+        mysql.Delete(j.Id)
+    }
+
+    jobs, err = mysql.GetAll()
+    assert.Nil(t, err)
+    assert.Equal(t, len(jobs), 0)
 
 }
 
