@@ -31,6 +31,51 @@ func TestFromString(t *testing.T) {
 	dur, err = iso8601.FromString("P1W")
 	assert.Nil(t, err)
 	assert.Equal(t, 1, dur.Weeks)
+
+	// test with 2M
+	dur, err = iso8601.FromString("P2M")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, dur.Years)
+	assert.Equal(t, 2, dur.Months)
+	assert.Equal(t, 0, dur.Days)
+	assert.Equal(t, 0, dur.Hours)
+	assert.Equal(t, 0, dur.Minutes)
+	assert.Equal(t, 0, dur.Seconds)
+
+	// test with invalid
+	dur, err = iso8601.FromString("PT")
+	assert.Nil(t, dur)
+	assert.Equal(t, err.Error(), "invalid ISO 8601 duration spec PT")
+
+	// test with 4h
+	dur, err = iso8601.FromString("PT4H")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, dur.Years)
+	assert.Equal(t, 0, dur.Months)
+	assert.Equal(t, 0, dur.Days)
+	assert.Equal(t, 4, dur.Hours)
+	assert.Equal(t, 0, dur.Minutes)
+	assert.Equal(t, 0, dur.Seconds)
+
+	// test with 5m
+	dur, err = iso8601.FromString("PT5M")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, dur.Years)
+	assert.Equal(t, 0, dur.Months)
+	assert.Equal(t, 0, dur.Days)
+	assert.Equal(t, 0, dur.Hours)
+	assert.Equal(t, 5, dur.Minutes)
+	assert.Equal(t, 0, dur.Seconds)
+
+	// test with 6s
+	dur, err = iso8601.FromString("PT6S")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, dur.Years)
+	assert.Equal(t, 0, dur.Months)
+	assert.Equal(t, 0, dur.Days)
+	assert.Equal(t, 0, dur.Hours)
+	assert.Equal(t, 0, dur.Minutes)
+	assert.Equal(t, 6, dur.Seconds)
 }
 
 func TestString(t *testing.T) {
