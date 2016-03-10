@@ -93,7 +93,7 @@ var delayParsingTests = []struct {
 	{time.Hour*24 + time.Second*10 + time.Minute*10, "P1DT10M10S"},
 	{time.Second*10 + time.Minute*10, "PT10M10S"},
 	{time.Hour*24 + time.Second*10, "P1DT10S"},
-	{time.Hour*24*365 + time.Hour*24, "P1Y1DT"},
+	{time.Hour*24*365 + time.Hour*24, "P1Y1D"},
 }
 
 func TestDelayParsing(t *testing.T) {
