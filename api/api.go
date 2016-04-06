@@ -278,7 +278,7 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB, defaultOwne
 	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
 	// Route for getting job stats
 	r.HandleFunc(ApiJobPath+"stats/{id}/", HandleListJobStatsRequest(cache)).Methods("GET")
-	// Route for listing all jops
+	// Route for listing all jobs
 	r.HandleFunc(ApiJobPath, HandleListJobsRequest(cache)).Methods("GET")
 	// Route for manually start a job
 	r.HandleFunc(ApiJobPath+"start/{id}/", HandleStartJobRequest(cache)).Methods("POST")
