@@ -284,7 +284,7 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB, defaultOwne
 	r.HandleFunc(ApiJobPath+"start/{id}/", HandleStartJobRequest(cache)).Methods("POST")
 	// Route for manually start a job
 	r.HandleFunc(ApiJobPath+"enable/{id}/", HandleEnableJobRequest(cache)).Methods("POST")
-	// Route for manually start a job
+	// Route for manually disable a job
 	r.HandleFunc(ApiJobPath+"disable/{id}/", HandleDisableJobRequest(cache)).Methods("POST")
 	// Route for getting app-level metrics
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
