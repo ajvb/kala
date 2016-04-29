@@ -101,7 +101,7 @@ func TestDeleteJob(t *testing.T) {
 	testJob := testJobs[0]
 
 	// Expect a HDEL operation to be preformed with the job ID
-	conn.Command("HDEL", testJob.Job.Id).
+	conn.Command("HDEL", HashKey, testJob.Job.Id).
 		Expect("ok").
 		ExpectError(nil)
 
@@ -109,7 +109,7 @@ func TestDeleteJob(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test error handling
-	conn.Command("HDEL", testJob.Job.Id).
+	conn.Command("HDEL", HashKey, testJob.Job.Id).
 		ExpectError(errors.New("Redis error"))
 
 	err = db.Delete(testJob.Job.Id)
