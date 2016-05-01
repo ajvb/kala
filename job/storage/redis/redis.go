@@ -70,7 +70,7 @@ func (d DB) Get(id string) (*job.Job, error) {
 
 // Delete deletes a persisted Job.
 func (d DB) Delete(id string) error {
-	_, err := d.conn.Do("HDEL", id)
+	_, err := d.conn.Do("HDEL", HashKey, id)
 	if err != nil {
 		return err
 	}
