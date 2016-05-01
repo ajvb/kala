@@ -59,7 +59,9 @@ func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 		log.Fatal(err)
 	}
 	for _, j := range allJobs {
-		j.StartWaiting(c)
+		if j.ShouldStartWaiting() {
+			j.StartWaiting(c)
+		}
 		c.Set(j)
 	}
 

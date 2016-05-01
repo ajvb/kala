@@ -400,3 +400,11 @@ func (j *Job) RunCmd() error {
 	jobRunner := &JobRunner{job: j}
 	return jobRunner.runCmd()
 }
+
+func (j *Job) ShouldStartWaiting() bool {
+	if int(j.timesToRepeat) < len(j.Stats) {
+		return false
+	}
+
+	return true
+}
