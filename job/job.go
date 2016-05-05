@@ -172,6 +172,7 @@ func (j *Job) Init(cache JobCache) error {
 
 	j.lock.Unlock()
 	j.StartWaiting(cache)
+
 	j.lock.Lock()
 
 	return nil
@@ -377,10 +378,11 @@ func (j *Job) Run(cache JobCache) {
 	if newStat != nil {
 		j.Stats = append(j.Stats, newStat)
 	}
-	if j.timesToRepeat != 0 {
-		j.timesToRepeat--
+
+	if j.ShouldStartWaiting() {
 		go j.StartWaiting(cache)
 	}
+
 	j.lock.Unlock()
 }
 
@@ -402,9 +404,13 @@ func (j *Job) RunCmd() error {
 }
 
 func (j *Job) ShouldStartWaiting() bool {
-	if int(j.timesToRepeat) < len(j.Stats) {
+
+	if j.Disabled {
 		return false
 	}
 
+	if int(j.timesToRepeat) < len(j.Stats) {
+		return false
+	}
 	return true
 }

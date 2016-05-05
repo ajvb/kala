@@ -2,10 +2,10 @@ package job
 
 import (
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var testDbPath = ""
@@ -764,10 +764,14 @@ func TestDependentJobsChildGetsDeleted(t *testing.T) {
 func TestDependentJobsChildGetsDisabled(t *testing.T) {
 	cache := NewMockCache()
 
+	// Creates parent job with a schedule
+	// Sets up timer to run job
 	mockJob := GetMockJobWithGenericSchedule()
 	mockJob.Name = "mock_parent_job"
 	mockJob.Init(cache)
 
+	// Creates child job
+	// J.Init() then searches the cache for parent job and appends child to dep jobs
 	mockChildJob := GetMockJob()
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
@@ -788,8 +792,11 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 	j.Run(cache)
 	time.Sleep(time.Second * 2)
 
+	// Child job should not have been run
 	assert.True(t, mockChildJob.Metadata.LastSuccess.IsZero())
 	assert.False(t, mockChildJob.Metadata.LastAttemptedRun.IsZero())
+
+	// Within a second this job should have attempted to be run
 	assert.WithinDuration(t, mockChildJob.Metadata.LastAttemptedRun, n, time.Duration(time.Second))
 }
 
