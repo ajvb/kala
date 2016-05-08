@@ -1,6 +1,7 @@
 package job
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -155,6 +156,23 @@ func TestJobRun(t *testing.T) {
 	cache := NewMockCache()
 
 	j := GetMockJobWithGenericSchedule()
+	j.Init(cache)
+	j.Run(cache)
+
+	now := time.Now()
+
+	assert.Equal(t, j.Metadata.SuccessCount, uint(1))
+	assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
+	assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)
+}
+
+func TestJobWithRepeatOfZeroAndNoInterval(t *testing.T) {
+	cache := NewMockCache()
+
+	j := GetMockJob()
+	parsedTime := time.Now().Add(time.Minute * 5).Format(time.RFC3339)
+	scheduleStr := fmt.Sprintf("R%d/%s/", 0, parsedTime)
+	j.Schedule = scheduleStr
 	j.Init(cache)
 	j.Run(cache)
 
