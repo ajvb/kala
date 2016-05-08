@@ -220,12 +220,14 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 	}
 	log.Debugf("Schedule Time: %s", j.scheduleTime)
 
-	j.delayDuration, err = iso8601.FromString(splitTime[2])
-	if err != nil {
-		log.Errorf("Error converting delayDuration to a iso8601.Duration: %s", err)
-		return err
+	if j.timesToRepeat != 0 {
+		j.delayDuration, err = iso8601.FromString(splitTime[2])
+		if err != nil {
+			log.Errorf("Error converting delayDuration to a iso8601.Duration: %s", err)
+			return err
+		}
+		log.Debugf("Delay Duration: %s", j.delayDuration.ToDuration())
 	}
-	log.Debugf("Delay Duration: %s", j.delayDuration.ToDuration())
 
 	if j.Epsilon != "" {
 		j.epsilonDuration, err = iso8601.FromString(j.Epsilon)
