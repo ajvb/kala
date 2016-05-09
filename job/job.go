@@ -80,6 +80,10 @@ type Job struct {
 	Stats []*JobStat `json:"stats"`
 
 	lock sync.RWMutex
+
+	// Says if a job has been executed right numbers of time
+	// and should not been executed again in the future
+	IsDone bool `json:"is_done"`
 }
 
 type Metadata struct {
@@ -383,6 +387,8 @@ func (j *Job) Run(cache JobCache) {
 
 	if j.ShouldStartWaiting() {
 		go j.StartWaiting(cache)
+	} else {
+		j.IsDone = true
 	}
 
 	j.lock.Unlock()
