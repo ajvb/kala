@@ -45,6 +45,19 @@ var getWaitDurationTableTests = []struct {
 	{
 		JobFunc: func() *Job {
 			return &Job{
+				// Schedule time is passed, no repetitions
+				Schedule: "R0/2015-10-17T11:44:54.389361-07:00/",
+				Metadata: Metadata{
+					LastAttemptedRun: time.Time{},
+				},
+			}
+		},
+		ExpectedDuration: 0 * time.Second,
+		Name:             "Passed time, 0 seconds",
+	},
+	{
+		JobFunc: func() *Job {
+			return &Job{
 				// Schedule time is passed
 				Schedule: "R/2015-10-17T11:44:54.389361-07:00/P1D",
 				Metadata: Metadata{

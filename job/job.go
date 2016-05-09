@@ -266,6 +266,10 @@ func (j *Job) GetWaitDuration() time.Duration {
 	waitDuration := time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())
 
 	if waitDuration < 0 {
+		if j.timesToRepeat == 0 {
+			return 0
+		}
+
 		if j.Metadata.LastAttemptedRun.IsZero() {
 			waitDuration = j.delayDuration.ToDuration()
 		} else {
