@@ -183,6 +183,20 @@ func TestJobWithRepeatOfZeroAndNoInterval(t *testing.T) {
 	assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)
 }
 
+func TestJobWithRepeatOfZeroThatIsDoneAfterRun(t *testing.T) {
+	cache := NewMockCache()
+
+	j := GetMockJob()
+	parsedTime := time.Now().Add(time.Minute * 5).Format(time.RFC3339)
+	scheduleStr := fmt.Sprintf("R%d/%s/", 0, parsedTime)
+	j.Schedule = scheduleStr
+	j.Init(cache)
+	j.Run(cache)
+
+	assert.Equal(t, j.Metadata.SuccessCount, uint(1))
+	assert.Equal(t, j.IsDone, true)
+}
+
 func TestJobRunAndRepeat(t *testing.T) {
 	cache := NewMockCache()
 
@@ -198,7 +212,27 @@ func TestJobRunAndRepeat(t *testing.T) {
 		assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)
 		j.lock.RUnlock()
 	}
+}
 
+func TestTwoTimesRecurringJobIsDoneAfterThirdRun(t *testing.T) {
+	cache := NewMockCache()
+
+	oneSecondFromNow := time.Now().Add(time.Second)
+	j := GetMockJobWithSchedule(2, oneSecondFromNow, "PT1S")
+	j.Init(cache)
+
+	for i := 0; i < 2; i++ {
+		time.Sleep(time.Second)
+		j.lock.RLock()
+		assert.Equal(t, j.IsDone, false)
+		j.lock.RUnlock()
+	}
+
+	time.Sleep(time.Second)
+
+	j.lock.RLock()
+	assert.Equal(t, j.IsDone, true)
+	j.lock.RUnlock()
 }
 
 func TestJobEpsilon(t *testing.T) {
