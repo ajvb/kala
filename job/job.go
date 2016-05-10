@@ -415,13 +415,19 @@ func (j *Job) RunCmd() error {
 	return jobRunner.runCmd()
 }
 
-func (j *Job) ShouldStartWaiting() bool {
+func (j *Job) hasFixedRepetitions() bool {
+	if j.timesToRepeat != -1 {
+		return true
+	}
+	return false
+}
 
+func (j *Job) ShouldStartWaiting() bool {
 	if j.Disabled {
 		return false
 	}
 
-	if int(j.timesToRepeat) < len(j.Stats) {
+	if j.hasFixedRepetitions() && int(j.timesToRepeat) < len(j.Stats) {
 		return false
 	}
 	return true

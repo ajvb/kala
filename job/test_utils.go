@@ -3,6 +3,8 @@ package job
 import (
 	"fmt"
 	"time"
+
+	"github.com/ajvb/kala/utils/iso8601"
 )
 
 type MockDB struct{}
@@ -42,6 +44,21 @@ func GetMockJobWithSchedule(repeat int, scheduleTime time.Time, delay string) *J
 	parsedTime := scheduleTime.Format(time.RFC3339)
 	scheduleStr := fmt.Sprintf("R%d/%s/%s", repeat, parsedTime, delay)
 	genericMockJob.Schedule = scheduleStr
+
+	return genericMockJob
+}
+
+func GetMockRecurringJobWithSchedule(scheduleTime time.Time, delay string) *Job {
+	genericMockJob := GetMockJob()
+
+	parsedTime := scheduleTime.Format(time.RFC3339)
+	scheduleStr := fmt.Sprintf("R/%s/%s", parsedTime, delay)
+	genericMockJob.Schedule = scheduleStr
+	genericMockJob.timesToRepeat = -1
+
+	parsedDuration, _ := iso8601.FromString(delay)
+
+	genericMockJob.delayDuration = parsedDuration
 
 	return genericMockJob
 }
