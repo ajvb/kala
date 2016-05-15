@@ -9,6 +9,7 @@ import (
 	"github.com/ajvb/kala/api"
 	"github.com/ajvb/kala/job"
 	"github.com/ajvb/kala/job/storage/boltdb"
+	"github.com/ajvb/kala/job/storage/orm"
 	"github.com/ajvb/kala/job/storage/redis"
 
 	log "github.com/Sirupsen/logrus"
@@ -125,6 +126,8 @@ func main() {
 					db = boltdb.GetBoltDB(c.String("boltpath"))
 				case "redis":
 					db = redis.New(c.String("jobDBAddress"))
+				case "postgres","mysql":
+					db = orm.Open(c.String("jobDB"),c.String("jobDBAddress"))
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}
