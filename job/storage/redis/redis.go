@@ -19,8 +19,9 @@ type DB struct {
 }
 
 // New instantiates a new DB.
-func New(address string) *DB {
-	conn, err := redis.Dial("tcp", address)
+func New(address string, password redis.DialOption) *DB {
+
+	conn, err := redis.Dial("tcp", address, password)
 	if err != nil {
 		log.Fatal(err)
 	}

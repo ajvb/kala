@@ -10,6 +10,7 @@ import (
 	"github.com/ajvb/kala/job"
 	"github.com/ajvb/kala/job/storage/boltdb"
 	"github.com/ajvb/kala/job/storage/redis"
+	redislib "github.com/garyburd/redigo/redis"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -95,6 +96,11 @@ func main() {
 					Value: "127.0.0.1:6379",
 					Usage: "Network address for the job database, in 'host:port' format.",
 				},
+				cli.StringFlag{
+					Name:  "jobDBPassword",
+					Value: "password",
+					Usage: "Password for the job database, in 'password' format.",
+				},
 				cli.BoolFlag{
 					Name:  "verbose, v",
 					Usage: "Set for verbose logging.",
@@ -124,7 +130,13 @@ func main() {
 				case "boltdb":
 					db = boltdb.GetBoltDB(c.String("boltpath"))
 				case "redis":
-					db = redis.New(c.String("jobDBAddress"))
+					if c.String("jobDBPassword") != "" {
+						option := redislib.DialPassword(c.String("jobDBPassword"))
+						db = redis.New(c.String("jobDBAddress"), option)
+					} else {
+						db = redis.New(c.String("jobDBAddress"), redislib.DialOption{})
+					}
+
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}
