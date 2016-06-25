@@ -9,7 +9,7 @@ import (
 	"github.com/ajvb/kala/api"
 	"github.com/ajvb/kala/job"
 	"github.com/ajvb/kala/job/storage/boltdb"
-	"github.com/ajvb/kala/job/storage/redis"
+	"github.com/cescoferraro/kala/job/storage/redis"
 	redislib "github.com/garyburd/redigo/redis"
 
 	log "github.com/Sirupsen/logrus"

@@ -1,5 +1,5 @@
 FROM golang
 
-RUN go get github.com/ajvb/kala
+RUN go get github.com/cescoferraro/kala
 ENTRYPOINT kala run
 EXPOSE 8000
