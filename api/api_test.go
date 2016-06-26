@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ajvb/kala/job"
+	"github.com/cescoferraro/kala/job"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +29,7 @@ func generateNewJobMap() map[string]string {
 		"schedule": scheduleStr,
 		"name":     "mock_job",
 		"command":  "bash -c 'date'",
-		"owner":    "aj@ajvb.me",
+		"owner":    "aj@cescoferraro.me",
 	}
 }
 func generateJobAndCache() (*job.MemoryJobCache, *job.Job) {
@@ -52,7 +52,7 @@ func (a *ApiTestSuite) TestHandleAddJob() {
 	cache := job.NewMockCache()
 	jobMap := generateNewJobMap()
 	jobMap["owner"] = ""
-	defaultOwner := "aj+tester@ajvb.me"
+	defaultOwner := "aj+tester@cescoferraro.me"
 	handler := HandleAddJob(cache, defaultOwner)
 
 	jsonJobMap, err := json.Marshal(jobMap)

@@ -1,22 +1,28 @@
-package client
+package main
 
 import (
 	"log"
+	"time"
 
-	"github.com/ajvb/kala/client"
-	"github.com/ajvb/kala/job"
+	"github.com/cescoferraro/kala/client"
+	"github.com/cescoferraro/kala/job"
 )
 
 func main() {
+
 	c := client.New("http://127.0.0.1:8000")
 	body := &job.Job{
-		Schedule: "R2/2016-06-30T16:25:16.828696-07:00/PT10S",
-		Name:     "test_job",
-		Command:  "bash -c 'date'",
+		Schedule: getSchedule(),
+		Name:     "cescojob",
+		Command:  "touch teste.txt",
 	}
 	id, err := c.CreateJob(body)
 	log.Println(id, err)
 
-	hey, err := c.GetAllJobs()
-	log.Println(hey, err)
+}
+
+func getSchedule() string {
+	thisTime := time.Now().Add(2 * time.Second).Format(time.RFC3339Nano)
+
+	return "R1/" + thisTime + "/PT10S"
 }

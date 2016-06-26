@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kala
+  namespace: db
+  labels:
+    name: kala
+spec:
+  ports:
+  - port: 8000
+    targetPort: 8000
+  externalIPs:
+    - 107.170.205.220
+    - 45.55.5.204
+  selector:
+    name: kala
+#sudo docker run -it --rm redis redis-cli -h 45.55.23.190 -p 6379 -a descriptor8

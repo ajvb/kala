@@ -234,7 +234,7 @@ func (s *IssueService) ListByRepo(owner, repo string, params *IssueListParams) (
 
 ## Projects using Sling
 
-* [ajvb/kala](https://github.com/ajvb/kala)
+* [cescoferraro/kala](https://github.com/cescoferraro/kala)
 * [dghubble/go-twitter](https://github.com/dghubble/go-twitter)
 * [dghubble/go-digits](https://github.com/dghubble/go-digits)
 * [drinkin/go-gosquared](https://github.com/drinkin/go-gosquared)

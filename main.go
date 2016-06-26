@@ -6,9 +6,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/ajvb/kala/api"
-	"github.com/ajvb/kala/job"
-	"github.com/ajvb/kala/job/storage/boltdb"
+	"github.com/cescoferraro/kala/api"
+	"github.com/cescoferraro/kala/job"
+	"github.com/cescoferraro/kala/job/storage/boltdb"
 	"github.com/cescoferraro/kala/job/storage/redis"
 	redislib "github.com/garyburd/redigo/redis"
 
