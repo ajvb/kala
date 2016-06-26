@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ajvb/kala/utils/iso8601"
+	"github.com/cescoferraro/kala/utils/iso8601"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/mattn/go-shellwords"

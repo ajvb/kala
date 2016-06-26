@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ajvb/kala/utils/iso8601"
+	"github.com/cescoferraro/kala/utils/iso8601"
 )
 
 type MockDB struct{}
@@ -33,7 +33,7 @@ func GetMockJob() *Job {
 	return &Job{
 		Name:    "mock_job",
 		Command: "bash -c 'date'",
-		Owner:   "aj@ajvb.me",
+		Owner:   "aj@cescoferraro.me",
 		Retries: 2,
 	}
 }

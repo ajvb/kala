@@ -3,7 +3,7 @@ machine:
         America/Los_Angeles
     environment:
         GOPATH: "${HOME}/gopath"
-        ORG_NAME: "github.com/ajvb"
+        ORG_NAME: "github.com/cescoferraro"
         REPO_PATH: "${ORG_NAME}/kala"
 
 dependencies:

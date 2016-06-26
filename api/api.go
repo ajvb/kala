@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/ajvb/kala/api/middleware"
-	"github.com/ajvb/kala/job"
+	"github.com/cescoferraro/kala/api/middleware"
+	"github.com/cescoferraro/kala/job"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/negroni"

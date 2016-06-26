@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ajvb/kala/api"
-	"github.com/ajvb/kala/job"
+	"github.com/cescoferraro/kala/api"
+	"github.com/cescoferraro/kala/job"
 
 	"github.com/dghubble/sling"
 )

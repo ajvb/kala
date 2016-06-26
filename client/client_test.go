@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/ajvb/kala/api"
-	"github.com/ajvb/kala/job"
+	"github.com/cescoferraro/kala/api"
+	"github.com/cescoferraro/kala/job"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -50,7 +50,7 @@ func NewJobMap() *job.Job {
 		Schedule: scheduleStr,
 		Name:     "mock_job",
 		Command:  "bash -c 'date'",
-		Owner:    "aj@ajvb.me",
+		Owner:    "aj@cescoferraro.me",
 	}
 }
 
