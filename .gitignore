@@ -1,4 +1,5 @@
 *.pyc
 *.db
 *.coverprofile
+.vscode/
 kala
