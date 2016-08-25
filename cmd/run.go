@@ -79,7 +79,7 @@ func init() {
 	RootCmd.AddCommand(RunserverCmd)
 	utils.CreateShortBoolFlag(RunserverCmd, "verbose output", "verbose", "v", true)
 	utils.CreateIntFlag(RunserverCmd, "Port to run Application server on", "port", "p", 8000)
-	utils.CreateStringFlag(RunserverCmd, "Interface to listen on, default is all.", "interface", "i", "all")
+	utils.CreateStringFlag(RunserverCmd, "Interface to listen on, default is all.", "interface", "i", "0.0.0.0")
 	utils.CreateStringFlag(RunserverCmd, "Default owner. The inputted email will be attached to any job missing an owner", "default-owner", "o", "")
 	utils.CreateStringFlag(RunserverCmd, "Implementation of job database, either 'boltdb' or 'redis'.", "jobDB", "", "boltdb")
 	utils.CreateStringFlag(RunserverCmd, "Path to the bolt database file, default is current directory.", "boltpath", "", "")
