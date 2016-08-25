@@ -75,7 +75,6 @@ var RunserverCmd = &cobra.Command{
 }
 
 func init() {
-
 	RootCmd.AddCommand(RunserverCmd)
 	utils.CreateShortBoolFlag(RunserverCmd, "verbose output", "verbose", "v", true)
 	utils.CreateIntFlag(RunserverCmd, "Port to run Application server on", "port", "p", 8000)
@@ -85,5 +84,4 @@ func init() {
 	utils.CreateStringFlag(RunserverCmd, "Path to the bolt database file, default is current directory.", "boltpath", "", "")
 	utils.CreateStringFlag(RunserverCmd, "Network address for the job database, in 'host:port' format.", "jobDBAddress", "", "127.0.0.1:6379")
 	utils.CreateStringFlag(RunserverCmd, "Password for the job database, in 'password' format.", "jobDBPassword", "", "127.0.0.1:6379")
-
 }

@@ -24,6 +24,9 @@
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.2",
     "gulp-livereload": "^3.8.1",
-    "node-notifier": "^4.6.1"
+    "gulp-sequence": "^0.4.5",
+    "gulp-watch": "^4.3.9",
+    "node-notifier": "^4.6.1",
+    "yargs": "^5.0.0"
   }
 }

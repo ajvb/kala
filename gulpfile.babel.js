@@ -1,21 +1,16 @@
 'use strict'
 import gulp  from 'gulp';
+import gulpWatch  from 'gulp-watch';
 import child  from 'child_process'
 import reload  from "gulp-livereload"
 import util   from 'gulp-util'
 import notifier  from 'node-notifier'
+import runSequence  from 'gulp-sequence'
 var argv = require('yargs').argv
 var server = null;
 
 
-gulp.task('watch', () => {
 
-    gulpWatch('**/*.go', () => {
-        runSequence('server:build', ['server:spawn', 'server:reload'])
-    });
-
-
-});
 
 
 gulp.task('server:build', function () {
@@ -28,13 +23,13 @@ gulp.task('server:build', function () {
     }
 
 
-    let build = child.spawnSync('go', ['build', '-o', 'www/bin', 'src/main.go'], 
-    {
-        env: {
-            'PATH': process.env.PATH,
-            'GOPATH': process.env.GOPATH
-        }
-    })
+    let build = child.spawnSync('go', ['build', '-o', 'kala', 'main.go'],
+        {
+            env: {
+                'PATH': process.env.PATH,
+                'GOPATH': process.env.GOPATH
+            }
+        })
     if (build.stderr.length) {
         var lines = build.stderr.toString()
             .split('\n').filter(function (line) {
@@ -59,7 +54,7 @@ gulp.task('server:spawn', function () {
         server.kill();
 
     /* Spawn application server */
-    server = child.spawn('./bin', [], { cwd: './www' }, function (error, stdout, stderr) {
+    server = child.spawn('./kala', ['run'], { cwd: './' }, function (error, stdout, stderr) {
         // work with result
     });
     //console.log(server);
@@ -83,3 +78,12 @@ gulp.task('server:spawn', function () {
 });
 
 
+gulp.task('watch', () => {
+    gulp.start('server:build', ['server:spawn'])
+    gulpWatch('cmd/**/*.go', () => {
+
+        gulp.start('server:build', ['server:spawn'])
+    });
+
+
+});
