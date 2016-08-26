@@ -1,15 +1,16 @@
 package client
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
 	"github.com/ajvb/kala/api"
 	"github.com/ajvb/kala/job"
-
-	"github.com/dghubble/sling"
 )
 
 var (
@@ -22,7 +23,6 @@ var (
 // KalaClient is the base struct for this package.
 type KalaClient struct {
 	apiEndpoint string
-	requester   *sling.Sling
 }
 
 // New is used to create a new KalaClient based off of the apiEndpoint
@@ -32,11 +32,57 @@ func New(apiEndpoint string) *KalaClient {
 	if strings.HasSuffix(apiEndpoint, "/") {
 		apiEndpoint = apiEndpoint[:len(apiEndpoint)-1]
 	}
+	apiUrlPrefix := api.ApiUrlPrefix[:len(api.ApiUrlPrefix)-1]
 
 	return &KalaClient{
-		apiEndpoint: apiEndpoint + api.ApiUrlPrefix,
-		requester:   sling.New().Base(apiEndpoint + api.ApiUrlPrefix),
+		apiEndpoint: apiEndpoint + apiUrlPrefix,
 	}
+}
+
+func (kc *KalaClient) encode(value interface{}) (io.Reader, error) {
+	if value == nil {
+		return nil, nil
+	}
+	buf := new(bytes.Buffer)
+	if err := json.NewEncoder(buf).Encode(value); err != nil {
+		return nil, err
+	}
+	return buf, nil
+}
+
+func (kc *KalaClient) decode(body io.Reader, target interface{}) error {
+	if target == nil {
+		return nil
+	}
+	return json.NewDecoder(body).Decode(target)
+}
+
+func (kc *KalaClient) url(parts ...string) string {
+	for i, part := range parts {
+		if part == "" {
+			continue
+		}
+		if init, last := part[:len(part)-1], part[len(part)-1]; last == '/' {
+			parts[i] = init
+		}
+	}
+	return strings.Join(append([]string{kc.apiEndpoint}, parts...), "/") + "/"
+}
+
+func (kc *KalaClient) do(method, url string, expectedStatus int, payload, target interface{}) (*http.Response, error) {
+	body, err := kc.encode(payload)
+	if err != nil {
+		return nil, err
+	}
+	req, _ := http.NewRequest(method, url, body)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != expectedStatus {
+		return resp, GenericError
+	}
+	return resp, kc.decode(resp.Body, target)
 }
 
 // CreateJob is used for creating a new job within Kala. Note that the
@@ -51,14 +97,14 @@ func New(apiEndpoint string) *KalaClient {
 //		id, err := c.CreateJob(body)
 func (kc *KalaClient) CreateJob(body *job.Job) (string, error) {
 	id := &api.AddJobResponse{}
-	resp, err := kc.requester.New().Post(api.JobPath).BodyJSON(body).ReceiveSuccess(id)
+	_, err := kc.do(http.MethodPost, kc.url(api.JobPath), http.StatusCreated, body, id)
 	if err != nil {
+		if err == GenericError {
+			return "", JobCreationError
+		}
 		return "", err
 	}
-	if resp.StatusCode != http.StatusCreated {
-		return "", JobCreationError
-	}
-	return id.Id, nil
+	return id.Id, err
 }
 
 // GetJob is used to retrieve a Job from Kala by its ID.
@@ -68,12 +114,12 @@ func (kc *KalaClient) CreateJob(body *job.Job) (string, error) {
 //		job, err := c.GetJob(id)
 func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 	j := &api.JobResponse{}
-	resp, err := kc.requester.New().Get(api.JobPath + id + "/").ReceiveSuccess(j)
+	_, err := kc.do(http.MethodGet, kc.url(api.JobPath, id), http.StatusOK, nil, j)
 	if err != nil {
+		if err == GenericError {
+			return nil, JobNotFound
+		}
 		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, JobNotFound
 	}
 	return j.Job, nil
 }
@@ -85,14 +131,8 @@ func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 //		jobs, err := c.GetAllJobs()
 func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 	jobs := &api.ListJobsResponse{}
-	resp, err := kc.requester.New().Get(api.JobPath).ReceiveSuccess(jobs)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, GenericError
-	}
-	return jobs.Jobs, nil
+	_, err := kc.do(http.MethodGet, kc.url(api.JobPath), http.StatusOK, nil, jobs)
+	return jobs.Jobs, err
 }
 
 // DeleteJob is used to delete a Job from Kala by its ID.
@@ -101,13 +141,12 @@ func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 //		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
 //		ok, err := c.DeleteJob(id)
 func (kc *KalaClient) DeleteJob(id string) (bool, error) {
-	// nil is completely safe to use, as it is simply ignored in the sling library.
-	resp, err := kc.requester.New().Delete(api.JobPath + id + "/").ReceiveSuccess(nil)
+	resp, err := kc.do(http.MethodDelete, kc.url(api.JobPath, id), http.StatusNoContent, nil, nil)
 	if err != nil {
+		if err == GenericError {
+			return false, fmt.Errorf("Delete failed with a status code of %d", resp.StatusCode)
+		}
 		return false, err
-	}
-	if resp.StatusCode != http.StatusNoContent {
-		return false, fmt.Errorf("Delete failed with a status code of %d", resp.StatusCode)
 	}
 	return true, nil
 }
@@ -119,14 +158,8 @@ func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 //		stats, err := c.GetJobStats(id)
 func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 	js := &api.ListJobStatsResponse{}
-	resp, err := kc.requester.New().Get(api.JobPath+"stats/"+id+"/").Receive(js, nil)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, GenericError
-	}
-	return js.JobStats, nil
+	_, err := kc.do(http.MethodGet, kc.url(api.JobPath, "stats", id), http.StatusOK, nil, js)
+	return js.JobStats, err
 }
 
 // StartJob is used to manually start a Job by its ID.
@@ -135,12 +168,12 @@ func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 //		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
 //		ok, err := c.StartJob(id)
 func (kc *KalaClient) StartJob(id string) (bool, error) {
-	resp, err := kc.requester.New().Post(api.JobPath+"start/"+id+"/").Receive(nil, nil)
+	_, err := kc.do(http.MethodPost, kc.url(api.JobPath, "start", id), http.StatusNoContent, nil, nil)
 	if err != nil {
+		if err == GenericError {
+			return false, nil
+		}
 		return false, err
-	}
-	if resp.StatusCode != http.StatusNoContent {
-		return false, nil
 	}
 	return true, nil
 }
@@ -151,12 +184,6 @@ func (kc *KalaClient) StartJob(id string) (bool, error) {
 //		stats, err := c.GetKalaStats()
 func (kc *KalaClient) GetKalaStats() (*job.KalaStats, error) {
 	ks := &api.KalaStatsResponse{}
-	resp, err := kc.requester.New().Get("stats/").Receive(ks, nil)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, GenericError
-	}
-	return ks.Stats, nil
+	_, err := kc.do(http.MethodGet, kc.url("stats"), http.StatusOK, nil, ks)
+	return ks.Stats, err
 }
