@@ -18,6 +18,8 @@ var (
 	JobCreationError = errors.New("Error creating job")
 
 	GenericError = errors.New("An error occured performing your request")
+
+	jobPath = api.JobPath[:len(api.JobPath)-1]
 )
 
 // KalaClient is the base struct for this package.
@@ -58,31 +60,27 @@ func (kc *KalaClient) decode(body io.Reader, target interface{}) error {
 }
 
 func (kc *KalaClient) url(parts ...string) string {
-	for i, part := range parts {
-		if part == "" {
-			continue
-		}
-		if init, last := part[:len(part)-1], part[len(part)-1]; last == '/' {
-			parts[i] = init
-		}
-	}
 	return strings.Join(append([]string{kc.apiEndpoint}, parts...), "/") + "/"
 }
 
-func (kc *KalaClient) do(method, url string, expectedStatus int, payload, target interface{}) (*http.Response, error) {
+func (kc *KalaClient) do(method, url string, expectedStatus int, payload, target interface{}) (int, error) {
 	body, err := kc.encode(payload)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	req, _ := http.NewRequest(method, url, body)
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return 0, err
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	if resp.StatusCode != expectedStatus {
-		return resp, GenericError
+	defer resp.Body.Close()
+	if status := resp.StatusCode; status != expectedStatus {
+		return status, GenericError
 	}
-	return resp, kc.decode(resp.Body, target)
+	return resp.StatusCode, kc.decode(resp.Body, target)
 }
 
 // CreateJob is used for creating a new job within Kala. Note that the
@@ -97,7 +95,7 @@ func (kc *KalaClient) do(method, url string, expectedStatus int, payload, target
 //		id, err := c.CreateJob(body)
 func (kc *KalaClient) CreateJob(body *job.Job) (string, error) {
 	id := &api.AddJobResponse{}
-	_, err := kc.do(http.MethodPost, kc.url(api.JobPath), http.StatusCreated, body, id)
+	_, err := kc.do(http.MethodPost, kc.url(jobPath), http.StatusCreated, body, id)
 	if err != nil {
 		if err == GenericError {
 			return "", JobCreationError
@@ -114,7 +112,7 @@ func (kc *KalaClient) CreateJob(body *job.Job) (string, error) {
 //		job, err := c.GetJob(id)
 func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 	j := &api.JobResponse{}
-	_, err := kc.do(http.MethodGet, kc.url(api.JobPath, id), http.StatusOK, nil, j)
+	_, err := kc.do(http.MethodGet, kc.url(jobPath, id), http.StatusOK, nil, j)
 	if err != nil {
 		if err == GenericError {
 			return nil, JobNotFound
@@ -131,7 +129,7 @@ func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 //		jobs, err := c.GetAllJobs()
 func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 	jobs := &api.ListJobsResponse{}
-	_, err := kc.do(http.MethodGet, kc.url(api.JobPath), http.StatusOK, nil, jobs)
+	_, err := kc.do(http.MethodGet, kc.url(jobPath), http.StatusOK, nil, jobs)
 	return jobs.Jobs, err
 }
 
@@ -141,10 +139,10 @@ func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 //		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
 //		ok, err := c.DeleteJob(id)
 func (kc *KalaClient) DeleteJob(id string) (bool, error) {
-	resp, err := kc.do(http.MethodDelete, kc.url(api.JobPath, id), http.StatusNoContent, nil, nil)
+	status, err := kc.do(http.MethodDelete, kc.url(jobPath, id), http.StatusNoContent, nil, nil)
 	if err != nil {
 		if err == GenericError {
-			return false, fmt.Errorf("Delete failed with a status code of %d", resp.StatusCode)
+			return false, fmt.Errorf("Delete failed with a status code of %d", status)
 		}
 		return false, err
 	}
@@ -158,7 +156,7 @@ func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 //		stats, err := c.GetJobStats(id)
 func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 	js := &api.ListJobStatsResponse{}
-	_, err := kc.do(http.MethodGet, kc.url(api.JobPath, "stats", id), http.StatusOK, nil, js)
+	_, err := kc.do(http.MethodGet, kc.url(jobPath, "stats", id), http.StatusOK, nil, js)
 	return js.JobStats, err
 }
 
@@ -168,7 +166,7 @@ func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 //		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
 //		ok, err := c.StartJob(id)
 func (kc *KalaClient) StartJob(id string) (bool, error) {
-	_, err := kc.do(http.MethodPost, kc.url(api.JobPath, "start", id), http.StatusNoContent, nil, nil)
+	_, err := kc.do(http.MethodPost, kc.url(jobPath, "start", id), http.StatusNoContent, nil, nil)
 	if err != nil {
 		if err == GenericError {
 			return false, nil
