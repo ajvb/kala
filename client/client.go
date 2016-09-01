@@ -13,6 +13,12 @@ import (
 	"github.com/ajvb/kala/job"
 )
 
+const (
+	methodGet    = "GET"
+	methodPost   = "POST"
+	methodDelete = "DELETE"
+)
+
 var (
 	JobNotFound      = errors.New("Job not found")
 	JobCreationError = errors.New("Error creating job")
@@ -63,18 +69,18 @@ func (kc *KalaClient) url(parts ...string) string {
 	return strings.Join(append([]string{kc.apiEndpoint}, parts...), "/") + "/"
 }
 
-func (kc *KalaClient) do(method, url string, expectedStatus int, payload, target interface{}) (int, error) {
+func (kc *KalaClient) do(method, url string, expectedStatus int, payload, target interface{}) (statusCode int, err error) {
 	body, err := kc.encode(payload)
 	if err != nil {
-		return 0, err
+		return
 	}
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		return 0, err
+		return
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return 0, err
+		return
 	}
 	defer resp.Body.Close()
 	if status := resp.StatusCode; status != expectedStatus {
@@ -95,7 +101,7 @@ func (kc *KalaClient) do(method, url string, expectedStatus int, payload, target
 //		id, err := c.CreateJob(body)
 func (kc *KalaClient) CreateJob(body *job.Job) (string, error) {
 	id := &api.AddJobResponse{}
-	_, err := kc.do(http.MethodPost, kc.url(jobPath), http.StatusCreated, body, id)
+	_, err := kc.do(methodPost, kc.url(jobPath), http.StatusCreated, body, id)
 	if err != nil {
 		if err == GenericError {
 			return "", JobCreationError
@@ -112,7 +118,7 @@ func (kc *KalaClient) CreateJob(body *job.Job) (string, error) {
 //		job, err := c.GetJob(id)
 func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 	j := &api.JobResponse{}
-	_, err := kc.do(http.MethodGet, kc.url(jobPath, id), http.StatusOK, nil, j)
+	_, err := kc.do(methodGet, kc.url(jobPath, id), http.StatusOK, nil, j)
 	if err != nil {
 		if err == GenericError {
 			return nil, JobNotFound
@@ -129,7 +135,7 @@ func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 //		jobs, err := c.GetAllJobs()
 func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 	jobs := &api.ListJobsResponse{}
-	_, err := kc.do(http.MethodGet, kc.url(jobPath), http.StatusOK, nil, jobs)
+	_, err := kc.do(methodGet, kc.url(jobPath), http.StatusOK, nil, jobs)
 	return jobs.Jobs, err
 }
 
@@ -139,7 +145,7 @@ func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 //		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
 //		ok, err := c.DeleteJob(id)
 func (kc *KalaClient) DeleteJob(id string) (bool, error) {
-	status, err := kc.do(http.MethodDelete, kc.url(jobPath, id), http.StatusNoContent, nil, nil)
+	status, err := kc.do(methodDelete, kc.url(jobPath, id), http.StatusNoContent, nil, nil)
 	if err != nil {
 		if err == GenericError {
 			return false, fmt.Errorf("Delete failed with a status code of %d", status)
@@ -156,7 +162,7 @@ func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 //		stats, err := c.GetJobStats(id)
 func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 	js := &api.ListJobStatsResponse{}
-	_, err := kc.do(http.MethodGet, kc.url(jobPath, "stats", id), http.StatusOK, nil, js)
+	_, err := kc.do(methodGet, kc.url(jobPath, "stats", id), http.StatusOK, nil, js)
 	return js.JobStats, err
 }
 
@@ -166,7 +172,7 @@ func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 //		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
 //		ok, err := c.StartJob(id)
 func (kc *KalaClient) StartJob(id string) (bool, error) {
-	_, err := kc.do(http.MethodPost, kc.url(jobPath, "start", id), http.StatusNoContent, nil, nil)
+	_, err := kc.do(methodPost, kc.url(jobPath, "start", id), http.StatusNoContent, nil, nil)
 	if err != nil {
 		if err == GenericError {
 			return false, nil
@@ -182,6 +188,6 @@ func (kc *KalaClient) StartJob(id string) (bool, error) {
 //		stats, err := c.GetKalaStats()
 func (kc *KalaClient) GetKalaStats() (*job.KalaStats, error) {
 	ks := &api.KalaStatsResponse{}
-	_, err := kc.do(http.MethodGet, kc.url("stats"), http.StatusOK, nil, ks)
+	_, err := kc.do(methodGet, kc.url("stats"), http.StatusOK, nil, ks)
 	return ks.Stats, err
 }
