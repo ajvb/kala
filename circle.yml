@@ -9,6 +9,7 @@ machine:
 dependencies:
     override:
         # We have to copy this manually to avoid symlinks, which screws all kinds of stuff up
+        - go version
         - rm -rf ${GOPATH}/src/${REPO_PATH}
         - mkdir -p ${GOPATH}/src/${ORG_NAME}
         - cp -r ../kala ${GOPATH}/src/${ORG_NAME}
