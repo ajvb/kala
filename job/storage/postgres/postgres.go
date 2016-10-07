@@ -2,7 +2,6 @@ package postgres
 
 import (
   "fmt"
-  "strings"
   "encoding/json"
 
   "database/sql"
@@ -82,7 +81,7 @@ func (db *PostgresJobDB) Save(j *job.Job) error {
   parentJobs, _ := json.Marshal(j.ParentJobs)
   parentJobsStr := string(parentJobs)
 
-  _, err := db.conn.Query(INSERT_QUERY, 
+  row, err := db.conn.Query(INSERT_QUERY, 
     j.Name, 
     j.Id, 
     j.Command, 
@@ -99,7 +98,11 @@ func (db *PostgresJobDB) Save(j *job.Job) error {
     j.Metadata.LastError, 
     j.Metadata.LastAttemptedRun, 
     j.NextRunAt)
+  if row == nil{
+    panic(err)
+  }
   checkErr(err)
+
 
   return err
 }
