@@ -50,7 +50,7 @@ func (db *PostgresJobDB) Get(id string) (*job.Job, error) {
     var dependentJobsStr string
     var parentJobsStr string
     var meta job.Metadata
-    err := rows.Scan(
+    err = rows.Scan(
       &j.Name,
       &j.Id,
       &j.Command,
@@ -72,10 +72,16 @@ func (db *PostgresJobDB) Get(id string) (*job.Job, error) {
     }
 
     dependentJobsByte := []byte(dependentJobsStr)
-    json.Unmarshal(dependentJobsByte, &j.DependentJobs)
+    err = json.Unmarshal(dependentJobsByte, &j.DependentJobs)
+    if err != nil {
+      return nil, err
+    }
 
     parentJobsByte := []byte(parentJobsStr)
-    json.Unmarshal(parentJobsByte, &j.ParentJobs)
+    err = json.Unmarshal(parentJobsByte, &j.ParentJobs)
+    if err != nil {
+      return nil, err
+    }
 
     j.Metadata = meta
   }
@@ -84,10 +90,16 @@ func (db *PostgresJobDB) Get(id string) (*job.Job, error) {
 }
 
 func (db *PostgresJobDB) Save(j *job.Job) error {
-  dependentJobs, _ := json.Marshal(j.DependentJobs)
+  dependentJobs, err := json.Marshal(j.DependentJobs)
+  if err != nil {
+    return err
+  }
   dependentJobsStr := string(dependentJobs)
 
-  parentJobs, _ := json.Marshal(j.ParentJobs)
+  parentJobs, err := json.Marshal(j.ParentJobs)
+  if err != nil {
+    return err
+  }
   parentJobsStr := string(parentJobs)
 
   row, err := db.conn.Query(INSERT_QUERY,
@@ -153,10 +165,16 @@ func (db *PostgresJobDB) GetAll() ([]*job.Job, error) {
     }
 
     dependentJobsByte := []byte(dependentJobsStr)
-    json.Unmarshal(dependentJobsByte, &j.DependentJobs)
+    err = json.Unmarshal(dependentJobsByte, &j.DependentJobs)
+    if err != nil {
+      return nil, err
+    }
 
     parentJobsByte := []byte(parentJobsStr)
-    json.Unmarshal(parentJobsByte, &j.ParentJobs)
+    err = json.Unmarshal(parentJobsByte, &j.ParentJobs)
+    if err != nil {
+      return nil, err
+    }
 
     j.Metadata = meta
 
