@@ -18,12 +18,11 @@ type DB struct {
 	keyprefix    string
 }
 
-// New instantiates a new DB.
+// New instantiates a new client connection with the Consul server
 func New(address string) *DB {
 
-	config := &api.Config{
-		Address: address,
-	}
+	config := api.DefaultNonPooledConfig()
+	config.Address = address
 
 	queryOptions := &api.QueryOptions{
 		RequireConsistent: true,

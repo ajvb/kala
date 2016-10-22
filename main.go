@@ -86,7 +86,7 @@ func main() {
 				cli.StringFlag{
 					Name:  "jobDB",
 					Value: "boltdb",
-					Usage: "Implementation of job database, either 'boltdb' or 'redis'.",
+					Usage: "Implementation of job database, either 'boltdb','redis','consul.",
 				},
 				cli.StringFlag{
 					Name:  "boltpath",
