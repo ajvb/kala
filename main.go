@@ -106,6 +106,11 @@ func main() {
 					Name:  "verbose, v",
 					Usage: "Set for verbose logging.",
 				},
+				cli.IntFlag{
+					Name:  "persist-every",
+					Value: 5,
+					Usage: "Time interval (in minutes) in which kala persist jobs.",
+				},
 			},
 			Action: func(c *cli.Context) {
 				if c.Bool("v") {
@@ -147,7 +152,7 @@ func main() {
 
 				// Create cache
 				cache := job.NewMemoryJobCache(db)
-				cache.Start(DefaultPersistEvery)
+				cache.Start(time.Duration(c.Int("persist-every")) * time.Second)
 
 				log.Infof("Starting server on port %s...", connectionString)
 				log.Fatal(api.StartServer(connectionString, cache, db, c.String("default-owner")))
