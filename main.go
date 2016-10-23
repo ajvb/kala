@@ -21,9 +21,6 @@ func init() {
 }
 
 var (
-	// DefaultPersistEvery is an interval
-	DefaultPersistEvery = 5 * time.Second
-
 	db job.JobDB
 )
 
@@ -106,10 +103,10 @@ func main() {
 					Name:  "verbose, v",
 					Usage: "Set for verbose logging.",
 				},
-				cli.IntFlag{
+				cli.StringFlag{
 					Name:  "persist-every",
-					Value: 5,
-					Usage: "Time interval (in minutes) in which kala persist jobs.",
+					Value: "5m",
+					Usage: "Time interval as duration string in which kala persist jobs.",
 				},
 			},
 			Action: func(c *cli.Context) {
@@ -152,7 +149,14 @@ func main() {
 
 				// Create cache
 				cache := job.NewMemoryJobCache(db)
-				cache.Start(time.Duration(c.Int("persist-every")) * time.Second)
+
+				duration, err := time.ParseDuration(c.String("persist-every"))
+				// if duration string could not be parsed, set duration to default
+				if err != nil {
+					cache.Start(time.Duration(5 * time.Minute))
+				} else {
+					cache.Start(duration)
+				}
 
 				log.Infof("Starting server on port %s...", connectionString)
 				log.Fatal(api.StartServer(connectionString, cache, db, c.String("default-owner")))
