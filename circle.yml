@@ -6,6 +6,7 @@ machine:
         GOBIN: "${GOPATH}/bin"
         ORG_NAME: "github.com/ajvb"
         REPO_PATH: "${ORG_NAME}/kala"
+        GO15VENDOREXPERIMENT: 1
 
 dependencies:
     pre:
