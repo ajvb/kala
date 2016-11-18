@@ -52,16 +52,16 @@ I recommend checking out [Chronos](https://github.com/airbnb/chronos). This is d
 	cd $GOPATH/src/github.com/ajvb/kala
 	```
 
-2. Install godep
+2. Install Glide
 
 	```
-	go get github.com/tools/godep
+	curl https://glide.sh/get | sh
 	```
 
 3. Restore Godeps
 
 	```
-	godep restore
+	glide install
 	```
 
 4. Build the local Kala binary
