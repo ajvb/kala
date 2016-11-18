@@ -11,6 +11,7 @@ dependencies:
         # We have to copy this manually to avoid symlinks, which screws all kinds of stuff up
         - rm -rf ${GOPATH}/src/${REPO_PATH}
         - mkdir -p ${GOPATH}/src/${ORG_NAME}
+        - mkdir ${GOPATH}/bin
         - cp -r ../kala ${GOPATH}/src/${ORG_NAME}
         - curl https://glide.sh/get | sh
         - glide install:
