@@ -3,6 +3,7 @@ machine:
         America/Los_Angeles
     environment:
         GOPATH: "${HOME}/gopath"
+        GOBIN: "${GOPATH}/bin"
         ORG_NAME: "github.com/ajvb"
         REPO_PATH: "${ORG_NAME}/kala"
 
