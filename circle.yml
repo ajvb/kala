@@ -12,8 +12,8 @@ dependencies:
         - rm -rf ${GOPATH}/src/${REPO_PATH}
         - mkdir -p ${GOPATH}/src/${ORG_NAME}
         - cp -r ../kala ${GOPATH}/src/${ORG_NAME}
-
-        - go get -t -d -v ./...:
+	- curl https://glide.sh/get | sh
+        - glide install
             pwd: ../gopath/src/${REPO_PATH}
 
         - go build -v:
