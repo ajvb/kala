@@ -14,10 +14,9 @@ dependencies:
         - mkdir -p ${GOPATH}/src/${ORG_NAME}
         - cp -r ../kala ${GOPATH}/src/${ORG_NAME}
         - glide install
-            pwd: ../gopath/src/${REPO_PATH}
-
+            pwd: "../gopath/src/${REPO_PATH}"
         - go build -v:
-            pwd: ../gopath/src/${REPO_PATH}
+            pwd: "../gopath/src/${REPO_PATH}"
 
 test:
     pre:
