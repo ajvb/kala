@@ -4,6 +4,7 @@ machine:
     environment:
         GOPATH: "${HOME}/gopath"
         GOBIN: "${GOPATH}/bin"
+        PATH: "${GOBIN}:${PATH}"
         ORG_NAME: "github.com/ajvb"
         REPO_PATH: "${ORG_NAME}/kala"
         GO15VENDOREXPERIMENT: 1
@@ -30,8 +31,8 @@ test:
     override:
         - go test -race $(glide novendor):
             pwd: ../gopath/src/${REPO_PATH}
-        - $GOPATH/bin/overalls -project=${REPO_PATH} -covermode=count -debug -ignore=.git,Godeps:
+        - overalls -project=${REPO_PATH} -covermode=count -debug -ignore=.git,vendor:
             pwd: ../gopath/src/${REPO_PATH}
     post:
-        - $GOPATH/bin/goveralls -coverprofile=overalls.coverprofile -service=circle-ci -repotoken=$COVERALLS_KEY:
+        - goveralls -coverprofile=overalls.coverprofile -service=circle-ci -repotoken=$COVERALLS_KEY:
             pwd: ../gopath/src/${REPO_PATH}
