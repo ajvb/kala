@@ -28,7 +28,7 @@ test:
         - go get github.com/axw/gocov/gocov github.com/mattn/goveralls golang.org/x/tools/cmd/cover github.com/bluesuncorp/overalls:
             pwd: ../gopath/src/${REPO_PATH}
     override:
-        - go test -race ./...:
+        - go test -race $(glide novendor):
             pwd: ../gopath/src/${REPO_PATH}
         - $GOPATH/bin/overalls -project=${REPO_PATH} -covermode=count -debug -ignore=.git,Godeps:
             pwd: ../gopath/src/${REPO_PATH}
