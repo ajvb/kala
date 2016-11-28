@@ -355,7 +355,7 @@ FATA[0000] Command Failed with err: exit status 1
 
 ### How to add a dependent job
 
-Check out this [example for how to add dependent jobs](https://github.com/ajvb/kala/blob/master/examples/example_dependent_jobs.py) within a python script.
+Check out this [example for how to add dependent jobs](https://github.com/ajvb/kala/blob/master/examples/python/example_dependent_jobs.py) within a python script.
 
 ### Notes on Dependent Jobs
 
