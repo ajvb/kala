@@ -1,0 +1,18 @@
+package: github.com/ajvb/kala
+import:
+- package: github.com/Sirupsen/logrus
+- package: github.com/boltdb/bolt
+- package: github.com/codegangsta/cli
+- package: github.com/codegangsta/negroni
+- package: github.com/garyburd/redigo
+  subpackages:
+  - redis
+- package: github.com/gorilla/mux
+- package: github.com/mattn/go-shellwords
+- package: github.com/nu7hatch/gouuid
+testImport:
+- package: github.com/rafaeljusto/redigomock
+- package: github.com/stretchr/testify
+  subpackages:
+  - assert
+  - suite
