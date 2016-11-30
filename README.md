@@ -187,7 +187,7 @@ Install using:
 Example `schedule` string:
 
 ```
-R2/2015-06-04T19:25:16.828696-07:00/PT10S
+R2/2017-06-04T19:25:16.828696-07:00/PT10S
 ```
 
 This string can be split into three parts:
@@ -214,10 +214,10 @@ Kala will return an error if the start datetime has already passed.
 
 Examples:
 
-* `2015-06-04T19:25:16`
-* `2015-06-04T19:25:16.828696`
-* `2015-06-04T19:25:16.828696-07:00`
-* `2015-06-04T19:25:16-07:00`
+* `2017-06-04T19:25:16`
+* `2017-06-04T19:25:16.828696`
+* `2017-06-04T19:25:16.828696-07:00`
+* `2017-06-04T19:25:16-07:00`
 
 *To Note: It is recommended to include a timezone within your schedule parameter.*
 
@@ -273,7 +273,7 @@ Example:
 ```bash
 $ curl http://127.0.0.1:8000/api/v1/job/
 {"jobs":{}}
-$ curl http://127.0.0.1:8000/api/v1/job/ -d '{"epsilon": "PT5S", "command": "bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh", "name": "test_job", "schedule": "R2/2015-06-04T19:25:16.828696-07:00/PT10S"}'
+$ curl http://127.0.0.1:8000/api/v1/job/ -d '{"epsilon": "PT5S", "command": "bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh", "name": "test_job", "schedule": "R2/2017-06-04T19:25:16.828696-07:00/PT10S"}'
 {"id":"93b65499-b211-49ce-57e0-19e735cc5abd"}
 $ curl http://127.0.0.1:8000/api/v1/job/
 {
@@ -286,7 +286,7 @@ $ curl http://127.0.0.1:8000/api/v1/job/
             "disabled":false,
             "dependent_jobs":null,
             "parent_jobs":null,
-            "schedule":"R2/2015-06-04T19:25:16.828696-07:00/PT10S",
+            "schedule":"R2/2017-06-04T19:25:16.828696-07:00/PT10S",
             "retries":0,
             "epsilon":"PT5S",
             "success_count":0,
@@ -294,7 +294,7 @@ $ curl http://127.0.0.1:8000/api/v1/job/
             "error_count":0,
             "last_error":"0001-01-01T00:00:00Z",
             "last_attempted_run":"0001-01-01T00:00:00Z",
-            "next_run_at":"2015-06-04T19:25:16.828794572-07:00"
+            "next_run_at":"2017-06-04T19:25:16.828794572-07:00"
         }
     }
 }
@@ -307,10 +307,10 @@ Performing a DELETE will delete the Job.
 
 Example:
 ```bash
-$ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd
-{"job":{"name":"test_job","id":"93b65499-b211-49ce-57e0-19e735cc5abd","command":"bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh","owner":"","disabled":false,"dependent_jobs":null,"parent_jobs":null,"schedule":"R2/2015-06-04T19:25:16.828696-07:00/PT10S","retries":0,"epsilon":"PT5S","success_count":0,"last_success":"0001-01-01T00:00:00Z","error_count":0,"last_error":"0001-01-01T00:00:00Z","last_attempted_run":"0001-01-01T00:00:00Z","next_run_at":"2015-06-04T19:25:16.828737931-07:00"}}
-$ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd -X DELETE
-$ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd
+$ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd/
+{"job":{"name":"test_job","id":"93b65499-b211-49ce-57e0-19e735cc5abd","command":"bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh","owner":"","disabled":false,"dependent_jobs":null,"parent_jobs":null,"schedule":"R2/2017-06-04T19:25:16.828696-07:00/PT10S","retries":0,"epsilon":"PT5S","success_count":0,"last_success":"0001-01-01T00:00:00Z","error_count":0,"last_error":"0001-01-01T00:00:00Z","last_attempted_run":"0001-01-01T00:00:00Z","next_run_at":"2017-06-04T19:25:16.828737931-07:00"}}
+$ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd/ -X DELETE
+$ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd/
 ```
 
 ## /job/stats/{id}
@@ -318,7 +318,7 @@ $ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd
 Example:
 ```bash
 $ curl http://127.0.0.1:8000/api/v1/job/stats/5d5be920-c716-4c99-60e1-055cad95b40f/
-{"job_stats":[{"JobId":"5d5be920-c716-4c99-60e1-055cad95b40f","RanAt":"2015-06-03T20:01:53.232919459-07:00","NumberOfRetries":0,"Success":true,"ExecutionDuration":4529133}]}
+{"job_stats":[{"JobId":"5d5be920-c716-4c99-60e1-055cad95b40f","RanAt":"2017-06-03T20:01:53.232919459-07:00","NumberOfRetries":0,"Success":true,"ExecutionDuration":4529133}]}
 ```
 
 ## /job/start/{id}
@@ -333,7 +333,7 @@ $ curl http://127.0.0.1:8000/api/v1/job/start/5d5be920-c716-4c99-60e1-055cad95b4
 Example:
 ```bash
 $ curl http://127.0.0.1:8000/api/v1/stats/
-{"Stats":{"ActiveJobs":2,"DisabledJobs":0,"Jobs":2,"ErrorCount":0,"SuccessCount":0,"NextRunAt":"2015-06-04T19:25:16.82873873-07:00","LastAttemptedRun":"0001-01-01T00:00:00Z","CreatedAt":"2015-06-03T19:58:21.433668791-07:00"}}
+{"Stats":{"ActiveJobs":2,"DisabledJobs":0,"Jobs":2,"ErrorCount":0,"SuccessCount":0,"NextRunAt":"2017-06-04T19:25:16.82873873-07:00","LastAttemptedRun":"0001-01-01T00:00:00Z","CreatedAt":"2017-06-03T19:58:21.433668791-07:00"}}
 ```
 
 # Documentation
