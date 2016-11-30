@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -70,7 +71,7 @@ func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 
 	// Process-level defer for shutting down the db.
 	ch := make(chan os.Signal)
-	signal.Notify(ch, os.Interrupt, os.Kill)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	go func() {
 		s := <-ch
 		log.Infof("Process got signal: %s", s)
@@ -82,7 +83,7 @@ func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 		// Close the database
 		c.jobDB.Close()
 
-		os.Exit(1)
+		os.Exit(0)
 	}()
 }
 

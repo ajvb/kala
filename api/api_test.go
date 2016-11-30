@@ -318,4 +318,5 @@ func unmarshallRequestBody(t assert.TestingT, resp *http.Response, obj interface
 	assert.NoError(t, err)
 	resp.Body.Close()
 	err = json.Unmarshal(body, obj)
+	assert.NoError(t, err)
 }
