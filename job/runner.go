@@ -199,7 +199,7 @@ func (j *JobRunner) checkExpected(statusCode int) bool {
 }
 
 func (j *JobRunner) responseTimeout() time.Duration {
-	responseTimeout := time.Duration(j.job.RemoteProperties.Timeout)
+	responseTimeout := j.job.RemoteProperties.Timeout
 	if responseTimeout == 0 {
 
 		// set default to 30 seconds
