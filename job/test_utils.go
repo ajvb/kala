@@ -38,6 +38,15 @@ func GetMockJob() *Job {
 	}
 }
 
+func GetMockRemoteJob(props RemoteProperties) *Job {
+	return &Job{
+		Name:    "mock_remote_job",
+		Command: "",
+		JobType: RemoteJob,
+		RemoteProperties: props,
+	}
+}
+
 func GetMockJobWithSchedule(repeat int, scheduleTime time.Time, delay string) *Job {
 	genericMockJob := GetMockJob()
 

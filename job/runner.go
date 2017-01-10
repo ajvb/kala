@@ -26,6 +26,8 @@ var (
 	ErrJobTypeInvalid = errors.New("Job Type is not valid.")
 )
 
+// Run calls the appropiate run function, collects metadata around the success
+// or failure of the Job's execution, and schedules the next run.
 func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 	j.job.lock.RLock()
 	defer j.job.lock.RUnlock()
@@ -122,6 +124,7 @@ func (j *JobRunner) RemoteRun() error {
 	// Set default or user's passed headers
 	j.setHeaders(req)
 
+	// Do the request
 	res, err := httpClient.Do(req)
 	if err != nil {
 		return err
@@ -198,6 +201,7 @@ func (j *JobRunner) checkExpected(statusCode int) bool {
 	return false
 }
 
+// responseTimeout sets a default timeout if none specified
 func (j *JobRunner) responseTimeout() time.Duration {
 	responseTimeout := j.job.RemoteProperties.Timeout
 	if responseTimeout == 0 {
@@ -208,9 +212,9 @@ func (j *JobRunner) responseTimeout() time.Duration {
 	return time.Duration(responseTimeout) * time.Second
 }
 
+// setHeaders sets default and user specific headers to the http request
 func (j *JobRunner) setHeaders(req *http.Request) {
-	// A valid assumption is that the user is sending something in json cause we're past 2017, check if the user
-	// already added it, if not, add it to the header
+	// A valid assumption is that the user is sending something in json cause we're past 2017
 	if !j.keyInHeaders("Content-Type", j.job.RemoteProperties.Headers) {
 		jsonContentType := "application/json"
 		req.Header.Set("Content-Type", jsonContentType)
@@ -225,6 +229,7 @@ func (j *JobRunner) setHeaders(req *http.Request) {
 	}
 }
 
+// keyInHeaders checks to see if a key of the name keyExpected exists in the headers list
 func (j *JobRunner) keyInHeaders(keyExpected string, headers []Header) bool {
 	for _, header := range headers {
 		if header.Key == keyExpected {

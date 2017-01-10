@@ -22,7 +22,9 @@ var (
 
 	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
 
-	ErrInvalidJob = errors.New("Invalid Job. Job's must contain a Name and a Command field")
+	ErrInvalidJob = errors.New("Invalid Local Job. Job's must contain a Name and a Command field")
+	ErrInvalidRemoteJob = errors.New("Invalid Remote Job. Job's must contain a Name and a url field")
+	ErrInvalidJobType = errors.New("Invalid Job type. Types supported: 0 for local and 1 for remote")
 )
 
 func init() {
@@ -79,6 +81,7 @@ type Job struct {
 	// Type of the job
 	JobType jobType `json:"type"`
 
+	// Custom properties for the remote job type
 	RemoteProperties RemoteProperties `json:"remote_proporties"`
 
 	// Collection of Job Stats
@@ -101,9 +104,17 @@ const (
 type RemoteProperties struct {
 	Url                   string   `json:"url"`
 	Method                string   `json:"method"`
+
+	// A body to attach to the http request
 	Body                  string   `json:"body"`
+
+	// A list of headers to add to http request (e.g. [{"key": "charset", "value": "UTF-8"}])
 	Headers               []Header `json:"headers"`
+
+	// A timeout property for the http request in seconds
 	Timeout               int      `json:"timeout"`
+
+	// A list of expected response codes (e.g. [200, 201])
 	ExpectedResponseCodes []int    `json:"expected_response_codes"`
 }
 
@@ -149,13 +160,6 @@ func NewFromBytes(b []byte) (*Job, error) {
 func (j *Job) Init(cache JobCache) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
-
-	// Job Validation
-	// TODO: Move this to a seperated method?
-	if j.Name == "" || j.Command == "" {
-		log.Errorf(ErrInvalidJob.Error())
-		return ErrInvalidJob
-	}
 
 	u4, err := uuid.NewV4()
 	if err != nil {
@@ -457,4 +461,17 @@ func (j *Job) ShouldStartWaiting() bool {
 		return false
 	}
 	return true
+}
+
+func (j *Job) validation() error {
+	if j.JobType == 0 && (j.Name == "" || j.Command == "") {
+		log.Errorf(ErrInvalidJob.Error())
+		return ErrInvalidJob
+	} else if j.JobType == 1 && (j.Name == "" || j.RemoteProperties.Url == ""){
+		log.Errorf(ErrInvalidRemoteJob.Error())
+		return ErrInvalidRemoteJob
+	} else {
+		log.Errorf(ErrInvalidJobType.Error())
+		return ErrInvalidJobType
+	}
 }
