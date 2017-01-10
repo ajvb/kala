@@ -34,18 +34,11 @@ func generateNewJobMap() map[string]string {
 }
 
 func generateNewRemoteJobMap() map[string]interface{} {
-	scheduleTime := time.Now().Add(time.Minute * 5)
-	repeat := 1
-	delay := "P1DT10M10S"
-	parsedTime := scheduleTime.Format(time.RFC3339)
-	scheduleStr := fmt.Sprintf("R%d/%s/%s", repeat, parsedTime, delay)
-
 	return map[string]interface{}{
-		"schedule": scheduleStr,
 		"name":     "mock_remote_job",
 		"owner":    "aj@ajvb.me",
 		"type": 1,
-		"remote_properties": map[string]string{
+		"remote_proporties": map[string]string{
 			"url": "http://example.com",
 		},
 	}

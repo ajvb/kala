@@ -161,12 +161,19 @@ func (j *Job) Init(cache JobCache) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
+	//validate job type and params
+	err := j.validation()
+	if err != nil {
+		return err
+	}
+
 	u4, err := uuid.NewV4()
 	if err != nil {
 		log.Errorf("Error occured when generating uuid: %s", err)
 		return err
 	}
 	j.Id = u4.String()
+
 
 	// Add Job to the cache.
 	err = cache.Set(j)
@@ -470,8 +477,10 @@ func (j *Job) validation() error {
 	} else if j.JobType == 1 && (j.Name == "" || j.RemoteProperties.Url == ""){
 		log.Errorf(ErrInvalidRemoteJob.Error())
 		return ErrInvalidRemoteJob
-	} else {
+	} else if j.JobType != 0 && j.JobType != 1 {
 		log.Errorf(ErrInvalidJobType.Error())
 		return ErrInvalidJobType
+	} else {
+		return nil
 	}
 }

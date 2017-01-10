@@ -23,5 +23,3 @@ test:
     override:
         - go test -race ./...:
             pwd: ../gopath/src/${REPO_PATH}
-        - $GOPATH/bin/overalls -project=${REPO_PATH} -covermode=count -debug -ignore=.git,Godeps:
-            pwd: ../gopath/src/${REPO_PATH}
