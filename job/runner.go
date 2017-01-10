@@ -205,7 +205,7 @@ func (j *JobRunner) responseTimeout() time.Duration {
 		// set default to 30 seconds
 		responseTimeout = 30
 	}
-	return time.Duration(time.Duration(responseTimeout) * time.Second)
+	return time.Duration(responseTimeout) * time.Second
 }
 
 func (j *JobRunner) setHeaders(req *http.Request) {
