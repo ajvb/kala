@@ -76,6 +76,11 @@ type Job struct {
 	// Meta data about successful and failed runs.
 	Metadata Metadata `json:"metadata"`
 
+	// Type of the job
+	JobType jobType `json:"type"`
+
+	RemoteProperties RemoteProperties `json:"remote_proporties"`
+
 	// Collection of Job Stats
 	Stats []*JobStat `json:"stats"`
 
@@ -86,12 +91,33 @@ type Job struct {
 	IsDone bool `json:"is_done"`
 }
 
+type jobType int
+
+const (
+	LocalJob jobType = 0 + iota
+	RemoteJob
+)
+
+type RemoteProperties struct {
+	Url                  string   `json:"url"`
+	Method               string   `json:"method"`
+	Body                 string   `json:"body"`
+	Headers              []Header `json:"headers"`
+	Timeout              int      `json:"timeout"`
+	ExpectedResponseCode []int    `json:"expected_response_codes"`
+}
+
 type Metadata struct {
 	SuccessCount     uint      `json:"success_count"`
 	LastSuccess      time.Time `json:"last_success"`
 	ErrorCount       uint      `json:"error_count"`
 	LastError        time.Time `json:"last_error"`
 	LastAttemptedRun time.Time `json:"last_attempted_run"`
+}
+
+type Header struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // Bytes returns the byte representation of the Job.
