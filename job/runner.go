@@ -1,14 +1,14 @@
 package job
 
 import (
-	"errors"
-	"os/exec"
-	"time"
-
-	"bytes"
-	log "github.com/Sirupsen/logrus"
-	"net/http"
 	"strings"
+	"errors"
+	"time"
+	"bytes"
+	"net/http"
+	"os/exec"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type JobRunner struct {
@@ -186,10 +186,10 @@ func (j *JobRunner) collectStats(success bool) {
 
 func (j *JobRunner) checkExpected(statusCode int) bool {
 	// If no expected response codes passed, add 200 status code as expected
-	if len(j.job.RemoteProperties.ExpectedResponseCode) == 0 {
-		j.job.RemoteProperties.ExpectedResponseCode = append(j.job.RemoteProperties.ExpectedResponseCode, 200)
+	if len(j.job.RemoteProperties.ExpectedResponseCodes) == 0 {
+		j.job.RemoteProperties.ExpectedResponseCodes = append(j.job.RemoteProperties.ExpectedResponseCodes, 200)
 	}
-	for _, expected := range j.job.RemoteProperties.ExpectedResponseCode {
+	for _, expected := range j.job.RemoteProperties.ExpectedResponseCodes {
 		if expected == statusCode {
 			return true
 		}

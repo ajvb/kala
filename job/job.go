@@ -99,12 +99,12 @@ const (
 )
 
 type RemoteProperties struct {
-	Url                  string   `json:"url"`
-	Method               string   `json:"method"`
-	Body                 string   `json:"body"`
-	Headers              []Header `json:"headers"`
-	Timeout              int      `json:"timeout"`
-	ExpectedResponseCode []int    `json:"expected_response_codes"`
+	Url                   string   `json:"url"`
+	Method                string   `json:"method"`
+	Body                  string   `json:"body"`
+	Headers               []Header `json:"headers"`
+	Timeout               int      `json:"timeout"`
+	ExpectedResponseCodes []int    `json:"expected_response_codes"`
 }
 
 type Metadata struct {
