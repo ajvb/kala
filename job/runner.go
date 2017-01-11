@@ -223,9 +223,9 @@ func (j *JobRunner) setHeaders(req *http.Request) {
 		j.job.RemoteProperties.Headers = append(j.job.RemoteProperties.Headers, Header{"Content-Type", jsonContentType})
 	}
 
-	// Set any custom headers
+	// Add any custom headers
 	for _, header := range j.job.RemoteProperties.Headers {
-		req.Header.Set(header.Key, header.Value)
+		req.Header.Add(header.Key, header.Value)
 	}
 }
 

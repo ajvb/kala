@@ -471,13 +471,13 @@ func (j *Job) ShouldStartWaiting() bool {
 }
 
 func (j *Job) validation() error {
-	if j.JobType == 0 && (j.Name == "" || j.Command == "") {
+	if j.JobType == LocalJob && (j.Name == "" || j.Command == "") {
 		log.Errorf(ErrInvalidJob.Error())
 		return ErrInvalidJob
-	} else if j.JobType == 1 && (j.Name == "" || j.RemoteProperties.Url == ""){
+	} else if j.JobType == RemoteJob && (j.Name == "" || j.RemoteProperties.Url == ""){
 		log.Errorf(ErrInvalidRemoteJob.Error())
 		return ErrInvalidRemoteJob
-	} else if j.JobType != 0 && j.JobType != 1 {
+	} else if j.JobType != LocalJob && j.JobType != RemoteJob {
 		log.Errorf(ErrInvalidJobType.Error())
 		return ErrInvalidJobType
 	} else {
