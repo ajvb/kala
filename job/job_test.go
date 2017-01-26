@@ -273,9 +273,9 @@ func TestJobEpsilon(t *testing.T) {
 
 	now := time.Now()
 
+	j.lock.RLock()
 	assert.Equal(t, j.Metadata.SuccessCount, uint(0))
 	assert.Equal(t, j.Metadata.ErrorCount, uint(2))
-	j.lock.RLock()
 	assert.WithinDuration(t, j.Metadata.LastError, now, 4*time.Second)
 	assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 4*time.Second)
 	assert.True(t, j.Metadata.LastSuccess.IsZero())
