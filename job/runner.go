@@ -222,8 +222,7 @@ func (j *JobRunner) setHeaders(req *http.Request) {
 		req.Header.Set("Content-Type", jsonContentType)
 
 		// Create a new header for our job properties and set the default header
-		j.job.RemoteProperties.Headers = make(http.Header)
-		j.job.RemoteProperties.Headers.Set("Content-Type", jsonContentType)
+		j.job.RemoteProperties.Headers = http.Header{"Content-Type": []string{jsonContentType}}
 	} else {
 		req.Header = j.job.RemoteProperties.Headers
 	}
