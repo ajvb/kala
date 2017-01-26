@@ -35,10 +35,10 @@ func generateNewJobMap() map[string]string {
 
 func generateNewRemoteJobMap() map[string]interface{} {
 	return map[string]interface{}{
-		"name":     "mock_remote_job",
-		"owner":    "aj@ajvb.me",
-		"type": 1,
-		"remote_proporties": map[string]string{
+		"name":  "mock_remote_job",
+		"owner": "aj@ajvb.me",
+		"type":  1,
+		"remote_properties": map[string]string{
 			"url": "http://example.com",
 		},
 	}

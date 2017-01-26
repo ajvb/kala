@@ -1,12 +1,12 @@
 package job
 
 import (
-	"strings"
-	"errors"
-	"time"
 	"bytes"
+	"errors"
 	"net/http"
 	"os/exec"
+	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -215,26 +215,16 @@ func (j *JobRunner) responseTimeout() time.Duration {
 // setHeaders sets default and user specific headers to the http request
 func (j *JobRunner) setHeaders(req *http.Request) {
 	// A valid assumption is that the user is sending something in json cause we're past 2017
-	if !j.keyInHeaders("Content-Type", j.job.RemoteProperties.Headers) {
+	if j.job.RemoteProperties.Headers["Content-Type"] == nil {
 		jsonContentType := "application/json"
+
+		// Set in the request header we are sending to remote host the newly header
 		req.Header.Set("Content-Type", jsonContentType)
 
-		// Add the new header to the job properties
-		j.job.RemoteProperties.Headers = append(j.job.RemoteProperties.Headers, Header{"Content-Type", jsonContentType})
+		// Create a new header for our job properties and set the default header
+		j.job.RemoteProperties.Headers = make(http.Header)
+		j.job.RemoteProperties.Headers.Set("Content-Type", jsonContentType)
+	} else {
+		req.Header = j.job.RemoteProperties.Headers
 	}
-
-	// Add any custom headers
-	for _, header := range j.job.RemoteProperties.Headers {
-		req.Header.Add(header.Key, header.Value)
-	}
-}
-
-// keyInHeaders checks to see if a key of the name keyExpected exists in the headers list
-func (j *JobRunner) keyInHeaders(keyExpected string, headers []Header) bool {
-	for _, header := range headers {
-		if header.Key == keyExpected {
-			return true
-		}
-	}
-	return false
 }

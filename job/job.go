@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,9 +23,9 @@ var (
 
 	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
 
-	ErrInvalidJob = errors.New("Invalid Local Job. Job's must contain a Name and a Command field")
+	ErrInvalidJob       = errors.New("Invalid Local Job. Job's must contain a Name and a Command field")
 	ErrInvalidRemoteJob = errors.New("Invalid Remote Job. Job's must contain a Name and a url field")
-	ErrInvalidJobType = errors.New("Invalid Job type. Types supported: 0 for local and 1 for remote")
+	ErrInvalidJobType   = errors.New("Invalid Job type. Types supported: 0 for local and 1 for remote")
 )
 
 func init() {
@@ -82,7 +83,7 @@ type Job struct {
 	JobType jobType `json:"type"`
 
 	// Custom properties for the remote job type
-	RemoteProperties RemoteProperties `json:"remote_proporties"`
+	RemoteProperties RemoteProperties `json:"remote_properties"`
 
 	// Collection of Job Stats
 	Stats []*JobStat `json:"stats"`
@@ -97,25 +98,26 @@ type Job struct {
 type jobType int
 
 const (
-	LocalJob jobType = 0 + iota
+	LocalJob jobType = iota
 	RemoteJob
 )
 
+// RemoteProperties Custom properties for the remote job type
 type RemoteProperties struct {
-	Url                   string   `json:"url"`
-	Method                string   `json:"method"`
+	Url    string `json:"url"`
+	Method string `json:"method"`
 
 	// A body to attach to the http request
-	Body                  string   `json:"body"`
+	Body string `json:"body"`
 
 	// A list of headers to add to http request (e.g. [{"key": "charset", "value": "UTF-8"}])
-	Headers               []Header `json:"headers"`
+	Headers http.Header `json:"headers"`
 
 	// A timeout property for the http request in seconds
-	Timeout               int      `json:"timeout"`
+	Timeout int `json:"timeout"`
 
 	// A list of expected response codes (e.g. [200, 201])
-	ExpectedResponseCodes []int    `json:"expected_response_codes"`
+	ExpectedResponseCodes []int `json:"expected_response_codes"`
 }
 
 type Metadata struct {
@@ -124,11 +126,6 @@ type Metadata struct {
 	ErrorCount       uint      `json:"error_count"`
 	LastError        time.Time `json:"last_error"`
 	LastAttemptedRun time.Time `json:"last_attempted_run"`
-}
-
-type Header struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
 }
 
 // Bytes returns the byte representation of the Job.
@@ -173,7 +170,6 @@ func (j *Job) Init(cache JobCache) error {
 		return err
 	}
 	j.Id = u4.String()
-
 
 	// Add Job to the cache.
 	err = cache.Set(j)
@@ -471,16 +467,16 @@ func (j *Job) ShouldStartWaiting() bool {
 }
 
 func (j *Job) validation() error {
+	var err error
 	if j.JobType == LocalJob && (j.Name == "" || j.Command == "") {
-		log.Errorf(ErrInvalidJob.Error())
-		return ErrInvalidJob
-	} else if j.JobType == RemoteJob && (j.Name == "" || j.RemoteProperties.Url == ""){
-		log.Errorf(ErrInvalidRemoteJob.Error())
-		return ErrInvalidRemoteJob
+		err = ErrInvalidJob
+	} else if j.JobType == RemoteJob && (j.Name == "" || j.RemoteProperties.Url == "") {
+		err = ErrInvalidRemoteJob
 	} else if j.JobType != LocalJob && j.JobType != RemoteJob {
-		log.Errorf(ErrInvalidJobType.Error())
-		return ErrInvalidJobType
+		err = ErrInvalidJobType
 	} else {
 		return nil
 	}
+	log.Errorf(err.Error())
+	return err
 }
