@@ -14,24 +14,16 @@ import (
 	"github.com/ajvb/kala/utils/iso8601"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/mattn/go-shellwords"
 	"github.com/nu7hatch/gouuid"
 )
 
 var (
-	shParser = shellwords.NewParser()
-
 	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
 
 	ErrInvalidJob       = errors.New("Invalid Local Job. Job's must contain a Name and a Command field")
 	ErrInvalidRemoteJob = errors.New("Invalid Remote Job. Job's must contain a Name and a url field")
 	ErrInvalidJobType   = errors.New("Invalid Job type. Types supported: 0 for local and 1 for remote")
 )
-
-func init() {
-	shParser.ParseEnv = true
-	shParser.ParseBacktick = true
-}
 
 type Job struct {
 	Name string `json:"name"`

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/mattn/go-shellwords"
 )
 
 type JobRunner struct {
@@ -26,7 +27,7 @@ var (
 	ErrJobTypeInvalid = errors.New("Job Type is not valid.")
 )
 
-// Run calls the appropiate run function, collects metadata around the success
+// Run calls the appropriate run function, collects metadata around the success
 // or failure of the Job's execution, and schedules the next run.
 func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 	j.job.lock.RLock()
@@ -138,10 +139,18 @@ func (j *JobRunner) RemoteRun() error {
 	}
 }
 
+func initShParser() *shellwords.Parser {
+	shParser := shellwords.NewParser()
+	shParser.ParseEnv = true
+	shParser.ParseBacktick = true
+	return shParser
+}
+
 func (j *JobRunner) runCmd() error {
 	j.numberOfAttempts++
 
 	// Execute command
+	shParser := initShParser()
 	args, err := shParser.Parse(j.job.Command)
 	if err != nil {
 		return err
