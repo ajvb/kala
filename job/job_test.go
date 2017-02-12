@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"net/http/httptest"
+	"net/http"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -271,9 +273,9 @@ func TestJobEpsilon(t *testing.T) {
 
 	now := time.Now()
 
+	j.lock.RLock()
 	assert.Equal(t, j.Metadata.SuccessCount, uint(0))
 	assert.Equal(t, j.Metadata.ErrorCount, uint(2))
-	j.lock.RLock()
 	assert.WithinDuration(t, j.Metadata.LastError, now, 4*time.Second)
 	assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 4*time.Second)
 	assert.True(t, j.Metadata.LastSuccess.IsZero())
@@ -926,4 +928,50 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 	assert.Equal(t, j.ParentJobs[0], mockJobBackup.Id)
 	assert.True(t, len(j.ParentJobs) == 1)
 	j.lock.RUnlock()
+}
+
+func TestRemoteJobRunner(t *testing.T) {
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Hello, client")
+	}))
+	defer testServer.Close()
+
+	mockRemoteJob := GetMockRemoteJob(RemoteProperties{
+		Url: testServer.URL,
+	})
+
+	cache := NewMockCache()
+	mockRemoteJob.Run(cache)
+	assert.True(t, mockRemoteJob.Metadata.SuccessCount == 1)
+}
+
+func TestRemoteJobBadStatus(t *testing.T) {
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "something failed", http.StatusInternalServerError)
+	}))
+	defer testServer.Close()
+
+	mockRemoteJob := GetMockRemoteJob(RemoteProperties{
+		Url: testServer.URL,
+	})
+
+	cache := NewMockCache()
+	mockRemoteJob.Run(cache)
+	assert.True(t, mockRemoteJob.Metadata.SuccessCount == 0)
+}
+
+func TestRemoteJobBadStatusSuccess(t *testing.T) {
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "something failed", http.StatusInternalServerError)
+	}))
+	defer testServer.Close()
+
+	mockRemoteJob := GetMockRemoteJob(RemoteProperties{
+		Url: testServer.URL,
+		ExpectedResponseCodes: []int{500},
+	})
+
+	cache := NewMockCache()
+	mockRemoteJob.Run(cache)
+	assert.True(t, mockRemoteJob.Metadata.SuccessCount == 1)
 }

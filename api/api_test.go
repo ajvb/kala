@@ -32,6 +32,18 @@ func generateNewJobMap() map[string]string {
 		"owner":    "aj@ajvb.me",
 	}
 }
+
+func generateNewRemoteJobMap() map[string]interface{} {
+	return map[string]interface{}{
+		"name":  "mock_remote_job",
+		"owner": "aj@ajvb.me",
+		"type":  1,
+		"remote_properties": map[string]string{
+			"url": "http://example.com",
+		},
+	}
+}
+
 func generateJobAndCache() (*job.MemoryJobCache, *job.Job) {
 	cache := job.NewMockCache()
 	j := job.GetMockJobWithGenericSchedule()
@@ -70,6 +82,31 @@ func (a *ApiTestSuite) TestHandleAddJob() {
 	a.Equal(defaultOwner, retrievedJob.Owner)
 	a.Equal(w.Code, http.StatusCreated)
 }
+
+func (a *ApiTestSuite) TestHandleAddRemoteJob() {
+	t := a.T()
+	cache := job.NewMockCache()
+	jobMap := generateNewRemoteJobMap()
+	jobMap["owner"] = ""
+	defaultOwner := "aj+tester@ajvb.me"
+	handler := HandleAddJob(cache, defaultOwner)
+
+	jsonJobMap, err := json.Marshal(jobMap)
+	a.NoError(err)
+	w, req := setupTestReq(t, "POST", ApiJobPath, jsonJobMap)
+	handler(w, req)
+
+	var addJobResp AddJobResponse
+	err = json.Unmarshal(w.Body.Bytes(), &addJobResp)
+	a.NoError(err)
+	retrievedJob, err := cache.Get(addJobResp.Id)
+	a.NoError(err)
+	a.Equal(jobMap["name"], retrievedJob.Name)
+	a.NotEqual(jobMap["owner"], retrievedJob.Owner)
+	a.Equal(defaultOwner, retrievedJob.Owner)
+	a.Equal(w.Code, http.StatusCreated)
+}
+
 func (a *ApiTestSuite) TestHandleAddJobFailureBadJson() {
 	t := a.T()
 	cache := job.NewMockCache()

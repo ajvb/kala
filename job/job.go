@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,22 +14,16 @@ import (
 	"github.com/ajvb/kala/utils/iso8601"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/mattn/go-shellwords"
 	"github.com/nu7hatch/gouuid"
 )
 
 var (
-	shParser = shellwords.NewParser()
-
 	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
 
-	ErrInvalidJob = errors.New("Invalid Job. Job's must contain a Name and a Command field")
+	ErrInvalidJob       = errors.New("Invalid Local Job. Job's must contain a Name and a Command field")
+	ErrInvalidRemoteJob = errors.New("Invalid Remote Job. Job's must contain a Name and a url field")
+	ErrInvalidJobType   = errors.New("Invalid Job type. Types supported: 0 for local and 1 for remote")
 )
-
-func init() {
-	shParser.ParseEnv = true
-	shParser.ParseBacktick = true
-}
 
 type Job struct {
 	Name string `json:"name"`
@@ -76,6 +71,12 @@ type Job struct {
 	// Meta data about successful and failed runs.
 	Metadata Metadata `json:"metadata"`
 
+	// Type of the job
+	JobType jobType `json:"type"`
+
+	// Custom properties for the remote job type
+	RemoteProperties RemoteProperties `json:"remote_properties"`
+
 	// Collection of Job Stats
 	Stats []*JobStat `json:"stats"`
 
@@ -84,6 +85,31 @@ type Job struct {
 	// Says if a job has been executed right numbers of time
 	// and should not been executed again in the future
 	IsDone bool `json:"is_done"`
+}
+
+type jobType int
+
+const (
+	LocalJob jobType = iota
+	RemoteJob
+)
+
+// RemoteProperties Custom properties for the remote job type
+type RemoteProperties struct {
+	Url    string `json:"url"`
+	Method string `json:"method"`
+
+	// A body to attach to the http request
+	Body string `json:"body"`
+
+	// A list of headers to add to http request (e.g. [{"key": "charset", "value": "UTF-8"}])
+	Headers http.Header `json:"headers"`
+
+	// A timeout property for the http request in seconds
+	Timeout int `json:"timeout"`
+
+	// A list of expected response codes (e.g. [200, 201])
+	ExpectedResponseCodes []int `json:"expected_response_codes"`
 }
 
 type Metadata struct {
@@ -124,11 +150,10 @@ func (j *Job) Init(cache JobCache) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
-	// Job Validation
-	// TODO: Move this to a seperated method?
-	if j.Name == "" || j.Command == "" {
-		log.Errorf(ErrInvalidJob.Error())
-		return ErrInvalidJob
+	//validate job type and params
+	err := j.validation()
+	if err != nil {
+		return err
 	}
 
 	u4, err := uuid.NewV4()
@@ -431,4 +456,19 @@ func (j *Job) ShouldStartWaiting() bool {
 		return false
 	}
 	return true
+}
+
+func (j *Job) validation() error {
+	var err error
+	if j.JobType == LocalJob && (j.Name == "" || j.Command == "") {
+		err = ErrInvalidJob
+	} else if j.JobType == RemoteJob && (j.Name == "" || j.RemoteProperties.Url == "") {
+		err = ErrInvalidRemoteJob
+	} else if j.JobType != LocalJob && j.JobType != RemoteJob {
+		err = ErrInvalidJobType
+	} else {
+		return nil
+	}
+	log.Errorf(err.Error())
+	return err
 }
