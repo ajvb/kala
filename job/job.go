@@ -213,6 +213,10 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
+	if j.Schedule == "" {
+		return nil
+	}
+
 	var err error
 	splitTime := strings.Split(j.Schedule, "/")
 	if len(splitTime) != 3 {
