@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ajvb/kala/job"
+	"github.com/gwoo/kala/job"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/boltdb/bolt"
