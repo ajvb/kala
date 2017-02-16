@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ajvb/kala/job"
+	"github.com/gwoo/kala/job"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
