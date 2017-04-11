@@ -6,11 +6,11 @@ import (
 	"runtime"
 	"time"
 
+	redislib "github.com/garyburd/redigo/redis"
 	"github.com/gwoo/kala/api"
 	"github.com/gwoo/kala/job"
 	"github.com/gwoo/kala/job/storage/boltdb"
 	"github.com/gwoo/kala/job/storage/redis"
-	redislib "github.com/garyburd/redigo/redis"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -148,7 +148,7 @@ func main() {
 				}
 
 				// Create cache
-				cache := job.NewMemoryJobCache(db)
+				cache := job.NewFreeJobCache(db)
 				cache.Start(time.Duration(c.Int("persist-every")) * time.Second)
 
 				log.Infof("Starting server on port %s...", connectionString)

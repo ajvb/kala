@@ -25,8 +25,8 @@ func (m *MockDB) Close() error {
 	return nil
 }
 
-func NewMockCache() *MemoryJobCache {
-	return NewMemoryJobCache(&MockDB{})
+func NewMockCache() *FreeJobCache {
+	return NewFreeJobCache(&MockDB{})
 }
 
 func GetMockJob() *Job {
@@ -40,9 +40,9 @@ func GetMockJob() *Job {
 
 func GetMockRemoteJob(props RemoteProperties) *Job {
 	return &Job{
-		Name:    "mock_remote_job",
-		Command: "",
-		JobType: RemoteJob,
+		Name:             "mock_remote_job",
+		Command:          "",
+		JobType:          RemoteJob,
 		RemoteProperties: props,
 	}
 }
