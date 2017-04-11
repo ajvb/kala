@@ -24,6 +24,15 @@
 			"Rev": "c7477ad8e330bef55bf1ebe300cf8aa67c492d1b"
 		},
 		{
+			"ImportPath": "github.com/cornelk/hashmap",
+			"Rev": "5fee90babde75fb6e9065a9c6459202a3a47ae32"
+		},
+		{
+			"ImportPath": "github.com/dchest/siphash",
+			"Comment": "v1.0.0-32-g4ebf1de",
+			"Rev": "4ebf1de738443ea7f45f02dc394c4df1942a126d"
+		},
+		{
 			"ImportPath": "github.com/garyburd/redigo/internal",
 			"Comment": "v1.0.0-20-g4854517",
 			"Rev": "48545177e92ae3e7bcdbd50b42f7a139e6a268da"
