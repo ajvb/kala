@@ -29,6 +29,16 @@ func New(address string, password redis.DialOption) *DB {
 	}
 }
 
+func Newnopass(address string) *DB {
+	conn, err := redis.Dial("tcp", address)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &DB{
+		conn: conn,
+	}
+}
+
 // GetAll returns all persisted Jobs.
 func (d DB) GetAll() ([]*job.Job, error) {
 	jobs := []*job.Job{}
