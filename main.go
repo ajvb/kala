@@ -133,11 +133,11 @@ func main() {
 				case "boltdb":
 					db = boltdb.GetBoltDB(c.String("boltpath"))
 				case "redis":
-					if c.String("jobDBPassword") != "" {
+					if c.String("jobDBPassword") != "" && c.String("jobDBPassword") != "password" {
 						option := redislib.DialPassword(c.String("jobDBPassword"))
 						db = redis.New(c.String("jobDBAddress"), option)
 					} else {
-						db = redis.New(c.String("jobDBAddress"), redislib.DialOption{})
+						db = redis.Newnopass(c.String("jobDBAddress"))
 					}
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
