@@ -96,7 +96,7 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "jobDBPassword",
-					Value: "password",
+					Value: "",
 					Usage: "Password for the job database, in 'password' format.",
 				},
 				cli.BoolFlag{
@@ -133,11 +133,11 @@ func main() {
 				case "boltdb":
 					db = boltdb.GetBoltDB(c.String("boltpath"))
 				case "redis":
-					if c.String("jobDBPassword") != "" && c.String("jobDBPassword") != "password" {
+					if c.String("jobDBPassword") != "" {
 						option := redislib.DialPassword(c.String("jobDBPassword"))
-						db = redis.New(c.String("jobDBAddress"), option)
+						db = redis.New(c.String("jobDBAddress"), option, 1)
 					} else {
-						db = redis.Newnopass(c.String("jobDBAddress"))
+						db = redis.New(c.String("jobDBAddress"), redislib.DialOption{}, 0)
 					}
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
