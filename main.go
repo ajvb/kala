@@ -12,7 +12,7 @@ import (
 	"github.com/ajvb/kala/job/storage/redis"
 	redislib "github.com/garyburd/redigo/redis"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/codegangsta/cli"
 )
 
