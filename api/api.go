@@ -9,7 +9,7 @@ import (
 	"github.com/ajvb/kala/api/middleware"
 	"github.com/ajvb/kala/job"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
 )
