@@ -135,9 +135,9 @@ func main() {
 				case "redis":
 					if c.String("jobDBPassword") != "" {
 						option := redislib.DialPassword(c.String("jobDBPassword"))
-						db = redis.New(c.String("jobDBAddress"), option, 1)
+						db = redis.New(c.String("jobDBAddress"), option, true)
 					} else {
-						db = redis.New(c.String("jobDBAddress"), redislib.DialOption{}, 0)
+						db = redis.New(c.String("jobDBAddress"), redislib.DialOption{}, false)
 					}
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
