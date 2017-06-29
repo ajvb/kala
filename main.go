@@ -9,6 +9,7 @@ import (
 	"github.com/ajvb/kala/api"
 	"github.com/ajvb/kala/job"
 	"github.com/ajvb/kala/job/storage/boltdb"
+	"github.com/ajvb/kala/job/storage/consul"
 	"github.com/ajvb/kala/job/storage/redis"
 	redislib "github.com/garyburd/redigo/redis"
 
@@ -82,7 +83,7 @@ func main() {
 				cli.StringFlag{
 					Name:  "jobDB",
 					Value: "boltdb",
-					Usage: "Implementation of job database, either 'boltdb' or 'redis'.",
+					Usage: "Implementation of job database, either 'boltdb','redis','consul'.",
 				},
 				cli.StringFlag{
 					Name:  "boltpath",
@@ -139,6 +140,8 @@ func main() {
 					} else {
 						db = redis.New(c.String("jobDBAddress"), redislib.DialOption{}, false)
 					}
+				case "consul":
+					db = consul.New(c.String("jobDBAddress"))
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}

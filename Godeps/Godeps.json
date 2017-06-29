@@ -6,6 +6,19 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.10.0-38-g3ec0642",
+			"Rev": "3ec0642a7fb6488f65b06f9040adc67e3990296a"
+		},
+		{
+			"ImportPath": "github.com/armon/go-metrics",
+			"Rev": "3df31a1ada83e310c2e24b267c8e8b68836547b4"
+		},
+		{
+			"ImportPath": "github.com/armon/go-radix",
+			"Rev": "4239b77079c7b5d1243b7b4736304ce8ddb6f0f2"
+		},
+		{
 			"ImportPath": "github.com/boltdb/bolt",
 			"Comment": "v1.0-117-g0f053fa",
 			"Rev": "0f053fabc06119583d61937a0a06ef0ba0f1b301"
@@ -21,13 +34,14 @@
 			"Rev": "c7477ad8e330bef55bf1ebe300cf8aa67c492d1b"
 		},
 		{
-			"ImportPath": "github.com/dghubble/sling",
-			"Comment": "v1.0-2-g6f0c98a",
-			"Rev": "6f0c98af02f338455d6c4eeee03523dd7602d584"
+			"ImportPath": "github.com/garyburd/redigo/internal",
+			"Comment": "v1.0.0-5-gffa8d46",
+			"Rev": "ffa8d46ada782d81cfda81a0fbd9f45ceae448e8"
 		},
 		{
-			"ImportPath": "github.com/google/go-querystring/query",
-			"Rev": "547ef5ac979778feb2f760cdb5f4eae1a2207b86"
+			"ImportPath": "github.com/garyburd/redigo/redis",
+			"Comment": "v1.0.0-5-gffa8d46",
+			"Rev": "ffa8d46ada782d81cfda81a0fbd9f45ceae448e8"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
@@ -38,6 +52,92 @@
 			"Rev": "ffb3f683aad4dcbc2bb65177799563252585dd22"
 		},
 		{
+			"ImportPath": "github.com/hashicorp/consul/acl",
+			"Comment": "v0.7.0-104-g41f1764",
+			"Rev": "41f1764434246ba7ee91625fb9a23d94ae6d6e19"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/consul/api",
+			"Comment": "v0.7.0-104-g41f1764",
+			"Rev": "41f1764434246ba7ee91625fb9a23d94ae6d6e19"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/consul/consul/structs",
+			"Comment": "v0.7.0-104-g41f1764",
+			"Rev": "41f1764434246ba7ee91625fb9a23d94ae6d6e19"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/consul/testutil",
+			"Comment": "v0.7.0-104-g41f1764",
+			"Rev": "41f1764434246ba7ee91625fb9a23d94ae6d6e19"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/consul/types",
+			"Comment": "v0.7.0-104-g41f1764",
+			"Rev": "41f1764434246ba7ee91625fb9a23d94ae6d6e19"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-cleanhttp",
+			"Rev": "ad28ea4487f05916463e2423a55166280e8254b5"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-msgpack/codec",
+			"Rev": "fa3f63826f7c23912c15263591e65d54d080b458"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/golang-lru",
+			"Rev": "0a025b7e63adc15a622f29b0b2c4c3848243bbf6"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/golang-lru/simplelru",
+			"Rev": "0a025b7e63adc15a622f29b0b2c4c3848243bbf6"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl",
+			"Rev": "6f5bfed9a0a22222fbe4e731ae3481730ba41e93"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/ast",
+			"Rev": "6f5bfed9a0a22222fbe4e731ae3481730ba41e93"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/parser",
+			"Rev": "6f5bfed9a0a22222fbe4e731ae3481730ba41e93"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/scanner",
+			"Rev": "6f5bfed9a0a22222fbe4e731ae3481730ba41e93"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/strconv",
+			"Rev": "6f5bfed9a0a22222fbe4e731ae3481730ba41e93"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/token",
+			"Rev": "6f5bfed9a0a22222fbe4e731ae3481730ba41e93"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/json/parser",
+			"Rev": "6f5bfed9a0a22222fbe4e731ae3481730ba41e93"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/json/scanner",
+			"Rev": "6f5bfed9a0a22222fbe4e731ae3481730ba41e93"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/json/token",
+			"Rev": "6f5bfed9a0a22222fbe4e731ae3481730ba41e93"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/raft",
+			"Rev": "5f09c4ffdbcd2a53768e78c47717415de12b6728"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/serf/coordinate",
+			"Comment": "v0.8.0-23-g1d4fa60",
+			"Rev": "1d4fa605f6ff3ed628d7ae5eda7c0e56803e72a5"
+		},
+		{
 			"ImportPath": "github.com/mattn/go-shellwords",
 			"Rev": "f4e566c536cf69158e808ec28ef4182a37fdc981"
 		},
@@ -46,8 +146,9 @@
 			"Rev": "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
 		},
 		{
-			"ImportPath": "github.com/op/go-logging",
-			"Rev": "e8d5414f0947014548c2334044a0fac13187dfee"
+			"ImportPath": "github.com/rafaeljusto/redigomock",
+			"Comment": "v2.0-2-g7201885",
+			"Rev": "7201885ad17aca2d5f97adc05cdb2d23af8fe047"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
@@ -63,6 +164,10 @@
 			"ImportPath": "github.com/stretchr/testify/suite",
 			"Comment": "v1.0-21-gf552045",
 			"Rev": "f5520455607c0233cb6d7b056f71b22c1d265ef1"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "002cbb5f952456d0c50e0d2aff17ea5eca716979"
 		}
 	]
 }
