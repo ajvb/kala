@@ -1,0 +1,6 @@
+FROM golang:1.7.3-alpine
+
+WORKDIR /go/src/github.com/ajvb/kala
+ADD . /go/src/github.com/ajvb/kala
+
+CMD go run main.go 
