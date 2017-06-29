@@ -13,7 +13,7 @@ import (
 
 	"github.com/ajvb/kala/utils/iso8601"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/nu7hatch/gouuid"
 )
 

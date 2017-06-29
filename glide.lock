@@ -1,0 +1,45 @@
+hash: 192bf4daf59210fc24244600a65fb84ac04a30ff9f112441c0fb323e7a3d0a75
+updated: 2017-06-29T19:01:26.194431459+03:00
+imports:
+- name: github.com/boltdb/bolt
+  version: e9cf4fae01b5a8ff89d0ec6b32f0d9c9f79aefdd
+- name: github.com/codegangsta/cli
+  version: b892ba3809cd07fcf2b064e166b0c2e16e0147bd
+- name: github.com/codegangsta/negroni
+  version: 460c5567329bbad8917f126d2b386787f48e343b
+- name: github.com/garyburd/redigo
+  version: 57f1cd7de6175c96b423e7ac2534ff2b39e2ef79
+  subpackages:
+  - internal
+  - redis
+- name: github.com/gorilla/context
+  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
+- name: github.com/gorilla/mux
+  version: 8c683ee571b6ee7ffc9f1cafd13103c422e71cbf
+- name: github.com/mattn/go-shellwords
+  version: 02e3cf038dcea8290e44424da473dd12be796a8a
+- name: github.com/nu7hatch/gouuid
+  version: 179d4d0c4d8d407a32af483c2354df1d2c91e6c3
+- name: github.com/sirupsen/logrus
+  version: 3d4380f53a34dcdc95f0c1db702615992b38d9a4
+- name: golang.org/x/sys
+  version: 90796e5a05ce440b41c768bd9af257005e470461
+  subpackages:
+  - unix
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/rafaeljusto/redigomock
+  version: dafd969785a5948b7a263843f53b3f90544772d0
+- name: github.com/stretchr/testify
+  version: f6abca593680b2315d2075e0f5e2a9751e3f431a
+  subpackages:
+  - assert
+  - require
+  - suite
