@@ -12,14 +12,11 @@ dependencies:
         - rm -rf ${GOPATH}/src/${REPO_PATH}
         - mkdir -p ${GOPATH}/src/${ORG_NAME}
         - cp -r ../kala ${GOPATH}/src/${ORG_NAME}
-
-        - go get -t -d -v ./...:
-            pwd: ../gopath/src/${REPO_PATH}
-
+        - go version
         - go build -v:
-            pwd: ../gopath/src/${REPO_PATH}
+            pwd: ../${GOPATH}/src/${REPO_PATH}
 
 test:
     override:
         - go test -race ./...:
-            pwd: ../gopath/src/${REPO_PATH}
+            pwd: ../${GOPATH}/src/${REPO_PATH}
