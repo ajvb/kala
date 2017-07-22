@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"github.com/gwoo/kala/job"
+	"github.com/ajvb/kala/job"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
