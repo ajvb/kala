@@ -4,6 +4,7 @@ jobs:
     docker:
       - image: circleci/golang:1.8
       - image: progrium/consul
+        command: "-server -bootstrap"
 
     working_directory: /go/src/github.com/ajvb/kala
     environment:
