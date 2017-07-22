@@ -40,17 +40,15 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 		return nil, j.meta, ErrJobDisabled
 	}
 
-	log.Infof("Job %s running", j.job.Name)
+	log.Infof("Job %s:%s started.", j.job.Name, j.job.Id)
 
 	j.runSetup()
 
 	for {
 		var err error
 		if j.job.JobType == LocalJob {
-			log.Debug("Running local job")
 			err = j.LocalRun()
 		} else if j.job.JobType == RemoteJob {
-			log.Debug("Running remote job")
 			err = j.RemoteRun()
 		} else {
 			err = ErrJobTypeInvalid
@@ -79,7 +77,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 		}
 	}
 
-	log.Infof("%s was successful!", j.job.Name)
+	log.Infof("Job %s:%s finished.", j.job.Name, j.job.Id)
 	j.meta.SuccessCount++
 	j.meta.LastSuccess = time.Now()
 

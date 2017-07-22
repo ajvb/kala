@@ -185,9 +185,14 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration) {
 		log.Fatal(err)
 	}
 	for _, j := range allJobs {
+		if j.Schedule == "" {
+			log.Infof("Job %s:%s skipped.", j.Name, j.Id)
+			continue
+		}
 		if j.ShouldStartWaiting() {
 			j.StartWaiting(c)
 		}
+		log.Infof("Job %s:%s added to cache.", j.Name, j.Id)
 		c.Set(j)
 	}
 	// Occasionally, save items in cache to db.
