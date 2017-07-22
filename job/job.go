@@ -3,6 +3,7 @@ package job
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -478,4 +479,14 @@ func (j *Job) validation() error {
 	}
 	log.Errorf(err.Error())
 	return err
+}
+
+//Type alias for the recursive call
+type RJob Job
+
+// need this to fix race condition
+func (j *Job) MarshalJSON() ([]byte, error) {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+	return json.Marshal(RJob(*j))
 }
