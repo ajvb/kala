@@ -45,7 +45,7 @@ func generateNewRemoteJobMap() map[string]interface{} {
 	}
 }
 
-func generateJobAndCache() (*job.FreeJobCache, *job.Job) {
+func generateJobAndCache() (*job.LockFreeJobCache, *job.Job) {
 	cache := job.NewMockCache()
 	j := job.GetMockJobWithGenericSchedule()
 	j.Init(cache)

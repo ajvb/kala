@@ -17,7 +17,7 @@ import (
 func NewTestServer() *httptest.Server {
 	r := mux.NewRouter()
 	db := &job.MockDB{}
-	cache := job.NewFreeJobCache(db)
+	cache := job.NewLockFreeJobCache(db)
 	api.SetupApiRoutes(r, cache, db, "")
 	return httptest.NewServer(r)
 }
