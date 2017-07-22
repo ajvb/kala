@@ -92,7 +92,7 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "jobDBAddress",
-					Value: "127.0.0.1:6379",
+					Value: "",
 					Usage: "Network address for the job database, in 'host:port' format.",
 				},
 				cli.StringFlag{
@@ -141,7 +141,7 @@ func main() {
 						db = redis.New(c.String("jobDBAddress"), redislib.DialOption{}, false)
 					}
 				case "consul":
-					db = consul.New()
+					db = consul.New(c.String("jobDBAddress"))
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}

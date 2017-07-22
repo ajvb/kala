@@ -12,7 +12,7 @@ import (
 var testDbPath = ""
 
 func setupTest(t *testing.T) {
-	db := New()
+	db := New("")
 	defer db.Close()
 
 	jobs, err := db.GetAll()
@@ -27,7 +27,7 @@ func setupTest(t *testing.T) {
 func TestSaveAndGetJob(t *testing.T) {
 	setupTest(t)
 
-	db := New()
+	db := New("")
 	cache := job.NewLockFreeJobCache(db)
 	defer db.Close()
 
@@ -50,7 +50,7 @@ func TestSaveAndGetJob(t *testing.T) {
 func TestDeleteJob(t *testing.T) {
 	setupTest(t)
 
-	db := New()
+	db := New("")
 	cache := job.NewLockFreeJobCache(db)
 
 	genericMockJob := job.GetMockJobWithGenericSchedule()
@@ -83,7 +83,7 @@ func TestDeleteJob(t *testing.T) {
 func TestSaveAndGetAllJobs(t *testing.T) {
 	setupTest(t)
 
-	db := New()
+	db := New("")
 	cache := job.NewLockFreeJobCache(db)
 	defer db.Close()
 

@@ -16,8 +16,12 @@ var (
 	prefix = "kala/jobs/"
 )
 
-func New() *ConsulJobDB {
-	client, err := api.NewClient(api.DefaultConfig())
+func New(address string) *ConsulJobDB {
+	config := api.DefaultConfig()
+	if address != "" {
+		config.Address = address
+	}
+	client, err := api.NewClient(config)
 	if err != nil {
 		log.Fatal(err)
 	}
