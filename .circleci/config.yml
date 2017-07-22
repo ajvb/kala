@@ -32,7 +32,7 @@ jobs:
 
       - run:
           name: Start service
-          command: ./bin/kala run --jobDb=consul
+          command: ./bin/kala run --jobDB=consul
           background: true
 
       - run:
