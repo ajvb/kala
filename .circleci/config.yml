@@ -25,7 +25,7 @@ jobs:
 
       - run:
           name: Run unit tests
-          command:  go test -race ./...
+          command:  go test -v -race ./...
 
       - run: make bin/kala
 
