@@ -51,9 +51,31 @@
 			"Rev": "ffb3f683aad4dcbc2bb65177799563252585dd22"
 		},
 		{
+			"ImportPath": "github.com/hashicorp/consul/api",
+			"Comment": "v0.9.0-7-g3117d9ec",
+			"Rev": "3117d9ec2b86d8436512b824305d7b5978f05d48"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-cleanhttp",
+			"Rev": "3573b8b52aa7b37b9358d966a898feb387f62437"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-rootcerts",
+			"Rev": "6bb64b370b90e7ef1fa532be9e591a81c3493e00"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/serf/coordinate",
+			"Comment": "v0.8.1-63-gbbeddf0",
+			"Rev": "bbeddf0b3ab3072a60525afbd6b6f47d33839eee"
+		},
+		{
 			"ImportPath": "github.com/mattn/go-shellwords",
 			"Comment": "v1.0.0",
 			"Rev": "f4e566c536cf69158e808ec28ef4182a37fdc981"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/go-homedir",
+			"Rev": "b8bc1bf767474819792c23f32d8286a45736f1c6"
 		},
 		{
 			"ImportPath": "github.com/nu7hatch/gouuid",
