@@ -162,19 +162,19 @@ func (c *MemoryJobCache) PersistEvery(persistWaitTime time.Duration) {
 	}
 }
 
-type FreeJobCache struct {
+type LockFreeJobCache struct {
 	jobs  *hashmap.HashMap
 	jobDB JobDB
 }
 
-func NewFreeJobCache(jobDB JobDB) *FreeJobCache {
-	return &FreeJobCache{
+func NewLockFreeJobCache(jobDB JobDB) *LockFreeJobCache {
+	return &LockFreeJobCache{
 		jobs:  hashmap.New(),
 		jobDB: jobDB,
 	}
 }
 
-func (c *FreeJobCache) Start(persistWaitTime time.Duration) {
+func (c *LockFreeJobCache) Start(persistWaitTime time.Duration) {
 	if persistWaitTime == 0 {
 		persistWaitTime = 5 * time.Second
 	}
@@ -190,7 +190,6 @@ func (c *FreeJobCache) Start(persistWaitTime time.Duration) {
 		}
 		c.Set(j)
 	}
-
 	// Occasionally, save items in cache to db.
 	go c.PersistEvery(persistWaitTime)
 
@@ -212,7 +211,7 @@ func (c *FreeJobCache) Start(persistWaitTime time.Duration) {
 	}()
 }
 
-func (c *FreeJobCache) Get(id string) (*Job, error) {
+func (c *LockFreeJobCache) Get(id string) (*Job, error) {
 	val, exists := c.jobs.GetStringKey(id)
 	if val == nil || !exists {
 		return nil, ErrJobDoesntExist
@@ -224,7 +223,7 @@ func (c *FreeJobCache) Get(id string) (*Job, error) {
 	return j, nil
 }
 
-func (c *FreeJobCache) GetAll() *JobsMap {
+func (c *LockFreeJobCache) GetAll() *JobsMap {
 	jm := NewJobsMap()
 	for el := range c.jobs.Iter() {
 		jm.Jobs[el.Key.(string)] = (*Job)(el.Value)
@@ -232,7 +231,7 @@ func (c *FreeJobCache) GetAll() *JobsMap {
 	return jm
 }
 
-func (c *FreeJobCache) Set(j *Job) error {
+func (c *LockFreeJobCache) Set(j *Job) error {
 	if j == nil {
 		return nil
 	}
@@ -240,7 +239,7 @@ func (c *FreeJobCache) Set(j *Job) error {
 	return nil
 }
 
-func (c *FreeJobCache) Delete(id string) error {
+func (c *LockFreeJobCache) Delete(id string) error {
 	j, err := c.Get(id)
 	if j == nil {
 		return ErrJobDoesntExist
@@ -254,11 +253,12 @@ func (c *FreeJobCache) Delete(id string) error {
 	// Remove itself from dependent jobs as a parent job
 	// and possibly delete child jobs if they don't have any other parents.
 	go j.DeleteFromDependentJobs(c)
+	log.Infof("Deleting %s", id)
 	c.jobs.Del(id)
 	return nil
 }
 
-func (c *FreeJobCache) Persist() error {
+func (c *LockFreeJobCache) Persist() error {
 	jm := c.GetAll()
 	for _, j := range jm.Jobs {
 		err := c.jobDB.Save(j)
@@ -269,7 +269,7 @@ func (c *FreeJobCache) Persist() error {
 	return nil
 }
 
-func (c *FreeJobCache) PersistEvery(persistWaitTime time.Duration) {
+func (c *LockFreeJobCache) PersistEvery(persistWaitTime time.Duration) {
 	wait := time.Tick(persistWaitTime)
 	var err error
 	for {

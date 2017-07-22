@@ -18,7 +18,7 @@ type testJob struct {
 var (
 	conn     = redigomock.NewConn()
 	db       = mockRedisDB()
-	cache    = job.NewFreeJobCache(db)
+	cache    = job.NewLockFreeJobCache(db)
 	testJobs = initTestJobs(3)
 )
 

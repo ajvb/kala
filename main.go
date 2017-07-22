@@ -151,7 +151,7 @@ func main() {
 				}
 
 				// Create cache
-				cache := job.NewFreeJobCache(db)
+				cache := job.NewLockFreeJobCache(db)
 				cache.Start(time.Duration(c.Int("persist-every")) * time.Second)
 
 				log.Infof("Starting server on port %s...", connectionString)
