@@ -83,7 +83,7 @@ func main() {
 				cli.StringFlag{
 					Name:  "jobDB",
 					Value: "boltdb",
-					Usage: "Implementation of job database, either 'boltdb' or 'redis'.",
+					Usage: "Implementation of job database, either 'boltdb', 'redis' or 'consul'.",
 				},
 				cli.StringFlag{
 					Name:  "boltpath",
@@ -152,9 +152,10 @@ func main() {
 
 				// Create cache
 				cache := job.NewLockFreeJobCache(db)
+				log.Infof("Preparing cache")
 				cache.Start(time.Duration(c.Int("persist-every")) * time.Second)
 
-				log.Infof("Starting server on port %s...", connectionString)
+				log.Infof("Starting server on port %s", connectionString)
 				log.Fatal(api.StartServer(connectionString, cache, db, c.String("default-owner")))
 			},
 		},

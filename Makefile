@@ -15,6 +15,9 @@ clean:
 start: bin/$(APP)
 	./bin/$(APP) run -v
 
+start-consul: bin/$(APP)
+	./bin/$(APP) run --jobDB=consul -v
+
 test:
 	go test -v ./...
 
