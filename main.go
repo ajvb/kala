@@ -6,12 +6,12 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/ajvb/kala/api"
+	"github.com/ajvb/kala/job"
+	"github.com/ajvb/kala/job/storage/boltdb"
+	"github.com/ajvb/kala/job/storage/consul"
+	"github.com/ajvb/kala/job/storage/redis"
 	redislib "github.com/garyburd/redigo/redis"
-	"github.com/gwoo/kala/api"
-	"github.com/gwoo/kala/job"
-	"github.com/gwoo/kala/job/storage/boltdb"
-	"github.com/gwoo/kala/job/storage/consul"
-	"github.com/gwoo/kala/job/storage/redis"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
