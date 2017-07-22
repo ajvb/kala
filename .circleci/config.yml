@@ -1,0 +1,48 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.8
+      - image: progrium/consul
+
+    working_directory: /go/src/github.com/ajvb/kala
+    environment:
+      TEST_RESULTS: /tmp/test-results
+
+    steps:
+      - checkout
+      - run: mkdir -p $TEST_RESULTS
+      - run:
+          name: Waiting for Consul to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 8500 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Consul && exit 1
+
+      - run:
+          name: Run unit tests
+          command:  go test -race ./...
+
+      - run: make bin/kala
+
+      - run:
+          name: Start service
+          command: ./bin/kala run --jobDb=consul
+          background: true
+
+      - run:
+          name: Validate service is working
+          command: |
+            sleep 5
+            curl --retry 10 --retry-delay 1 -X POST --header "Content-Type: application/json" -d '{"command": "echo cool", "name": "test_job"}' http://localhost:8000//api/v1/job/
+
+      - store_artifacts:
+          path: /tmp/test-results
+          destination: raw-test-output
+
+      - store_test_results:
+          path: /tmp/test-results
