@@ -10,6 +10,7 @@ import (
 	"github.com/gwoo/kala/api"
 	"github.com/gwoo/kala/job"
 	"github.com/gwoo/kala/job/storage/boltdb"
+	"github.com/gwoo/kala/job/storage/consul"
 	"github.com/gwoo/kala/job/storage/redis"
 
 	log "github.com/Sirupsen/logrus"
@@ -20,17 +21,17 @@ func init() {
 	log.SetLevel(log.WarnLevel)
 }
 
-var (
-	db job.JobDB
-)
+// The current version of kala
+var Version = "0.1"
 
 func main() {
+	var db job.JobDB
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	app := cli.NewApp()
 	app.Name = "Kala"
 	app.Usage = "Modern job scheduler"
-	app.Version = "0.1"
+	app.Version = Version
 	app.Commands = []cli.Command{
 		{
 			Name:  "run_command",
@@ -139,6 +140,8 @@ func main() {
 					} else {
 						db = redis.New(c.String("jobDBAddress"), redislib.DialOption{}, false)
 					}
+				case "consul":
+					db = consul.New()
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}

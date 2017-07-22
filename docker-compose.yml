@@ -1,0 +1,12 @@
+version: '2'
+
+services:
+  consul:
+    image: progrium/consul
+    ports:
+      - "8500:8500"
+    command: "-server -bootstrap"
+  redis:
+    image: redis:4
+    ports:
+      - "6379:6379"
