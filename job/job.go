@@ -249,9 +249,9 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 		}
 	}
 	if checkTime {
-		duration := time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())
-		if duration < 0 {
-			return fmt.Errorf("Job %s:%s cannot be scheduled %s ago", j.Name, j.Id, duration.String())
+		diff := j.scheduleTime.Sub(time.Now())
+		if diff < 0 {
+			return fmt.Errorf("Job %s:%s cannot be scheduled %s ago", j.Name, j.Id, diff.String())
 		}
 	}
 	log.Debugf("Job %s:%s scheduled", j.Name, j.Id)
