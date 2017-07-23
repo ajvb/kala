@@ -65,7 +65,10 @@ func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 		if j.ShouldStartWaiting() {
 			j.StartWaiting(c)
 		}
-		c.Set(j)
+		err = c.Set(j)
+		if err != nil {
+			log.Errorln(err)
+		}
 	}
 
 	// Occasionally, save items in cache to db.
@@ -193,7 +196,10 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration) {
 			j.StartWaiting(c)
 		}
 		log.Infof("Job %s:%s added to cache.", j.Name, j.Id)
-		c.Set(j)
+		err := c.Set(j)
+		if err != nil {
+			log.Errorln(err)
+		}
 	}
 	// Occasionally, save items in cache to db.
 	go c.PersistEvery(persistWaitTime)

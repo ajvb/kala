@@ -361,7 +361,10 @@ func (j *Job) DeleteFromParentJobs(cache JobCache) error {
 		parentJob.DependentJobs = append(
 			parentJob.DependentJobs[:ndx], parentJob.DependentJobs[ndx+1:]...,
 		)
-		cache.Set(parentJob)
+		err = cache.Set(parentJob)
+		if err != nil {
+			return err
+		}
 		parentJob.lock.Unlock()
 	}
 
