@@ -252,9 +252,6 @@ func (c *LockFreeJobCache) Set(j *Job) error {
 
 func (c *LockFreeJobCache) Delete(id string) error {
 	j, err := c.Get(id)
-	if j == nil {
-		return ErrJobDoesntExist
-	}
 	if err != nil {
 		return err
 	}
