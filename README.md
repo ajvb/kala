@@ -96,10 +96,16 @@ $ kala run -p 2222
 2015/06/10 18:31:31 main.go:59:func·001 :: INFO 002 Starting server on port :2222...
 ```
 
-Kala uses BoltDB by default for the job database, however you can also use Redis by using the jobDB and jobDBAddress params:
+Kala uses BoltDB by default for the job database
+use Redis by using the jobDB and jobDBAddress params:
 
 ```bash
 kala run --jobDB=redis --jobDBAddress=127.0.0.1:6379
+```
+use Consul by using the jobDB and jobDBAddress params:
+
+```bash
+kala run --jobDB=consul --jobDBAddress=127.0.0.1:8500
 ```
 
 Kala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.

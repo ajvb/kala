@@ -22,6 +22,9 @@ type DB struct {
 func New(address string, password redis.DialOption, sendPassword bool) *DB {
 	var conn redis.Conn
 	var err error
+	if address == "" {
+		address = "127.0.0.1:6379"
+	}
 	if sendPassword {
 		conn, err = redis.Dial("tcp", address, password)
 	} else {

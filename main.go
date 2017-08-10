@@ -9,6 +9,7 @@ import (
 	"github.com/ajvb/kala/api"
 	"github.com/ajvb/kala/job"
 	"github.com/ajvb/kala/job/storage/boltdb"
+	"github.com/ajvb/kala/job/storage/consul"
 	"github.com/ajvb/kala/job/storage/redis"
 	redislib "github.com/garyburd/redigo/redis"
 
@@ -20,17 +21,17 @@ func init() {
 	log.SetLevel(log.WarnLevel)
 }
 
-var (
-	db job.JobDB
-)
+// The current version of kala
+var Version = "0.1"
 
 func main() {
+	var db job.JobDB
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	app := cli.NewApp()
 	app.Name = "Kala"
 	app.Usage = "Modern job scheduler"
-	app.Version = "0.1"
+	app.Version = Version
 	app.Commands = []cli.Command{
 		{
 			Name:  "run_command",
@@ -82,7 +83,7 @@ func main() {
 				cli.StringFlag{
 					Name:  "jobDB",
 					Value: "boltdb",
-					Usage: "Implementation of job database, either 'boltdb' or 'redis'.",
+					Usage: "Implementation of job database, either 'boltdb', 'redis' or 'consul'.",
 				},
 				cli.StringFlag{
 					Name:  "boltpath",
@@ -91,7 +92,7 @@ func main() {
 				},
 				cli.StringFlag{
 					Name:  "jobDBAddress",
-					Value: "127.0.0.1:6379",
+					Value: "",
 					Usage: "Network address for the job database, in 'host:port' format.",
 				},
 				cli.StringFlag{
@@ -139,6 +140,8 @@ func main() {
 					} else {
 						db = redis.New(c.String("jobDBAddress"), redislib.DialOption{}, false)
 					}
+				case "consul":
+					db = consul.New(c.String("jobDBAddress"))
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}
@@ -148,10 +151,11 @@ func main() {
 				}
 
 				// Create cache
-				cache := job.NewMemoryJobCache(db)
+				cache := job.NewLockFreeJobCache(db)
+				log.Infof("Preparing cache")
 				cache.Start(time.Duration(c.Int("persist-every")) * time.Second)
 
-				log.Infof("Starting server on port %s...", connectionString)
+				log.Infof("Starting server on port %s", connectionString)
 				log.Fatal(api.StartServer(connectionString, cache, db, c.String("default-owner")))
 			},
 		},

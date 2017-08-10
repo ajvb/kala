@@ -12,10 +12,11 @@ import (
 
 	"github.com/ajvb/kala/job"
 
+	"testing"
+
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 func generateNewJobMap() map[string]string {
@@ -44,7 +45,7 @@ func generateNewRemoteJobMap() map[string]interface{} {
 	}
 }
 
-func generateJobAndCache() (*job.MemoryJobCache, *job.Job) {
+func generateJobAndCache() (*job.LockFreeJobCache, *job.Job) {
 	cache := job.NewMockCache()
 	j := job.GetMockJobWithGenericSchedule()
 	j.Init(cache)

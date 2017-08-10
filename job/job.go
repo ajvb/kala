@@ -3,6 +3,7 @@ package job
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -18,6 +19,8 @@ import (
 )
 
 var (
+	// nano seconds allowed between current time and when job is supposed to start
+	validOffset            = time.Minute
 	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
 
 	ErrInvalidJob       = errors.New("Invalid Local Job. Job's must contain a Name and a Command field")
@@ -213,6 +216,10 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
+	if j.Schedule == "" {
+		return nil
+	}
+
 	var err error
 	splitTime := strings.Split(j.Schedule, "/")
 	if len(splitTime) != 3 {
@@ -232,7 +239,6 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 			return err
 		}
 	}
-	log.Debugf("timesToRepeat: %d", j.timesToRepeat)
 
 	j.scheduleTime, err = time.Parse(time.RFC3339, splitTime[1])
 	if err != nil {
@@ -243,11 +249,13 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 		}
 	}
 	if checkTime {
-		if (time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())) < 0 {
-			return fmt.Errorf("Schedule time has passed on Job with id of %s", j.Id)
+		diff := j.scheduleTime.Sub(time.Now())
+		if diff < 0 {
+			return fmt.Errorf("Job %s:%s cannot be scheduled %s ago", j.Name, j.Id, diff.String())
 		}
 	}
-	log.Debugf("Schedule Time: %s", j.scheduleTime)
+	log.Debugf("Job %s:%s scheduled", j.Name, j.Id)
+	log.Debugf("Starting %s will repeat for %d", j.scheduleTime, j.timesToRepeat)
 
 	if j.timesToRepeat != 0 {
 		j.delayDuration, err = iso8601.FromString(splitTime[2])
@@ -255,7 +263,7 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 			log.Errorf("Error converting delayDuration to a iso8601.Duration: %s", err)
 			return err
 		}
-		log.Debugf("Delay Duration: %s", j.delayDuration.ToDuration())
+		log.Debugf("Delay duration is %s", j.delayDuration.ToDuration())
 	}
 
 	if j.Epsilon != "" {
@@ -265,7 +273,6 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -276,7 +283,7 @@ func (j *Job) StartWaiting(cache JobCache) {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
-	log.Infof("Job Scheduled to run in: %s", waitDuration)
+	log.Infof("Job %s:%s repeating in %s", j.Name, j.Id, waitDuration)
 
 	j.NextRunAt = time.Now().Add(waitDuration)
 
@@ -354,7 +361,10 @@ func (j *Job) DeleteFromParentJobs(cache JobCache) error {
 		parentJob.DependentJobs = append(
 			parentJob.DependentJobs[:ndx], parentJob.DependentJobs[ndx+1:]...,
 		)
-
+		err = cache.Set(parentJob)
+		if err != nil {
+			return err
+		}
 		parentJob.lock.Unlock()
 	}
 
@@ -374,6 +384,7 @@ func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
 
 		// If there are no other parent jobs, delete this job.
 		if len(childJob.ParentJobs) == 1 {
+			log.Infof("Deleting child %s", id)
 			cache.Delete(childJob.Id)
 			continue
 		}
@@ -471,4 +482,14 @@ func (j *Job) validation() error {
 	}
 	log.Errorf(err.Error())
 	return err
+}
+
+//Type alias for the recursive call
+type RJob Job
+
+// need this to fix race condition
+func (j *Job) MarshalJSON() ([]byte, error) {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+	return json.Marshal(RJob(*j))
 }
