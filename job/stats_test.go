@@ -50,6 +50,7 @@ func TestKalaStats(t *testing.T) {
 	assert.Equal(t, kalaStat.DisabledJobs, 5)
 	assert.Equal(t, kalaStat.SuccessCount, uint(5))
 	assert.Equal(t, kalaStat.ErrorCount, uint(0))
+	assert.True(t, (nextRunAt.UnixNano()-kalaStat.NextRunAt.UnixNano()) > 0)
 	assert.WithinDuration(t, kalaStat.NextRunAt, nextRunAt, time.Second)
 	assert.WithinDuration(t, kalaStat.LastAttemptedRun, now, time.Millisecond*100)
 	assert.WithinDuration(t, kalaStat.CreatedAt, createdAt, time.Millisecond*100)
