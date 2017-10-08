@@ -155,6 +155,14 @@ func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 	return true, nil
 }
 
+// DeleteAllJobs is used to delete all jobs from Kala
+// Example:
+// 		c := New("http://127.0.0.1:8000")
+//		ok, err := c.DeleteAllJobs()
+func (kc *KalaClient) DeleteAllJobs() (bool, error) {
+	return kc.DeleteJob("all")
+}
+
 // GetJobStats is used to retrieve stats about a Job from Kala by its ID.
 // Example:
 // 		c := New("http://127.0.0.1:8000")
