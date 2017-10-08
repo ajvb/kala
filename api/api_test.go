@@ -300,6 +300,60 @@ func (a *ApiTestSuite) TestHandleStartJobRequestNotFound() {
 	a.Equal(w.Code, http.StatusNotFound)
 }
 
+func (a *ApiTestSuite) TestHandleEnableJobRequest() {
+	t := a.T()
+	cache, job := generateJobAndCache()
+	r := mux.NewRouter()
+	r.HandleFunc(ApiJobPath+"enable/{id}", HandleEnableJobRequest(cache)).Methods("POST")
+	ts := httptest.NewServer(r)
+
+	job.Disable()
+
+	_, req := setupTestReq(t, "POST", ts.URL+ApiJobPath+"enable/"+job.Id, nil)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	a.NoError(err)
+
+	a.Equal(http.StatusNoContent, resp.StatusCode)
+
+	a.Equal(false, job.Disabled)
+}
+func (a *ApiTestSuite) TestHandleEnableJobRequestNotFound() {
+	t := a.T()
+	cache := job.NewMockCache()
+	handler := HandleEnableJobRequest(cache)
+	w, req := setupTestReq(t, "POST", ApiJobPath+"enable/asdasd", nil)
+	handler(w, req)
+	a.Equal(w.Code, http.StatusNotFound)
+}
+
+func (a *ApiTestSuite) TestHandleDisableJobRequest() {
+	t := a.T()
+	cache, job := generateJobAndCache()
+	r := mux.NewRouter()
+	r.HandleFunc(ApiJobPath+"disable/{id}", HandleDisableJobRequest(cache)).Methods("POST")
+	ts := httptest.NewServer(r)
+
+	_, req := setupTestReq(t, "POST", ts.URL+ApiJobPath+"disable/"+job.Id, nil)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	a.NoError(err)
+
+	a.Equal(http.StatusNoContent, resp.StatusCode)
+
+	a.Equal(true, job.Disabled)
+}
+func (a *ApiTestSuite) TestHandleDisableJobRequestNotFound() {
+	t := a.T()
+	cache := job.NewMockCache()
+	handler := HandleDisableJobRequest(cache)
+	w, req := setupTestReq(t, "POST", ApiJobPath+"disable/asdasd", nil)
+	handler(w, req)
+	a.Equal(w.Code, http.StatusNotFound)
+}
+
 func (a *ApiTestSuite) TestHandleKalaStatsRequest() {
 	cache, _ := generateJobAndCache()
 	jobTwo := job.GetMockJobWithGenericSchedule()
