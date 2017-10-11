@@ -85,6 +85,11 @@
 			"Rev": "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
 		},
 		{
+			"ImportPath": "github.com/pkg/errors",
+			"Comment": "v0.8.0-5-gc605e28",
+			"Rev": "c605e284fe17294bda444b34710735b29d1a9d90"
+		},
+		{
 			"ImportPath": "github.com/rafaeljusto/redigomock",
 			"Comment": "v2.1",
 			"Rev": "7ae0511314e9946bb0c87d6d485169ab2467a290"
