@@ -2,7 +2,6 @@ package job
 
 import (
 	"bytes"
-	"errors"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -10,6 +9,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/mattn/go-shellwords"
+	"github.com/pkg/errors"
+	"io/ioutil"
 )
 
 type JobRunner struct {
@@ -46,10 +47,11 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 
 	for {
 		var err error
+		var output []byte
 		if j.job.JobType == LocalJob {
-			err = j.LocalRun()
+			output, err = j.LocalRun()
 		} else if j.job.JobType == RemoteJob {
-			err = j.RemoteRun()
+			output, err = j.RemoteRun()
 		} else {
 			err = ErrJobTypeInvalid
 		}
@@ -73,6 +75,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 			// TODO: Wrap error into something better.
 			return j.currentStat, j.meta, err
 		} else {
+			j.currentStat.Output = string(output)
 			break
 		}
 	}
@@ -99,12 +102,12 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 }
 
 // LocalRun executes the Job's local shell command
-func (j *JobRunner) LocalRun() error {
+func (j *JobRunner) LocalRun() (output []byte, err error) {
 	return j.runCmd()
 }
 
 // RemoteRun sends a http request, and checks if the response is valid in time,
-func (j *JobRunner) RemoteRun() error {
+func (j *JobRunner) RemoteRun() (output []byte, err error) {
 	// Calculate a response timeout
 	timeout := j.responseTimeout()
 
@@ -117,7 +120,7 @@ func (j *JobRunner) RemoteRun() error {
 	bodyBuffer := bytes.NewBufferString(j.job.RemoteProperties.Body)
 	req, err := http.NewRequest(method, j.job.RemoteProperties.Url, bodyBuffer)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Set default or user's passed headers
@@ -126,14 +129,23 @@ func (j *JobRunner) RemoteRun() error {
 	// Do the request
 	res, err := httpClient.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Check if we got any of the status codes the user asked for
 	if j.checkExpected(res.StatusCode) {
-		return nil
+		out, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return out, errors.Wrap(err, "read body error")
+		}
+		return out, nil
 	} else {
-		return errors.New(res.Status)
+		err = errors.New(res.Status)
+		out, err1 := ioutil.ReadAll(res.Body)
+		if err1 != nil {
+			err = errors.Wrap(err, "read body error")
+		}
+		return out, err
 	}
 }
 
@@ -144,20 +156,24 @@ func initShParser() *shellwords.Parser {
 	return shParser
 }
 
-func (j *JobRunner) runCmd() error {
+func (j *JobRunner) runCmd() (output []byte, err error) {
 	j.numberOfAttempts++
 
 	// Execute command
 	shParser := initShParser()
 	args, err := shParser.Parse(j.job.Command)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if len(args) == 0 {
-		return ErrCmdIsEmpty
+		return nil, ErrCmdIsEmpty
 	}
 	cmd := exec.Command(args[0], args[1:]...)
-	return cmd.Run()
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return out, errors.Wrap(err, "cmd.CombinedOutput")
+	}
+	return out, nil
 }
 
 func (j *JobRunner) shouldRetry() bool {

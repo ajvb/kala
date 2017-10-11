@@ -73,6 +73,7 @@ type JobStat struct {
 	JobId             string        `json:"job_id"`
 	RanAt             time.Time     `json:"ran_at"`
 	NumberOfRetries   uint          `json:"number_of_retries"`
+	Output            string        `json:"output"`
 	Success           bool          `json:"success"`
 	ExecutionDuration time.Duration `json:"execution_duration"`
 }

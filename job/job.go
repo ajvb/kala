@@ -448,7 +448,10 @@ func (j *Job) RunCmd() error {
 	defer j.lock.RUnlock()
 
 	jobRunner := &JobRunner{job: j}
-	return jobRunner.runCmd()
+	output, err := jobRunner.runCmd()
+	log.Info("output", output)
+
+	return err
 }
 
 func (j *Job) hasFixedRepetitions() bool {
@@ -491,5 +494,6 @@ type RJob Job
 func (j *Job) MarshalJSON() ([]byte, error) {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
+
 	return json.Marshal(RJob(*j))
 }
