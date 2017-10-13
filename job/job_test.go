@@ -975,3 +975,47 @@ func TestRemoteJobBadStatusSuccess(t *testing.T) {
 	mockRemoteJob.Run(cache)
 	assert.True(t, mockRemoteJob.Metadata.SuccessCount == 1)
 }
+
+func TestOnFailureJobTriggersOnFailure(t *testing.T) {
+	cache := NewMockCache()
+
+	onFailureJob := GetMockJob()
+	onFailureJob.Init(cache)
+	for !onFailureJob.IsDone {
+		time.Sleep(1)
+	}
+
+	j := GetMockFailingJob()
+	j.OnFailureJob = onFailureJob.Id
+
+	j.Init(cache)
+
+	for onFailureJob.NumberOfFinishedRuns() < 2 {
+		time.Sleep(1)
+	}
+
+	assert.Equal(t, j.Metadata.SuccessCount, uint(0))
+	assert.True(t, onFailureJob.Metadata.LastAttemptedRun.UnixNano() >= j.Metadata.LastAttemptedRun.UnixNano())
+}
+
+func TestOnFailureJobDoesntTriggerOnSuccess(t *testing.T) {
+	cache := NewMockCache()
+
+	onFailureJob := GetMockJob()
+	onFailureJob.Init(cache)
+	for !onFailureJob.IsDone {
+		time.Sleep(1)
+	}
+
+	j := GetMockJob()
+	j.OnFailureJob = onFailureJob.Id
+
+	j.Init(cache)
+
+	for !j.IsDone {
+		time.Sleep(1)
+	}
+
+	assert.Equal(t, j.Metadata.SuccessCount, uint(1))
+	assert.True(t, onFailureJob.Metadata.LastAttemptedRun.UnixNano() <= j.Metadata.LastAttemptedRun.UnixNano())
+}

@@ -49,6 +49,9 @@ type Job struct {
 	// List of ids of jobs that this job is dependent upon.
 	ParentJobs []string `json:"parent_jobs"`
 
+	// Job that gets run after all retries have failed consecutively
+	OnFailureJob string `json:"on_failure_job"`
+
 	// ISO 8601 String
 	// e.g. "R/2014-03-08T20:00:00.000Z/PT2H"
 	Schedule     string `json:"schedule"`
@@ -409,6 +412,19 @@ func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
 	return nil
 }
 
+// Runs the on failure job, if it exists. Does not lock the job - it is up to you to do this
+// however you want
+func (j *Job) RunOnFailureJob(cache JobCache) {
+	if (j.OnFailureJob != "") {
+		onFailureJob, cacheErr := cache.Get(j.OnFailureJob)
+		if cacheErr == ErrJobDoesntExist {
+			log.Errorf("Error retrieving dependent job with id of %s", j.OnFailureJob)
+		} else {
+			onFailureJob.Run(cache)
+		}
+	}
+}
+
 func (j *Job) Run(cache JobCache) {
 	// Schedule next run
 	j.lock.RLock()
@@ -416,7 +432,11 @@ func (j *Job) Run(cache JobCache) {
 	j.lock.RUnlock()
 	newStat, newMeta, err := jobRunner.Run(cache)
 	if err != nil {
+		// TODO: run on_failure job
 		log.Errorf("Error running job: %s", err)
+		j.lock.RLock()
+		j.RunOnFailureJob(cache)
+		j.lock.RUnlock()
 	}
 
 	j.lock.Lock()
@@ -492,4 +512,9 @@ func (j *Job) MarshalJSON() ([]byte, error) {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 	return json.Marshal(RJob(*j))
+}
+
+// TODO(itstehkman): This could go in j.Metadata
+func (j *Job) NumberOfFinishedRuns() int {
+	return len(j.Stats)
 }
