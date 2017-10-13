@@ -976,14 +976,25 @@ func TestRemoteJobBadStatusSuccess(t *testing.T) {
 	assert.True(t, mockRemoteJob.Metadata.SuccessCount == 1)
 }
 
+func waitForJob(j *Job) {
+	for {
+		j.lock.RLock()
+		if j.IsDone {
+			j.lock.RUnlock()
+			break
+		}
+		j.lock.RUnlock()
+		time.Sleep(1)
+	}
+
+}
+
 func TestOnFailureJobTriggersOnFailure(t *testing.T) {
 	cache := NewMockCache()
 
 	onFailureJob := GetMockJob()
 	onFailureJob.Init(cache)
-	for !onFailureJob.IsDone {
-		time.Sleep(1)
-	}
+	waitForJob(onFailureJob)
 
 	j := GetMockFailingJob()
 	j.OnFailureJob = onFailureJob.Id
@@ -994,8 +1005,12 @@ func TestOnFailureJobTriggersOnFailure(t *testing.T) {
 		time.Sleep(1)
 	}
 
+	j.lock.RLock()
+	onFailureJob.lock.RLock()
 	assert.Equal(t, j.Metadata.SuccessCount, uint(0))
 	assert.True(t, onFailureJob.Metadata.LastAttemptedRun.UnixNano() >= j.Metadata.LastAttemptedRun.UnixNano())
+	onFailureJob.lock.RUnlock()
+	j.lock.RUnlock()
 }
 
 func TestOnFailureJobDoesntTriggerOnSuccess(t *testing.T) {
@@ -1003,19 +1018,19 @@ func TestOnFailureJobDoesntTriggerOnSuccess(t *testing.T) {
 
 	onFailureJob := GetMockJob()
 	onFailureJob.Init(cache)
-	for !onFailureJob.IsDone {
-		time.Sleep(1)
-	}
+	waitForJob(onFailureJob)
 
 	j := GetMockJob()
 	j.OnFailureJob = onFailureJob.Id
 
 	j.Init(cache)
 
-	for !j.IsDone {
-		time.Sleep(1)
-	}
+	waitForJob(j)
 
+	j.lock.RLock()
+	onFailureJob.lock.RLock()
 	assert.Equal(t, j.Metadata.SuccessCount, uint(1))
 	assert.True(t, onFailureJob.Metadata.LastAttemptedRun.UnixNano() <= j.Metadata.LastAttemptedRun.UnixNano())
+	onFailureJob.lock.RUnlock()
+	j.lock.RUnlock()
 }

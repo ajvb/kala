@@ -516,5 +516,7 @@ func (j *Job) MarshalJSON() ([]byte, error) {
 
 // TODO(itstehkman): This could go in j.Metadata
 func (j *Job) NumberOfFinishedRuns() int {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
 	return len(j.Stats)
 }
