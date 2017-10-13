@@ -119,11 +119,12 @@ type RemoteProperties struct {
 }
 
 type Metadata struct {
-	SuccessCount     uint      `json:"success_count"`
-	LastSuccess      time.Time `json:"last_success"`
-	ErrorCount       uint      `json:"error_count"`
-	LastError        time.Time `json:"last_error"`
-	LastAttemptedRun time.Time `json:"last_attempted_run"`
+	SuccessCount     	uint      `json:"success_count"`
+	LastSuccess      	time.Time `json:"last_success"`
+	ErrorCount       	uint      `json:"error_count"`
+	LastError        	time.Time `json:"last_error"`
+	LastAttemptedRun 	time.Time `json:"last_attempted_run"`
+	NumberOfFinishedRuns	uint	  `json:"number_of_finished_runs"`
 }
 
 // Bytes returns the byte representation of the Job.
@@ -412,7 +413,7 @@ func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
 	return nil
 }
 
-// Runs the on failure job, if it exists. Does not lock the job - it is up to you to do this
+// Runs the on failure job, if it exists. Does not lock the parent job - it is up to you to do this
 // however you want
 func (j *Job) RunOnFailureJob(cache JobCache) {
 	if (j.OnFailureJob != "") {
@@ -432,7 +433,6 @@ func (j *Job) Run(cache JobCache) {
 	j.lock.RUnlock()
 	newStat, newMeta, err := jobRunner.Run(cache)
 	if err != nil {
-		// TODO: run on_failure job
 		log.Errorf("Error running job: %s", err)
 		j.lock.RLock()
 		j.RunOnFailureJob(cache)
@@ -512,11 +512,4 @@ func (j *Job) MarshalJSON() ([]byte, error) {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 	return json.Marshal(RJob(*j))
-}
-
-// TODO(itstehkman): This could go in j.Metadata
-func (j *Job) NumberOfFinishedRuns() int {
-	j.lock.RLock()
-	defer j.lock.RUnlock()
-	return len(j.Stats)
 }

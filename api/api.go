@@ -137,7 +137,6 @@ func HandleAddJob(cache job.JobCache, defaultOwner string) func(http.ResponseWri
 
 		err = newJob.Init(cache)
 		if err != nil {
-			// TODO(itstehkman): should we run on_failure job here?
 			errStr := "Error occured when initializing the job"
 			log.Errorf(errStr+": %s", err)
 			http.Error(w, errStr, http.StatusBadRequest)
