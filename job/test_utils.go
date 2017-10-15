@@ -33,7 +33,17 @@ func GetMockJob() *Job {
 	return &Job{
 		Name:    "mock_job",
 		Command: "bash -c 'date'",
-		Owner:   "aj@ajvb.me",
+		Owner:   "example@example.com",
+		Retries: 2,
+	}
+}
+
+
+func GetMockFailingJob() *Job {
+	return &Job{
+		Name:    "mock_failing_job",
+		Command: "asdf",
+		Owner:   "example@example.com",
 		Retries: 2,
 	}
 }
