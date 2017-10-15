@@ -38,6 +38,16 @@ func GetMockJob() *Job {
 	}
 }
 
+
+func GetMockFailingJob() *Job {
+	return &Job{
+		Name:    "mock_failing_job",
+		Command: "asdf",
+		Owner:   "aj@ajvb.me",
+		Retries: 2,
+	}
+}
+
 func GetMockRemoteJob(props RemoteProperties) *Job {
 	return &Job{
 		Name:             "mock_remote_job",

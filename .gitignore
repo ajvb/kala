@@ -3,3 +3,4 @@
 *.coverprofile
 .vscode/
 kala
+.idea/*
