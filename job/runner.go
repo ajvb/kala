@@ -69,6 +69,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 			}
 
 			j.collectStats(false)
+			j.meta.NumberOfFinishedRuns++
 
 			// TODO: Wrap error into something better.
 			return j.currentStat, j.meta, err
@@ -79,6 +80,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 
 	log.Infof("Job %s:%s finished.", j.job.Name, j.job.Id)
 	j.meta.SuccessCount++
+	j.meta.NumberOfFinishedRuns++
 	j.meta.LastSuccess = time.Now()
 
 	j.collectStats(true)

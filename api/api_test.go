@@ -116,6 +116,7 @@ func (a *ApiTestSuite) TestHandleAddJobFailureBadJson() {
 	w, req := setupTestReq(t, "POST", ApiJobPath, []byte("asd"))
 	handler(w, req)
 	a.Equal(w.Code, http.StatusBadRequest)
+
 }
 func (a *ApiTestSuite) TestHandleAddJobFailureBadSchedule() {
 	t := a.T()
@@ -131,7 +132,10 @@ func (a *ApiTestSuite) TestHandleAddJobFailureBadSchedule() {
 	w, req := setupTestReq(t, "POST", ApiJobPath, jsonJobMap)
 	handler(w, req)
 	a.Equal(w.Code, http.StatusBadRequest)
-	a.True(strings.Contains(bytes.NewBuffer(w.Body.Bytes()).String(), "when initializing"))
+	var respErr apiError
+	err = json.Unmarshal(w.Body.Bytes(), &respErr)
+	a.NoError(err)
+	a.True(strings.Contains(respErr.Error, "when initializing"))
 }
 
 func (a *ApiTestSuite) TestDeleteJobSuccess() {
