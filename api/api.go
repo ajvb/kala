@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -127,7 +128,7 @@ func HandleAddJob(cache job.JobCache, defaultOwner string) func(http.ResponseWri
 	return func(w http.ResponseWriter, r *http.Request) {
 		newJob, err := unmarshalNewJob(r)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			errorEncodeJSON(err, http.StatusBadRequest, w)
 			return
 		}
 
@@ -139,7 +140,7 @@ func HandleAddJob(cache job.JobCache, defaultOwner string) func(http.ResponseWri
 		if err != nil {
 			errStr := "Error occured when initializing the job"
 			log.Errorf(errStr+": %s", err)
-			http.Error(w, errStr, http.StatusBadRequest)
+			errorEncodeJSON(errors.New(errStr), http.StatusBadRequest, w)
 			return
 		}
 
@@ -268,6 +269,20 @@ func HandleEnableJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *h
 
 		w.WriteHeader(http.StatusNoContent)
 	}
+}
+
+type apiError struct {
+	Error string `json:"error"`
+}
+
+func errorEncodeJSON(errToEncode error, status int, w http.ResponseWriter) {
+	js, err := json.Marshal(apiError{Error: errToEncode.Error()})
+	if err != nil {
+		log.Errorf("could not encode error message: %v", err)
+		return
+	}
+	w.Header().Set(contentType, jsonContentType)
+	http.Error(w, string(js), status)
 }
 
 // SetupApiRoutes is used within main to initialize all of the routes
