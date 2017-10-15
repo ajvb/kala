@@ -30,14 +30,14 @@ func generateNewJobMap() map[string]string {
 		"schedule": scheduleStr,
 		"name":     "mock_job",
 		"command":  "bash -c 'date'",
-		"owner":    "aj@ajvb.me",
+		"owner":    "example@example.com",
 	}
 }
 
 func generateNewRemoteJobMap() map[string]interface{} {
 	return map[string]interface{}{
 		"name":  "mock_remote_job",
-		"owner": "aj@ajvb.me",
+		"owner": "example@example.com",
 		"type":  1,
 		"remote_properties": map[string]string{
 			"url": "http://example.com",
