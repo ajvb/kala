@@ -154,6 +154,12 @@ All routes have a prefix of `/api/v1`
 Install using:
 `go get github.com/ajvb/kala/client`
 
+#### Contrib
+* [Node.js - client](https://www.npmjs.com/package/kala-node)
+  ```shell
+  npm install kala-node
+  ```
+
 ## Job Data Struct
 
 [Docs can be found here](http://godoc.org/github.com/ajvb/kala/job#Job)
@@ -380,7 +386,7 @@ TODO
 
 ### For User
 - [ ] Python Client Library
-- [ ] Node Client Library
+- [x] Node Client Library
 - [ ] Create single release binary
 
 ### For Contributors
