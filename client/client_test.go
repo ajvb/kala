@@ -51,7 +51,7 @@ func NewJobMap() *job.Job {
 		Schedule: scheduleStr,
 		Name:     "mock_job",
 		Command:  "bash -c 'date'",
-		Owner:    "aj@ajvb.me",
+		Owner:    "example@example.com",
 	}
 }
 
