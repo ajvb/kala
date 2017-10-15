@@ -177,7 +177,7 @@ func HandleJobRequest(cache job.JobCache, db job.JobDB) func(w http.ResponseWrit
 		if r.Method == "DELETE" {
 			err = j.Delete(cache, db)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
+				errorEncodeJSON(err, http.StatusInternalServerError, w)
 			} else {
 				w.WriteHeader(http.StatusNoContent)
 			}
@@ -192,7 +192,7 @@ func HandleJobRequest(cache job.JobCache, db job.JobDB) func(w http.ResponseWrit
 func HandleDeleteAllJobs(cache job.JobCache, db job.JobDB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := job.DeleteAll(cache, db); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			errorEncodeJSON(err, http.StatusInternalServerError, w)
 		} else {
 			w.WriteHeader(http.StatusNoContent)
 		}
