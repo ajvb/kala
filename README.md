@@ -149,13 +149,13 @@ All routes have a prefix of `/api/v1`
 ## Client Libraries
 
 #### Official:
-* Go - [client](https://github.com/ajvb/kala/tree/master/client) - Docs: http://godoc.org/github.com/ajvb/kala/client
+* [Go](https://github.com/ajvb/kala/tree/master/client) - Docs: http://godoc.org/github.com/ajvb/kala/client
+    ```bash
+    go get github.com/ajvb/kala/client
+    ```
 
-Install using:
-`go get github.com/ajvb/kala/client`
-
-#### Contrib
-* [Node.js - client](https://www.npmjs.com/package/kala-node)
+#### Contrib:
+* [Node.js](https://www.npmjs.com/package/kala-node)
   ```shell
   npm install kala-node
   ```
