@@ -177,12 +177,24 @@ func HandleJobRequest(cache job.JobCache, db job.JobDB) func(w http.ResponseWrit
 		if r.Method == "DELETE" {
 			err = j.Delete(cache, db)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
+				errorEncodeJSON(err, http.StatusInternalServerError, w)
 			} else {
 				w.WriteHeader(http.StatusNoContent)
 			}
 		} else if r.Method == "GET" {
 			handleGetJob(w, r, j)
+		}
+	}
+}
+
+// HandleDeleteAllJobs is the handler for deleting all jobs
+// DELETE /api/v1/job/all
+func HandleDeleteAllJobs(cache job.JobCache, db job.JobDB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := job.DeleteAll(cache, db); err != nil {
+			errorEncodeJSON(err, http.StatusInternalServerError, w)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
 		}
 	}
 }
@@ -289,6 +301,8 @@ func errorEncodeJSON(errToEncode error, status int, w http.ResponseWriter) {
 func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB, defaultOwner string) {
 	// Route for creating a job
 	r.HandleFunc(ApiJobPath, HandleAddJob(cache, defaultOwner)).Methods("POST")
+	// Route for deleting all jobs
+	r.HandleFunc(ApiJobPath+"all/", HandleDeleteAllJobs(cache, db)).Methods("DELETE")
 	// Route for deleting and getting a job
 	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
 	// Route for getting job stats

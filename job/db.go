@@ -2,6 +2,7 @@ package job
 
 import (
 	"fmt"
+
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -34,4 +35,22 @@ func (j *Job) Delete(cache JobCache, db JobDB) error {
 		err = errTwo
 	}
 	return err
+}
+
+func DeleteAll(cache JobCache, db JobDB) error {
+	allJobs := cache.GetAll()
+	allJobs.Lock.RLock()
+	// make a copy of all jobs to prevent deadlock on delete
+	jobsCopy := make([]*Job, 0, len(allJobs.Jobs))
+	for _, j := range allJobs.Jobs {
+		jobsCopy = append(jobsCopy, j)
+	}
+	allJobs.Lock.RUnlock()
+
+	for _, j := range jobsCopy {
+		if err := j.Delete(cache, db); err != nil {
+			return err
+		}
+	}
+	return nil
 }
