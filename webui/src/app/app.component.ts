@@ -1,13 +1,10 @@
 import {Component, OnInit, Inject} from '@angular/core';
-import {HttpClient} from "@angular/common/http";
 
 import {MatDialog, MatDialogRef, MAT_DIALOG_DATA, MatSnackBar} from '@angular/material';
 import {DialogConfirmDialog} from "./confirm.component";
 import {DialogJobStatsDialog} from "./job.stats.component";
-import {
-  Job, JobStat, ListJobs, ListJobsResponse, KalaStats, KalaStatResponse, RemoteType,
-  JobStatResponse
-} from "./interfaces";
+import { Job, KalaStats,  RemoteType } from "./interfaces";
+import {KalaService} from "./kala.service";
 
 // @todo features: run manually, disable, enable, modify
 
@@ -27,10 +24,10 @@ export class DialogJobDetailDialog {
 
   constructor(
     public dialogRef: MatDialogRef<DialogJobDetailDialog>,
-    public http: HttpClient,
     @Inject(MAT_DIALOG_DATA) public data: any,
     public dialog: MatDialog,
     public snackBar: MatSnackBar,
+    public kalaService: KalaService,
     ) { }
 
   onNoClick(): void {
@@ -45,7 +42,7 @@ export class DialogJobDetailDialog {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
-        this.http.post(`http://localhost:8000/api/v1/job/enable/${job.id}/`, null).subscribe(res => {
+        this.kalaService.enableJob(job.id).subscribe(res => {
           console.log(res);
           this.snackBar.open("Enabled", "", {duration: 2500});
           job.disabled = false;
@@ -61,7 +58,7 @@ export class DialogJobDetailDialog {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
-        this.http.post(`http://localhost:8000/api/v1/job/disable/${job.id}/`, null).subscribe(res => {
+        this.kalaService.disableJob(job.id).subscribe(res => {
           console.log(res);
           job.disabled = true;
           this.snackBar.open("Disabled", "", {duration: 2500});
@@ -81,7 +78,7 @@ export class DialogJobDetailDialog {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
-        this.http.post(`http://localhost:8000/api/v1/job/start/${job.id}/`, null).subscribe(res => {
+        this.kalaService.startJob(job.id).subscribe(res => {
           console.log(res);
           this.snackBar.open("Started", "", {duration: 2500});
         })
@@ -89,8 +86,14 @@ export class DialogJobDetailDialog {
     });
   }
   showStats(job: Job): void  {
-    this.http.get<JobStatResponse>(`http://localhost:8000/api/v1/job/stats/${job.id}/`).subscribe(res => {
+    this.kalaService.getJobStats(job.id).subscribe(res => {
       job.stats = res.job_stats;
+
+      if (job.stats == null || job.stats.length == 0) {
+        this.snackBar.open("No stats to display");
+        return
+      }
+
       this.hidden = true;
       let dialogRef = this.dialog.open(DialogJobStatsDialog, {
         width: '70%',
@@ -110,7 +113,7 @@ export class DialogJobDetailDialog {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
-        this.http.delete("http://localhost:8000/api/v1/job/" + job.id + "/").subscribe(() => {
+        this.kalaService.deleteJob(job.id).subscribe(() => {
           let index = this.data.jobs.indexOf(job)
           if (index > -1) {
             this.data.jobs.splice(index, 1)
@@ -132,7 +135,7 @@ export class DialogJobDetailDialog {
 
 export class AppComponent implements OnInit {
   title = 'Kala';
-  defaultOperation: number = OperationCreate;
+  defaultOperation: number = OperationKalaMetrics;
   operations: {create: number, listJobs: number, kalaMetrics: number} = {
     create: OperationCreate,
     listJobs: OperationListJobs,
@@ -153,7 +156,10 @@ export class AppComponent implements OnInit {
   };
   KalaJobs: Job[] = [];
 
-  constructor(private http: HttpClient, public dialog: MatDialog) {}
+  constructor(
+    private dialog: MatDialog,
+    private kalaService: KalaService,
+  ) {}
   ngOnInit():void {
     switch (this.defaultOperation) {
       case OperationKalaMetrics:
@@ -169,7 +175,7 @@ export class AppComponent implements OnInit {
   }
 
   listJobs(): void {
-    this.http.get<ListJobsResponse>("http://localhost:8000/api/v1/job/").subscribe(data => {
+    this.kalaService.getJobs().subscribe(data => {
       for (let id in data.jobs) {
         const job = data.jobs[id]
         if (job.type == RemoteType) {
@@ -181,21 +187,12 @@ export class AppComponent implements OnInit {
   }
 
   metrics(): void {
-    this.http.get<KalaStatResponse>("http://localhost:8000/api/v1/stats/").subscribe(data => {
+    this.kalaService.getMetrics().subscribe(data => {
       this.KalaStat = data.Stats
-    })
+    });
   }
 
   openDialog(job: Job): void {
-    // this.http.get<JobDetailResponse>("http://localhost:8000/api/v1/job/"+id+"/").subscribe(res => {
-    //
-    //   console.log(res)
-    //   let dialogRef = this.dialog.open(DialogJobDetailDialog, {
-    //     width: '70%',
-    //     data: res.job,
-    //   });
-    //
-    // });
       let dialogRef = this.dialog.open(DialogJobDetailDialog, {
         width: '70%',
         data: {job: job, jobs: this.KalaJobs},

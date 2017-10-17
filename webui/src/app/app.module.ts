@@ -32,6 +32,7 @@ import 'hammerjs';
 import {DialogJobStatsDialog} from "./job.stats.component";
 import {AppCreateComponent} from "./app.create.component";
 import {DialogConfirmDialog} from "./confirm.component";
+import {KalaService} from "./kala.service";
 
 @NgModule({
   declarations: [
@@ -68,7 +69,9 @@ import {DialogConfirmDialog} from "./confirm.component";
     MatRadioModule,
     MatSnackBarModule,
   ],
-  providers: [],
+  providers: [
+    KalaService,
+  ],
   bootstrap: [AppComponent],
   entryComponents: [
     DialogJobDetailDialog,

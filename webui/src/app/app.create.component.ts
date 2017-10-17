@@ -2,6 +2,7 @@ import {Component} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {MatSnackBar} from "@angular/material";
 import {Job, LocalType, RemoteType, headers} from "./interfaces";
+import {KalaService} from "./kala.service";
 
 @Component({
   selector: 'create-job',
@@ -24,7 +25,7 @@ export class AppCreateComponent {
   };
 
   constructor(
-    private http: HttpClient,
+    private kalaService: KalaService,
     public snackBar: MatSnackBar,
   ){}
 
@@ -41,7 +42,7 @@ export class AppCreateComponent {
       this.job.remote_properties.expected_response_codes = codes;
     }
 
-    this.http.post("http://localhost:8000/api/v1/job/", JSON.stringify(this.job)).subscribe(data => {
+    this.kalaService.createJob(this.job).subscribe(data => {
       console.log(data);
 
       this.snackBar.open("Created", "", {duration: 2500});

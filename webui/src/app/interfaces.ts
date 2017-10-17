@@ -44,6 +44,10 @@ export interface Job {
   type?: number
   remote_properties?: RemoteProperties
   disabled?: boolean
+  owner?: string
+  schedule?: string
+  epsilon?: string
+  retries?: number
 }
 
 export interface ListJobs {

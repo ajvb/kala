@@ -33,6 +33,10 @@ export class DialogJobStatsDialog {
     console.log(index, size)
     let startIndex = index * size;
     this.stats.splice(0, this.stats.length)
+    if (this.data.stats == null || this.data.stats.length == 0) {
+      return
+    }
+
     for (let i = 0 ; i < size; i++) {
       if (!(i in this.data.stats)) {
         break;
