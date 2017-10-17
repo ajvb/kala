@@ -1,0 +1,29 @@
+.logo{
+  height: 26px;
+  margin: 0 4px 3px 0;
+}
+
+div {
+  display: block;
+}
+
+.flex-spacer {
+  -webkit-box-flex: 1;
+  -ms-flex-positive: 1;
+  flex-grow: 1;
+}
+
+.kala-metrics {
+}
+
+.content {
+  margin: 0 3%;
+}
+
+.job-card {
+  cursor: pointer;
+  width: 200px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+}

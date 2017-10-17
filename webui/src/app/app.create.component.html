@@ -1,0 +1,84 @@
+<div>
+  <mat-grid-list cols="4" rowHeight="60px">
+    <mat-grid-tile>
+      <mat-form-field>
+        <input matInput placeholder="Job name" [(ngModel)]="job.name">
+      </mat-form-field>
+    </mat-grid-tile>
+
+    <mat-grid-tile colspan="3" rowspan="15">
+      <div *ngIf="job.type == local_type" class="text-inside-grid">
+        <mat-form-field>
+          <input matInput placeholder="Command" [(ngModel)]="job.command">
+        </mat-form-field>
+      </div>
+      <div *ngIf="job.type == remote_type" class="text-inside-grid">
+        <p>
+          <mat-form-field>
+            <input style="width: 100%;" matInput type="url" placeholder="Url" [(ngModel)]="job.remote_properties.url">
+          </mat-form-field>
+        </p>
+        <p>
+          <mat-form-field>
+            <mat-select placeholder="Method" [(ngModel)]="job.remote_properties.method">
+              <mat-option *ngFor="let method of methods" [value]="method">
+                {{ method }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </p>
+        <p>
+          <mat-form-field style="width: 99%">
+            <textarea matInput rows="3" placeholder="Header" [(ngModel)]="job.remote_properties.headersStr"></textarea>
+            <mat-hint align="start">{{ '{' }}"key":["val1", "val2"]{{ '}' }}</mat-hint>
+          </mat-form-field>
+        </p>
+        <p>
+          <mat-form-field style="width: 99%">
+            <textarea matInput rows="6" placeholder="Body" [(ngModel)]="job.remote_properties.body"></textarea>
+          </mat-form-field>
+        </p>
+        <p>
+          <mat-form-field style="width: 45%; padding-right: 5%">
+            <input matInput type="number" placeholder="Timeout" [(ngModel)]="job.remote_properties.timeout">
+          </mat-form-field>
+          <mat-form-field style="width: 49%;">
+            <input matInput placeholder="Expected response codes" [(ngModel)]="job.remote_properties.expected_response_codesStr" >
+          </mat-form-field>
+        </p>
+      </div>
+
+    </mat-grid-tile>
+
+    <mat-grid-tile>
+      <mat-radio-group name="type" [(ngModel)]="job.type">
+        <mat-radio-button [value]="local_type" color="primary">Local</mat-radio-button>
+        <mat-radio-button [value]="remote_type" color="primary">Remote</mat-radio-button>
+      </mat-radio-group>
+    </mat-grid-tile>
+
+    <mat-grid-tile>
+      <mat-form-field>
+        <input matInput type="email" placeholder="Owner's email" [(ngModel)]="job.owner">
+      </mat-form-field>
+    </mat-grid-tile>
+    <mat-grid-tile>
+      <mat-form-field>
+        <input matInput placeholder="Schedule" [(ngModel)]="job.schedule">
+      </mat-form-field>
+    </mat-grid-tile>
+    <mat-grid-tile>
+      <mat-form-field>
+        <input matInput placeholder="Epsilon" [(ngModel)]="job.epsilon">
+      </mat-form-field>
+    </mat-grid-tile>
+    <mat-grid-tile>
+      <mat-form-field>
+        <input matInput type="number" placeholder="Retries" [(ngModel)]="job.retries">
+      </mat-form-field>
+    </mat-grid-tile>
+    <mat-grid-tile rows="4">
+      <button mat-raised-button color="primary" (click)="create()" [disabled]="isRequesting">Create</button>
+    </mat-grid-tile>
+  </mat-grid-list>
+</div>

@@ -1,0 +1,108 @@
+<div *ngIf="!hidden">
+  <h2 mat-dialog-title>{{ data.job.name }}</h2>
+  <mat-dialog-content>
+
+    <h3>
+      {{ data.job.id }}
+      <mat-chip-list style="display: inline-block">
+        <mat-chip disabled *ngIf="!data.job.disabled" color="primary" selected="true">Enabled</mat-chip>
+        <mat-chip disabled *ngIf="data.job.disabled">Disabled</mat-chip>
+      </mat-chip-list>
+    </h3>
+
+    <mat-nav-list>
+      <mat-list-item matLine>
+        <span class="field-label">Schedule</span>
+        <span>{{ data.job.schedule }}</span>
+      </mat-list-item>
+      <mat-list-item matLine>
+        <span class="field-label">Is done</span>
+        <span *ngIf="data.job.is_done">Yes</span>
+        <span *ngIf="!data.job.is_done">No</span>
+      </mat-list-item>
+      <mat-list-item matLine>
+        <span class="field-label">Job type</span>
+        <span *ngIf="data.job.type == 0">Local</span>
+        <span *ngIf="data.job.type == 1">Remote</span>
+      </mat-list-item>
+      <mat-list-item matLine *ngIf="data.job.type==0">
+        <span>Command</span><span>{{ data.job.command }}</span>
+      </mat-list-item>
+      <div *ngIf="data.job.type==1">
+        <mat-list-item matLine>
+          <span class="sub-field-label">Url</span>
+          <span>{{data.job.remote_properties.url}}</span>
+        </mat-list-item>
+        <mat-list-item matLine>
+          <span class="sub-field-label">Method</span>
+          <span>{{data.job.remote_properties.method}}</span>
+        </mat-list-item>
+        <mat-list-item matLine>
+          <span class="sub-field-label">Headers</span>
+          <span>{{data.job.remote_properties.headersStr}}</span>
+        </mat-list-item>
+        <mat-list-item matLine>
+          <span class="sub-field-label">Body</span>
+          <span>{{data.job.remote_properties.body}}</span>
+        </mat-list-item>
+        <mat-list-item matLine>
+          <span class="sub-field-label">Timeout</span>
+          <span>{{data.job.remote_properties.timeout}}</span>
+        </mat-list-item>
+        <mat-list-item matLine>
+          <span class="sub-field-label">Expected response codes</span>
+          <span>{{data.job.remote_properties.expected_response_codes}}</span>
+        </mat-list-item>
+      </div>
+      <mat-list-item matLine>
+        <span class="field-label">Dependent jobs</span>
+        <span>{{ data.job.dependent_jobs }}</span>
+      </mat-list-item>
+      <mat-list-item matLine>
+        <span class="field-label">Parent jobs</span>
+        <span>{{ data.job.parent_jobs }}</span>
+      </mat-list-item>
+      <mat-list-item matLine>
+        <span class="field-label">Retries</span>
+        <span>{{ data.job.retries }}</span>
+      </mat-list-item>
+      <mat-list-item matLine>
+        <span class="field-label">Epsilon</span>
+        <span>{{ data.job.epsilon }}</span>
+      </mat-list-item>
+      <mat-list-item matLine>
+        <span class="field-label">Next run at</span>
+        <span >{{ data.job.next_run_at }}</span>
+      </mat-list-item>
+      <mat-list-item matLine>
+        <span class="field-label">Metadata</span>
+      </mat-list-item>
+      <mat-list-item matLine>
+        <span class="sub-field-label">Success count</span>   <span>{{ data.job.metadata.success_count }}</span>
+      </mat-list-item>
+      <mat-list-item matLine>
+        <span class="sub-field-label">Last success at</span>   <span>{{ data.job.metadata.last_success }}</span>
+      </mat-list-item>
+      <mat-list-item matLine>
+        <span class="sub-field-label">Error count</span>   <span>{{ data.job.metadata.error_count }}</span>
+      </mat-list-item>
+      <mat-list-item matLine>
+        <span class="sub-field-label">Last attempted run at</span>   <span>{{ data.job.metadata.last_attempted_run }}</span>
+      </mat-list-item>
+      <mat-list-item matLine>
+        <span class="field-label">Owner</span>
+        <span>{{ data.job.owner }}</span>
+      </mat-list-item>
+    </mat-nav-list>
+  </mat-dialog-content>
+
+  <mat-dialog-actions>
+    <button mat-button color="primary" (click)="showStats(data.job)">Stats</button>
+    <button mat-button color="primary" *ngIf="data.job.disabled" (click)="enable(data.job)" [disabled]="isEnabling">Enable</button>
+    <button mat-button color="primary" *ngIf="!data.job.disabled" (click)="disable(data.job)" [disabled]="isDisabling">Disable</button>
+    <button mat-button color="primary" *ngIf="!data.job.disabled" (click)="run(data.job)">Run manually</button>
+    <!--@todo add modif-->
+    <!--<button mat-button color="primary" (click)="modify(data.job)">Modify</button>-->
+    <button mat-button color="warn" (click)="delete(data.job)">Delete</button>
+  </mat-dialog-actions>
+</div>

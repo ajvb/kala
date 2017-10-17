@@ -13,6 +13,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 const (
@@ -326,5 +327,8 @@ func StartServer(listenAddr string, cache job.JobCache, db job.JobDB, defaultOwn
 	SetupApiRoutes(r, cache, db, defaultOwner)
 	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log.Logger{}})
 	n.UseHandler(r)
-	return http.ListenAndServe(listenAddr, n)
+	handler := cors.New(cors.Options{
+		AllowedMethods: []string{"GET", "POST", "DELETE", "PATCH"},
+	}).Handler(n)
+	return http.ListenAndServe(listenAddr, handler)
 }

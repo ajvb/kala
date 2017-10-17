@@ -1,0 +1,11 @@
+
+.text-inside-grid {
+  position: absolute;
+  left: 10px;
+  top: 0px;
+  width: 100%;
+}
+
+mat-form-field {
+  width: 100%;
+}

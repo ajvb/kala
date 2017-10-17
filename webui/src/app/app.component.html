@@ -1,0 +1,47 @@
+<!--The content below is only a placeholder and can be replaced.-->
+<mat-toolbar color="primary">
+  <button mat-button>{{ title }}</button>
+
+  <mat-button-toggle-group #group="matButtonToggleGroup" [value]="defaultOperation">
+    <mat-button-toggle [value]="operations.kalaMetrics" (click)="metrics()">Metrics</mat-button-toggle>
+    <mat-button-toggle [value]="operations.listJobs" (click)="listJobs()">Jobs</mat-button-toggle>
+    <mat-button-toggle [value]="operations.create">Create</mat-button-toggle>
+  </mat-button-toggle-group>
+
+  <div class="flex-spacer"></div>
+  <a class="vertical-align: middle" mat-button href="https://github.com/ajvb/kala">
+      <img class="logo" src="assets/github-circle-white-transparent.svg">
+     GitHub
+  </a>
+</mat-toolbar>
+
+
+<div class="content">
+
+  <mat-card class="kala-metrics" *ngIf="group.value == operations.kalaMetrics">
+    <mat-card-content>
+      <mat-list>
+        <mat-list-item><span class="field-label">active jobs</span><span>{{ KalaStat.active_jobs }} </span></mat-list-item>
+        <mat-list-item><span class="field-label">disabled jobs</span><span>{{ KalaStat.disabled_jobs }} </span></mat-list-item>
+        <mat-list-item><span class="field-label">jobs</span><span>{{ KalaStat.jobs }} </span></mat-list-item>
+        <mat-list-item><span class="field-label">Error count</span><span>{{ KalaStat.error_count }} </span></mat-list-item>
+        <mat-list-item><span class="field-label">Success count</span><span>{{ KalaStat.success_count }} </span></mat-list-item>
+        <mat-list-item><span class="field-label">Next run at</span><span>{{ KalaStat.next_run_at }} </span></mat-list-item>
+        <mat-list-item><span class="field-label">Last attempted run at</span><span>{{ KalaStat.last_attempted_run }} </span></mat-list-item>
+        <mat-list-item><span class="field-label">Created at</span><span>{{ KalaStat.created }} </span></mat-list-item>
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
+
+  <create-job *ngIf="group.value== operations.create">
+
+  </create-job>
+
+  <mat-grid-list cols="4" rowHeight="3:2" *ngIf="group.value == operations.listJobs">
+    <mat-grid-tile *ngFor="let job of KalaJobs" (click)="openDialog(job)">
+     <mat-card style="" class="job-card" matTooltip="Click to show more">
+       {{ job.name }}
+     </mat-card>
+    </mat-grid-tile>
+  </mat-grid-list>
+</div>

@@ -1,0 +1,18 @@
+<h2 mat-dialog-title>{{ data.job_name }}</h2>
+<mat-dialog-content>
+  <mat-card *ngFor="let stat of stats" style="margin-bottom: 10px;">
+    <a mat-button>
+      <mat-icon>history</mat-icon>
+      {{ stat.ran_at }}
+    </a>
+    <p><span class="field-label">Number of retires</span><span>{{ stat.number_of_retries }}</span></p>
+    <p><span class="field-label">Output</span><span>{{ stat.output }}</span></p>
+    <p><span class="field-label">Is success</span><span>{{ stat.success ? "Yes" : "No" }}</span></p>
+    <p><span class="field-label">Execution duration</span><span>{{ stat.execution_duration/1000000000.0 }} s</span></p>
+  </mat-card>
+  <mat-paginator [length]="data.stats.length"
+                 [pageSize]="pageSize"
+                 [pageSizeOptions]="pageSizeOptions"
+                 (page)="page($event)">
+  </mat-paginator>
+</mat-dialog-content>

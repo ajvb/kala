@@ -1,0 +1,19 @@
+/* You can add global styles to this file, and also import other style files */
+body {
+  margin: 0;
+}
+
+@import '~@angular/material/prebuilt-themes/deeppurple-amber.css';
+
+.field-label {
+  font-size: 14px;
+  display:inline-block;
+  width: 200px;
+}
+
+.sub-field-label {
+  font-size: 14px;
+  display:inline-block;
+  width: 180px;
+  padding-left: 20px;
+}
