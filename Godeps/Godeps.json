@@ -90,6 +90,16 @@
 			"Rev": "7ae0511314e9946bb0c87d6d485169ab2467a290"
 		},
 		{
+			"ImportPath": "github.com/rs/cors",
+			"Comment": "v1.0",
+			"Rev": "a62a804a8a009876ca59105f7899938a1349f4b3"
+		},
+		{
+			"ImportPath": "github.com/rs/xhandler",
+			"Comment": "v1.0-1-ged27b6f",
+			"Rev": "ed27b6fd65218132ee50cd95f38474a3d8a2cd12"
+		},
+		{
 			"ImportPath": "github.com/stretchr/testify/assert",
 			"Comment": "v1.0-21-gf552045",
 			"Rev": "f5520455607c0233cb6d7b056f71b22c1d265ef1"
@@ -103,6 +113,10 @@
 			"ImportPath": "github.com/stretchr/testify/suite",
 			"Comment": "v1.0-21-gf552045",
 			"Rev": "f5520455607c0233cb6d7b056f71b22c1d265ef1"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "66aacef3dd8a676686c7ae3716979581e8b03c47"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
