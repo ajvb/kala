@@ -160,6 +160,11 @@ All routes have a prefix of `/api/v1`
   npm install kala-node
   ```
 
+* [Python](https://github.com/dmajere/kala-python)
+  ```shell
+  pip install git+https://github.com/dmajere/kala-python.git
+  ```
+
 ## Job Data Struct
 
 [Docs can be found here](http://godoc.org/github.com/ajvb/kala/job#Job)
@@ -386,7 +391,7 @@ TODO
 # TODO's
 
 ### For User
-- [ ] Python Client Library
+- [x] Python Client Library
 - [x] Node Client Library
 - [ ] Create single release binary
 
