@@ -1,0 +1,7 @@
+comment:
+  layout: header, changes, diff
+coverage:
+  ignore:
+  - .*.pb.go
+  status:
+    patch: false

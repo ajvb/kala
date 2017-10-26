@@ -1,62 +1,32 @@
 package job
 
 import (
+	"bytes"
+	"encoding/gob"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"os"
-	"os/exec"
-	"os/signal"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/ajvb/kala/utils/iso8601"
-	"github.com/ajvb/kala/utils/logging"
 
-	"github.com/mattn/go-shellwords"
+	log "github.com/Sirupsen/logrus"
 	"github.com/nu7hatch/gouuid"
 )
 
 var (
-	log = logging.GetLogger("kala")
+	// nano seconds allowed between current time and when job is supposed to start
+	validOffset            = time.Minute
+	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
 
-	shParser = shellwords.NewParser()
+	ErrInvalidJob       = errors.New("Invalid Local Job. Job's must contain a Name and a Command field")
+	ErrInvalidRemoteJob = errors.New("Invalid Remote Job. Job's must contain a Name and a url field")
+	ErrInvalidJobType   = errors.New("Invalid Job type. Types supported: 0 for local and 1 for remote")
 )
-
-func init() {
-	// Prep cache
-	allJobs, err := GetAllJobs()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, v := range allJobs {
-		v.StartWaiting()
-		AllJobs.Set(v)
-	}
-
-	// Occasionally, save items in cache to db.
-	go AllJobs.PersistEvery(SaveAllJobsWaitTime)
-
-	// Process-level defer for shutting down the db.
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
-	go func() {
-		s := <-c
-		log.Info("Process got signal: %s", s)
-		log.Info("Shutting down....")
-
-		// Persist all jobs to database
-		AllJobs.Persist()
-
-		// Close the database
-		db.Close()
-
-		os.Exit(1)
-	}()
-
-	shParser.ParseEnv = true
-	shParser.ParseBacktick = true
-}
 
 type Job struct {
 	Name string `json:"name"`
@@ -79,6 +49,9 @@ type Job struct {
 	// List of ids of jobs that this job is dependent upon.
 	ParentJobs []string `json:"parent_jobs"`
 
+	// Job that gets run after all retries have failed consecutively
+	OnFailureJob string `json:"on_failure_job"`
+
 	// ISO 8601 String
 	// e.g. "R/2014-03-08T20:00:00.000Z/PT2H"
 	Schedule     string `json:"schedule"`
@@ -92,60 +65,151 @@ type Job struct {
 	timesToRepeat int64
 
 	// Number of times to retry on failed attempt for each run.
-	Retries        uint `json:"retries"`
-	currentRetries uint
+	Retries uint `json:"retries"`
 
 	// Duration in which it is safe to retry the Job.
 	Epsilon         string `json:"epsilon"`
 	epsilonDuration *iso8601.Duration
 
-	// Meta data about successful and failed runs.
-	SuccessCount     uint      `json:"success_count"`
-	LastSuccess      time.Time `json:"last_success"`
-	ErrorCount       uint      `json:"error_count"`
-	LastError        time.Time `json:"last_error"`
-	LastAttemptedRun time.Time `json:"last_attempted_run"`
-
 	jobTimer  *time.Timer
 	NextRunAt time.Time `json:"next_run_at"`
 
-	currentStat *JobStat
-	Stats       []*JobStat `json:"-"`
+	// Meta data about successful and failed runs.
+	Metadata Metadata `json:"metadata"`
 
-	lock sync.Mutex
+	// Type of the job
+	JobType jobType `json:"type"`
+
+	// Custom properties for the remote job type
+	RemoteProperties RemoteProperties `json:"remote_properties"`
+
+	// Collection of Job Stats
+	Stats []*JobStat `json:"stats"`
+
+	lock sync.RWMutex
+
+	// Says if a job has been executed right numbers of time
+	// and should not been executed again in the future
+	IsDone bool `json:"is_done"`
+}
+
+type jobType int
+
+const (
+	LocalJob jobType = iota
+	RemoteJob
+)
+
+// RemoteProperties Custom properties for the remote job type
+type RemoteProperties struct {
+	Url    string `json:"url"`
+	Method string `json:"method"`
+
+	// A body to attach to the http request
+	Body string `json:"body"`
+
+	// A list of headers to add to http request (e.g. [{"key": "charset", "value": "UTF-8"}])
+	Headers http.Header `json:"headers"`
+
+	// A timeout property for the http request in seconds
+	Timeout int `json:"timeout"`
+
+	// A list of expected response codes (e.g. [200, 201])
+	ExpectedResponseCodes []int `json:"expected_response_codes"`
+}
+
+type Metadata struct {
+	SuccessCount     	uint      `json:"success_count"`
+	LastSuccess      	time.Time `json:"last_success"`
+	ErrorCount       	uint      `json:"error_count"`
+	LastError        	time.Time `json:"last_error"`
+	LastAttemptedRun 	time.Time `json:"last_attempted_run"`
+	NumberOfFinishedRuns	uint	  `json:"number_of_finished_runs"`
+}
+
+// Bytes returns the byte representation of the Job.
+func (j Job) Bytes() ([]byte, error) {
+	buff := new(bytes.Buffer)
+	enc := gob.NewEncoder(buff)
+	err := enc.Encode(j)
+	if err != nil {
+		return nil, err
+	}
+	return buff.Bytes(), nil
+}
+
+// NewFromBytes returns a Job instance from a byte representation.
+func NewFromBytes(b []byte) (*Job, error) {
+	j := &Job{}
+
+	buf := bytes.NewBuffer(b)
+	err := gob.NewDecoder(buf).Decode(j)
+	if err != nil {
+		return nil, err
+	}
+
+	return j, nil
 }
 
 // Init fills in the protected fields and parses the iso8601 notation.
-func (j *Job) Init() error {
+// It also adds the job to the Cache
+func (j *Job) Init(cache JobCache) error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	//validate job type and params
+	err := j.validation()
+	if err != nil {
+		return err
+	}
+
 	u4, err := uuid.NewV4()
 	if err != nil {
-		log.Error("Error occured when generating uuid: %s", err)
+		log.Errorf("Error occured when generating uuid: %s", err)
 		return err
 	}
 	j.Id = u4.String()
 
+	// Add Job to the cache.
+	err = cache.Set(j)
+	if err != nil {
+		return err
+	}
+
 	if len(j.ParentJobs) != 0 {
 		// Add new job to parent jobs
 		for _, p := range j.ParentJobs {
-			parentJob := AllJobs.Get(p)
+			parentJob, err := cache.Get(p)
+			if err != nil {
+				return err
+			}
 			parentJob.DependentJobs = append(parentJob.DependentJobs, j.Id)
 		}
 
 		return nil
 	}
 
+	// TODO: Delete from cache after running.
 	if j.Schedule == "" {
 		// If schedule is empty, its a one-off job.
-		go j.Run()
+		go j.Run(cache)
 		return nil
 	}
 
+	j.lock.Unlock()
 	err = j.InitDelayDuration(true)
+	j.lock.Lock()
 	if err != nil {
+		j.lock.Unlock()
+		cache.Delete(j.Id)
+		j.lock.Lock()
 		return err
 	}
 
-	j.StartWaiting()
+	j.lock.Unlock()
+	j.StartWaiting(cache)
+
+	j.lock.Lock()
 
 	return nil
 }
@@ -153,14 +217,20 @@ func (j *Job) Init() error {
 // InitDelayDuration is used to parsed the iso8601 Schedule notation into its relevent fields in the Job struct.
 // If checkTime is true, then it will return an error if the Scheduled time has passed.
 func (j *Job) InitDelayDuration(checkTime bool) error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	if j.Schedule == "" {
+		return nil
+	}
+
+	var err error
 	splitTime := strings.Split(j.Schedule, "/")
 	if len(splitTime) != 3 {
 		return fmt.Errorf(
 			"Schedule not formatted correctly. Should look like: R/2014-03-08T20:00:00Z/PT2H",
 		)
 	}
-
-	var err error
 
 	// Handle Repeat Amount
 	if splitTime[0] == "R" {
@@ -169,167 +239,277 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 	} else {
 		j.timesToRepeat, err = strconv.ParseInt(strings.Split(splitTime[0], "R")[1], 10, 0)
 		if err != nil {
-			log.Error("Error converting timesToRepeat to an int: %s", err)
+			log.Errorf("Error converting timesToRepeat to an int: %s", err)
 			return err
 		}
 	}
-	log.Debug("timesToRepeat: %d", j.timesToRepeat)
 
 	j.scheduleTime, err = time.Parse(time.RFC3339, splitTime[1])
 	if err != nil {
-		log.Error("Error converting scheduleTime to a time.Time: %s", err)
-		return err
-	}
-	if checkTime {
-		if (time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())) < 0 {
-			return fmt.Errorf("Schedule time has passed on Job with id of %s", j.Id)
+		j.scheduleTime, err = time.Parse(RFC3339WithoutTimezone, splitTime[1])
+		if err != nil {
+			log.Errorf("Error converting scheduleTime to a time.Time: %s", err)
+			return err
 		}
 	}
-	log.Debug("Schedule Time: %s", j.scheduleTime)
-
-	j.delayDuration, err = iso8601.FromString(splitTime[2])
-	if err != nil {
-		log.Error("Error converting delayDuration to a iso8601.Duration: %s", err)
-		return err
+	if checkTime {
+		diff := j.scheduleTime.Sub(time.Now())
+		if diff < 0 {
+			return fmt.Errorf("Job %s:%s cannot be scheduled %s ago", j.Name, j.Id, diff.String())
+		}
 	}
-	log.Debug("Delay Duration: %s", j.delayDuration.ToDuration())
+	log.Debugf("Job %s:%s scheduled", j.Name, j.Id)
+	log.Debugf("Starting %s will repeat for %d", j.scheduleTime, j.timesToRepeat)
+
+	if j.timesToRepeat != 0 {
+		j.delayDuration, err = iso8601.FromString(splitTime[2])
+		if err != nil {
+			log.Errorf("Error converting delayDuration to a iso8601.Duration: %s", err)
+			return err
+		}
+		log.Debugf("Delay duration is %s", j.delayDuration.ToDuration())
+	}
 
 	if j.Epsilon != "" {
 		j.epsilonDuration, err = iso8601.FromString(j.Epsilon)
 		if err != nil {
-			log.Error("Error converting j.Epsilon to iso8601.Duration: %s", err)
+			log.Errorf("Error converting j.Epsilon to iso8601.Duration: %s", err)
 			return err
 		}
 	}
-
 	return nil
 }
 
 // StartWaiting begins a timer for when it should execute the Jobs .Run() method.
-func (j *Job) StartWaiting() {
-	waitDuration := time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())
-	log.Debug("Wait Duration initial: %s", waitDuration)
-	if waitDuration < 0 {
-		// Needs to be recalculated each time because of Months.
-		waitDuration = j.delayDuration.ToDuration()
-	}
-	log.Info("Job Scheduled to run in: %s", waitDuration)
+func (j *Job) StartWaiting(cache JobCache) {
+	waitDuration := j.GetWaitDuration()
+
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	log.Infof("Job %s:%s repeating in %s", j.Name, j.Id, waitDuration)
+
 	j.NextRunAt = time.Now().Add(waitDuration)
-	j.jobTimer = time.AfterFunc(waitDuration, j.Run)
+
+	jobRun := func() { j.Run(cache) }
+	j.jobTimer = time.AfterFunc(waitDuration, jobRun)
+}
+
+func (j *Job) GetWaitDuration() time.Duration {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+
+	waitDuration := time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())
+
+	if waitDuration < 0 {
+		if j.timesToRepeat == 0 {
+			return 0
+		}
+
+		if j.Metadata.LastAttemptedRun.IsZero() {
+			waitDuration = j.delayDuration.ToDuration()
+		} else {
+			lastRun := j.Metadata.LastAttemptedRun
+			// Needs to be recalculated each time because of Months.
+			lastRun = lastRun.Add(j.delayDuration.ToDuration())
+			waitDuration = lastRun.Sub(time.Now())
+		}
+	}
+
+	return waitDuration
 }
 
 // Disable stops the job from running by stopping its jobTimer. It also sets Job.Disabled to true,
 // which is reflected in the UI.
 func (j *Job) Disable() {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
 	if j.jobTimer != nil {
 		j.jobTimer.Stop()
 	}
 	j.Disabled = true
 }
 
-// Run executes the Job's command, collects metadata around the success
-// or failure of the Job's execution, and schedules the next run.
-func (j *Job) Run() {
-	log.Info("Job %s running", j.Name)
-
+func (j *Job) Enable(cache JobCache) {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
-	j.runSetup()
+	if j.jobTimer != nil && j.Disabled {
+		go j.StartWaiting(cache)
+	}
+	j.Disabled = false
+}
 
-	for {
-		err := j.runCmd()
+// DeleteFromParentJobs goes through and deletes the current job from any parent jobs.
+func (j *Job) DeleteFromParentJobs(cache JobCache) error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	for _, p := range j.ParentJobs {
+		parentJob, err := cache.Get(p)
+
 		if err != nil {
-			// Log Error in Metadata
-			// TODO - Error Reporting, email error
-			log.Error("Run Command got an Error: %s", err)
+			return err
+		}
 
-			// Handle retrying
-			if j.shouldRetry() {
-				j.currentRetries--
-				continue
+		parentJob.lock.Lock()
+
+		ndx := 0
+		for i, id := range parentJob.DependentJobs {
+			if id == j.Id {
+				ndx = i
+				break
 			}
-
-			j.ErrorCount++
-			j.LastError = time.Now()
-
-			// If it doesn't retry, cleanup and exit.
-			j.runCleanup()
-			return
 		}
-		break
+		parentJob.DependentJobs = append(
+			parentJob.DependentJobs[:ndx], parentJob.DependentJobs[ndx+1:]...,
+		)
+		err = cache.Set(parentJob)
+		if err != nil {
+			return err
+		}
+		parentJob.lock.Unlock()
 	}
 
-	log.Info("%s was successful!", j.Name)
-	j.SuccessCount++
-	j.LastSuccess = time.Now()
-
-	// Get Execution Duration
-	j.currentStat.ExecutionDuration = time.Duration(
-		j.LastSuccess.UnixNano() - j.currentStat.RanAt.UnixNano(),
-	)
-	j.currentStat.Success = true
-	j.currentStat.NumberOfRetries = j.Retries - j.currentRetries
-
-	// Run Dependent Jobs
-	if len(j.DependentJobs) != 0 {
-		for _, id := range j.DependentJobs {
-			go AllJobs.Get(id).Run()
-		}
-	}
-
-	j.runCleanup()
-	return
+	return nil
 }
 
-func (j *Job) runCmd() error {
-	// Execute command
-	args, err := shParser.Parse(j.Command)
+// DeleteFromDependentJobs
+func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+
+	for _, id := range j.DependentJobs {
+		childJob, err := cache.Get(id)
+		if err != nil {
+			return err
+		}
+
+		// If there are no other parent jobs, delete this job.
+		if len(childJob.ParentJobs) == 1 {
+			log.Infof("Deleting child %s", id)
+			cache.Delete(childJob.Id)
+			continue
+		}
+
+		childJob.lock.Lock()
+
+		ndx := 0
+		for i, id := range childJob.ParentJobs {
+			if id == j.Id {
+				ndx = i
+				break
+			}
+		}
+		childJob.ParentJobs = append(
+			childJob.ParentJobs[:ndx], childJob.ParentJobs[ndx+1:]...,
+		)
+
+		childJob.lock.Unlock()
+
+	}
+
+	return nil
+}
+
+// Runs the on failure job, if it exists. Does not lock the parent job - it is up to you to do this
+// however you want
+func (j *Job) RunOnFailureJob(cache JobCache) {
+	if (j.OnFailureJob != "") {
+		onFailureJob, cacheErr := cache.Get(j.OnFailureJob)
+		if cacheErr == ErrJobDoesntExist {
+			log.Errorf("Error retrieving dependent job with id of %s", j.OnFailureJob)
+		} else {
+			onFailureJob.Run(cache)
+		}
+	}
+}
+
+func (j *Job) Run(cache JobCache) {
+	// Schedule next run
+	j.lock.RLock()
+	jobRunner := &JobRunner{job: j, meta: j.Metadata}
+	j.lock.RUnlock()
+	newStat, newMeta, err := jobRunner.Run(cache)
 	if err != nil {
-		return err
+		log.Errorf("Error running job: %s", err)
+		j.lock.RLock()
+		j.RunOnFailureJob(cache)
+		j.lock.RUnlock()
 	}
-	cmd := exec.Command(args[0], args[1:]...)
-	return cmd.Run()
+
+	j.lock.Lock()
+	j.Metadata = newMeta
+	if newStat != nil {
+		j.Stats = append(j.Stats, newStat)
+	}
+
+	if j.ShouldStartWaiting() {
+		go j.StartWaiting(cache)
+	} else {
+		j.IsDone = true
+	}
+
+	j.lock.Unlock()
 }
 
-func (j *Job) shouldRetry() bool {
-	// Check number of retries left
-	if j.currentRetries == 0 {
+func (j *Job) StopTimer() {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	if j.jobTimer != nil {
+		j.jobTimer.Stop()
+	}
+}
+
+func (j *Job) RunCmd() error {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+
+	jobRunner := &JobRunner{job: j}
+	return jobRunner.runCmd()
+}
+
+func (j *Job) hasFixedRepetitions() bool {
+	if j.timesToRepeat != -1 {
+		return true
+	}
+	return false
+}
+
+func (j *Job) ShouldStartWaiting() bool {
+	if j.Disabled {
 		return false
 	}
 
-	// Check Epsilon
-	if j.Epsilon != "" {
-		if j.epsilonDuration.ToDuration() == 0 {
-			timeSinceStart := time.Now().Sub(j.NextRunAt)
-			timeLeftToRetry := j.epsilonDuration.ToDuration() - timeSinceStart
-			if timeLeftToRetry < 0 {
-				return false
-			}
-		}
+	if j.hasFixedRepetitions() && int(j.timesToRepeat) < len(j.Stats) {
+		return false
 	}
-
 	return true
 }
 
-func (j *Job) runSetup() {
-	// Setup Job Stat
-	j.currentStat = NewJobStat(j.Id)
-
-	// Schedule next run
-	if j.timesToRepeat != 0 {
-		j.timesToRepeat--
-		go j.StartWaiting()
+func (j *Job) validation() error {
+	var err error
+	if j.JobType == LocalJob && (j.Name == "" || j.Command == "") {
+		err = ErrInvalidJob
+	} else if j.JobType == RemoteJob && (j.Name == "" || j.RemoteProperties.Url == "") {
+		err = ErrInvalidRemoteJob
+	} else if j.JobType != LocalJob && j.JobType != RemoteJob {
+		err = ErrInvalidJobType
+	} else {
+		return nil
 	}
-
-	j.LastAttemptedRun = time.Now()
-
-	// Init retries
-	j.currentRetries = j.Retries
+	log.Errorf(err.Error())
+	return err
 }
 
-func (j *Job) runCleanup() {
-	j.Stats = append(j.Stats, j.currentStat)
-	j.currentStat = nil
-	j.currentRetries = 0
+//Type alias for the recursive call
+type RJob Job
+
+// need this to fix race condition
+func (j *Job) MarshalJSON() ([]byte, error) {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+	return json.Marshal(RJob(*j))
 }

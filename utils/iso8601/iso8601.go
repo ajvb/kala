@@ -1,7 +1,3 @@
-//
-// TODO - Months are not currently properly handled
-//
-
 package iso8601
 
 import (
@@ -12,23 +8,16 @@ import (
 	"strconv"
 	"text/template"
 	"time"
-
-	"github.com/ajvb/kala/utils/logging"
 )
 
 var (
-	log = logging.GetLogger("iso8601")
-
 	// ErrBadFormat is returned when parsing fails
 	ErrBadFormat = errors.New("bad format string")
 
-	// ErrNoMonth is raised when a month is in the format string
-	ErrNoMonth = errors.New("no months allowed")
-
 	tmpl = template.Must(template.New("duration").Parse(`P{{if .Years}}{{.Years}}Y{{end}}{{if .Months}}{{.Months}}M{{end}}{{if .Weeks}}{{.Weeks}}W{{end}}{{if .Days}}{{.Days}}D{{end}}{{if .HasTimePart}}T{{end }}{{if .Hours}}{{.Hours}}H{{end}}{{if .Minutes}}{{.Minutes}}M{{end}}{{if .Seconds}}{{.Seconds}}S{{end}}`))
 
-	full = regexp.MustCompile(`P((?P<year>\d+)Y)?((?P<month>\d+)M)?((?P<day>\d+)D)?(T((?P<hour>\d+)H)?((?P<minute>\d+)M)?((?P<second>\d+)S)?)?`)
-	week = regexp.MustCompile(`P((?P<week>\d+)W)`)
+	full = regexp.MustCompile(`P(?:(?P<year>\d+)Y)?(?:(?P<month>\d+)M)?(?:(?P<day>\d+)D)?(?:(?P<time>T)(?:(?P<hour>\d+)H)?(?:(?P<minute>\d+)M)?(?:(?P<second>\d+)S)?)?`)
+	week = regexp.MustCompile(`P(?:(?P<week>\d+)W)`)
 )
 
 type Duration struct {
@@ -59,9 +48,17 @@ func FromString(dur string) (*Duration, error) {
 
 	d := &Duration{}
 
+	timeOccurred := false
+	dateUnspecified := true
+	weekUnspecified := true
+	timeUnspecified := true
 	for i, name := range re.SubexpNames() {
 		part := match[i]
 		if i == 0 || name == "" || part == "" {
+			continue
+		}
+		if name == "time" {
+			timeOccurred = true
 			continue
 		}
 
@@ -72,21 +69,32 @@ func FromString(dur string) (*Duration, error) {
 		switch name {
 		case "year":
 			d.Years = val
+			dateUnspecified = false
 		case "month":
 			d.Months = val
+			dateUnspecified = false
 		case "week":
 			d.Weeks = val
+			weekUnspecified = false
 		case "day":
 			d.Days = val
+			dateUnspecified = false
 		case "hour":
 			d.Hours = val
+			timeUnspecified = false
 		case "minute":
 			d.Minutes = val
+			timeUnspecified = false
 		case "second":
 			d.Seconds = val
+			timeUnspecified = false
 		default:
 			return nil, errors.New(fmt.Sprintf("unknown field %s", name))
 		}
+	}
+
+	if (dateUnspecified && weekUnspecified && timeUnspecified) || (timeOccurred && timeUnspecified) {
+		return nil, errors.New(fmt.Sprintf("invalid ISO 8601 duration spec %s", dur))
 	}
 
 	return d, nil

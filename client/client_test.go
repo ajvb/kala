@@ -2,18 +2,29 @@ package client
 
 import (
 	"fmt"
+	"net/http/httptest"
 	"os"
 	"time"
 
 	"github.com/ajvb/kala/api"
 	"github.com/ajvb/kala/job"
 
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 )
 
+func NewTestServer() *httptest.Server {
+	r := mux.NewRouter()
+	db := &job.MockDB{}
+	cache := job.NewLockFreeJobCache(db)
+	api.SetupApiRoutes(r, cache, db, "")
+	return httptest.NewServer(r)
+}
+
 func cleanUp() {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	jobs, err := kc.GetAllJobs()
@@ -29,23 +40,23 @@ func cleanUp() {
 	}
 }
 
-func NewJobMap() map[string]string {
+func NewJobMap() *job.Job {
 	scheduleTime := time.Now().Add(time.Minute * 5)
 	repeat := 1
 	delay := "P1DT10M10S"
 	parsedTime := scheduleTime.Format(time.RFC3339)
 	scheduleStr := fmt.Sprintf("R%d/%s/%s", repeat, parsedTime, delay)
 
-	return map[string]string{
-		"schedule": scheduleStr,
-		"name":     "mock_job",
-		"command":  "bash -c 'date'",
-		"owner":    "aj@ajvb.me",
+	return &job.Job{
+		Schedule: scheduleStr,
+		Name:     "mock_job",
+		Command:  "bash -c 'date'",
+		Owner:    "example@example.com",
 	}
 }
 
 func TestCreateGetDeleteJob(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
@@ -56,10 +67,10 @@ func TestCreateGetDeleteJob(t *testing.T) {
 
 	respJob, err := kc.GetJob(id)
 	assert.NoError(t, err)
-	assert.Equal(t, j["schedule"], respJob.Schedule)
-	assert.Equal(t, j["name"], respJob.Name)
-	assert.Equal(t, j["command"], respJob.Command)
-	assert.Equal(t, j["owner"], respJob.Owner)
+	assert.Equal(t, j.Schedule, respJob.Schedule)
+	assert.Equal(t, j.Name, respJob.Name)
+	assert.Equal(t, j.Command, respJob.Command)
+	assert.Equal(t, j.Owner, respJob.Owner)
 
 	ok, err := kc.DeleteJob(id)
 	assert.NoError(t, err)
@@ -69,12 +80,12 @@ func TestCreateGetDeleteJob(t *testing.T) {
 }
 
 func TestCreateJobError(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
 
-	j["schedule"] = "bbbbbbbbbbbbbbb"
+	j.Schedule = "bbbbbbbbbbbbbbb"
 
 	id, err := kc.CreateJob(j)
 	assert.Error(t, err)
@@ -84,7 +95,7 @@ func TestCreateJobError(t *testing.T) {
 }
 
 func TestGetJobError(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 
@@ -96,7 +107,7 @@ func TestGetJobError(t *testing.T) {
 }
 
 func TestDeleteJobError(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 
@@ -108,11 +119,10 @@ func TestDeleteJobError(t *testing.T) {
 }
 
 func TestGetAllJobs(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
-	job.AllJobs.Jobs = make(map[string]*job.Job, 0)
 
 	id, err := kc.CreateJob(j)
 	assert.NoError(t, err)
@@ -120,16 +130,16 @@ func TestGetAllJobs(t *testing.T) {
 	jobs, err := kc.GetAllJobs()
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(jobs))
-	assert.Equal(t, j["schedule"], jobs[id].Schedule)
-	assert.Equal(t, j["name"], jobs[id].Name)
-	assert.Equal(t, j["command"], jobs[id].Command)
-	assert.Equal(t, j["owner"], jobs[id].Owner)
+	assert.Equal(t, j.Schedule, jobs[id].Schedule)
+	assert.Equal(t, j.Name, jobs[id].Name)
+	assert.Equal(t, j.Command, jobs[id].Command)
+	assert.Equal(t, j.Owner, jobs[id].Owner)
 
 	cleanUp()
 }
 
 func TestGetAllJobsNoJobsExist(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 
@@ -142,7 +152,7 @@ func TestGetAllJobsNoJobsExist(t *testing.T) {
 }
 
 func TestDeleteJob(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
@@ -160,8 +170,29 @@ func TestDeleteJob(t *testing.T) {
 	cleanUp()
 }
 
+func TestDeleteAllJobs(t *testing.T) {
+	ts := NewTestServer()
+	defer ts.Close()
+	kc := New(ts.URL)
+	j := NewJobMap()
+
+	for i := 0; i < 10; i++ {
+		_, err := kc.CreateJob(j)
+		assert.NoError(t, err)
+	}
+
+	ok, err := kc.DeleteAllJobs()
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	allJobs, err := kc.GetAllJobs()
+	assert.Empty(t, allJobs)
+
+	cleanUp()
+}
+
 func TestGetJobStats(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
@@ -189,7 +220,7 @@ func TestGetJobStats(t *testing.T) {
 }
 
 func TestGetJobStatsError(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 
@@ -199,7 +230,7 @@ func TestGetJobStatsError(t *testing.T) {
 }
 
 func TestStartJob(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 	j := NewJobMap()
@@ -218,28 +249,27 @@ func TestStartJob(t *testing.T) {
 
 	respJob, err := kc.GetJob(id)
 	assert.NoError(t, err)
-	assert.Equal(t, uint(1), respJob.SuccessCount)
-	assert.WithinDuration(t, now, respJob.LastSuccess, time.Second*2)
-	assert.WithinDuration(t, now, respJob.LastAttemptedRun, time.Second*2)
+	assert.Equal(t, uint(1), respJob.Metadata.SuccessCount)
+	assert.WithinDuration(t, now, respJob.Metadata.LastSuccess, time.Second*2)
+	assert.WithinDuration(t, now, respJob.Metadata.LastAttemptedRun, time.Second*2)
 
 	cleanUp()
 }
 
 func TestStartJobError(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
 
 	ok, err := kc.StartJob("not-an-actual-id")
-	assert.Error(t, err)
+	assert.NoError(t, err)
 	assert.False(t, ok)
 }
 
 func TestGetKalaStats(t *testing.T) {
-	ts := api.NewTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 	kc := New(ts.URL)
-	job.AllJobs.Jobs = make(map[string]*job.Job, 0)
 
 	for i := 0; i < 5; i++ {
 		// Generate new job
