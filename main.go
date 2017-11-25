@@ -100,7 +100,7 @@ func main() {
 				cli.StringFlag{
 					Name:  "jobDBUsername",
 					Value: "",
-					Usage: "Username for the job database, in 'username' format.",
+					Usage: "Username for the job database, in 'username' format. Currently only needed for Mongo.",
 				},
 				cli.StringFlag{
 					Name:  "jobDBPassword",
