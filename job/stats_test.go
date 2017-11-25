@@ -55,3 +55,22 @@ func TestKalaStats(t *testing.T) {
 	assert.WithinDuration(t, kalaStat.LastAttemptedRun, now, time.Millisecond*100)
 	assert.WithinDuration(t, kalaStat.CreatedAt, createdAt, time.Millisecond*100)
 }
+
+func TestNextRunAt(t *testing.T) {
+	cache := NewMockCache()
+
+	sched := time.Now().Add(time.Second)
+	j := GetMockJobWithSchedule(2, sched, "P1DT10M10S")
+	j.Init(cache)
+	j.Disable()
+
+	sched2 := time.Now().Add(2 * time.Second)
+	j2 := GetMockJobWithSchedule(2, sched2, "P1DT10M10S")
+	j2.Init(cache)
+	j2.Disable()
+
+	kalaStat := NewKalaStats(cache)
+	assert.Equal(t, j.NextRunAt.UnixNano(), kalaStat.NextRunAt.UnixNano())
+	assert.Equal(t, j.Metadata.LastAttemptedRun.UnixNano(), kalaStat.LastAttemptedRun.UnixNano())
+	assert.NotEqual(t, j2.NextRunAt.UnixNano(), kalaStat.NextRunAt.UnixNano())
+}
