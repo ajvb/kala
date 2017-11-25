@@ -5,6 +5,7 @@ jobs:
       - image: circleci/golang:1.8
       - image: progrium/consul
         command: "-server -bootstrap"
+      - image: mongo:3.4
 
     working_directory: /go/src/github.com/ajvb/kala
     environment:
@@ -23,6 +24,16 @@ jobs:
               sleep 1
             done
             echo Failed waiting for Consul && exit 1
+      - run:
+          name: Waiting for Mongo to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 27017 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Mongo && exit 1
 
       - run:
           name: Run unit tests
