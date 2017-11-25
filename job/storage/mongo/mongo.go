@@ -8,8 +8,10 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-var database = "kala"
-var collection = "jobs"
+var (
+	database   = "kala"
+	collection = "jobs"
+)
 
 // DB is concrete implementation of the JobDB interface, that uses Redis for persistence.
 type DB struct {
