@@ -160,6 +160,11 @@ All routes have a prefix of `/api/v1`
   npm install kala-node
   ```
 
+* [Python](https://github.com/dmajere/kala-python)
+  ```shell
+  pip install git+https://github.com/dmajere/kala-python.git
+  ```
+
 ## Job Data Struct
 
 [Docs can be found here](http://godoc.org/github.com/ajvb/kala/job#Job)
@@ -270,7 +275,7 @@ Examples:
 |Getting a list of all Jobs | GET | /api/v1/job/ |
 |Getting a Job | GET | /api/v1/job/{id}/ |
 |Deleting a Job | DELETE | /api/v1/job/{id}/ |
-|Deleting all Jobs | DELETE | /api/v1/job/all |
+|Deleting all Jobs | DELETE | /api/v1/job/all/ |
 |Getting metrics about a certain Job | GET | /api/v1/job/stats/{id}/ |
 |Starting a Job manually | POST | /api/v1/job/start/{id}/ |
 |Getting app-level metrics | GET | /api/v1/stats/ |
@@ -386,7 +391,7 @@ TODO
 # TODO's
 
 ### For User
-- [ ] Python Client Library
+- [x] Python Client Library
 - [x] Node Client Library
 - [ ] Create single release binary
 
