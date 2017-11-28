@@ -47,7 +47,7 @@ func NewKalaStats(cache JobCache) *KalaStats {
 
 		if nextRun.IsZero() {
 			nextRun = job.NextRunAt
-		} else if (nextRun.UnixNano() - job.NextRunAt.UnixNano()) < 0 {
+		} else if (nextRun.UnixNano() - job.NextRunAt.UnixNano()) > 0 {
 			nextRun = job.NextRunAt
 		}
 
