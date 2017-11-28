@@ -108,6 +108,12 @@ use Consul by using the jobDB and jobDBAddress params:
 kala run --jobDB=consul --jobDBAddress=127.0.0.1:8500
 ```
 
+use Mongo by using the jobDB, jobDBAddress, jobDBUsername, and jobDBPassword params:
+
+```bash
+kala run --jobDB=mongo --jobDBAddress=server1.example.com,server2.example.com --jobDBUsername=admin --jobDBPassword=password
+```
+
 Kala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.
 
 ```bash

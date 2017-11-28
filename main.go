@@ -10,11 +10,13 @@ import (
 	"github.com/ajvb/kala/job"
 	"github.com/ajvb/kala/job/storage/boltdb"
 	"github.com/ajvb/kala/job/storage/consul"
+	"github.com/ajvb/kala/job/storage/mongo"
 	"github.com/ajvb/kala/job/storage/redis"
-	redislib "github.com/garyburd/redigo/redis"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	redislib "github.com/garyburd/redigo/redis"
+	"gopkg.in/mgo.v2"
 )
 
 func init() {
@@ -83,7 +85,7 @@ func main() {
 				cli.StringFlag{
 					Name:  "jobDB",
 					Value: "boltdb",
-					Usage: "Implementation of job database, either 'boltdb', 'redis' or 'consul'.",
+					Usage: "Implementation of job database, either 'boltdb', 'redis', 'mongo', or 'consul'.",
 				},
 				cli.StringFlag{
 					Name:  "boltpath",
@@ -94,6 +96,11 @@ func main() {
 					Name:  "jobDBAddress",
 					Value: "",
 					Usage: "Network address for the job database, in 'host:port' format.",
+				},
+				cli.StringFlag{
+					Name:  "jobDBUsername",
+					Value: "",
+					Usage: "Username for the job database, in 'username' format. Currently only needed for Mongo.",
 				},
 				cli.StringFlag{
 					Name:  "jobDBPassword",
@@ -139,6 +146,15 @@ func main() {
 						db = redis.New(c.String("jobDBAddress"), option, true)
 					} else {
 						db = redis.New(c.String("jobDBAddress"), redislib.DialOption{}, false)
+					}
+				case "mongo":
+					if c.String("jobDBUsername") != "" {
+						cred := &mgo.Credential{
+							Username: c.String("jobDBUsername"),
+							Password: c.String("jobDBPassword")}
+						db = mongo.New(c.String("jobDBAddress"), cred)
+					} else {
+						db = mongo.New(c.String("jobDBAddress"), &mgo.Credential{})
 					}
 				case "consul":
 					db = consul.New(c.String("jobDBAddress"))
