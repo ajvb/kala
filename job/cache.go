@@ -166,18 +166,20 @@ func (c *MemoryJobCache) PersistEvery(persistWaitTime time.Duration) {
 }
 
 type LockFreeJobCache struct {
-	jobs  *hashmap.HashMap
-	jobDB JobDB
+	jobs            *hashmap.HashMap
+	jobDB           JobDB
+	retentionPeriod time.Duration
 }
 
 func NewLockFreeJobCache(jobDB JobDB) *LockFreeJobCache {
 	return &LockFreeJobCache{
-		jobs:  hashmap.New(),
-		jobDB: jobDB,
+		jobs:            hashmap.New(),
+		jobDB:           jobDB,
+		retentionPeriod: -1,
 	}
 }
 
-func (c *LockFreeJobCache) Start(persistWaitTime time.Duration) {
+func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.Duration) {
 	if persistWaitTime == 0 {
 		persistWaitTime = 5 * time.Second
 	}
@@ -203,6 +205,12 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration) {
 	}
 	// Occasionally, save items in cache to db.
 	go c.PersistEvery(persistWaitTime)
+
+	// Run retention every hour to clean up old job stats entries
+	if jobstatTtl > 0 {
+		c.retentionPeriod = jobstatTtl
+		go c.RetentionEvery(60 * time.Second)
+	}
 
 	// Process-level defer for shutting down the db.
 	ch := make(chan os.Signal)
@@ -285,6 +293,52 @@ func (c *LockFreeJobCache) PersistEvery(persistWaitTime time.Duration) {
 		err = c.Persist()
 		if err != nil {
 			log.Errorf("Error occured persisting the database. Err: %s", err)
+		}
+	}
+}
+
+func (c *LockFreeJobCache) locateJobStatsIndexForRetention(stats []*JobStat) (marker int) {
+	now := time.Now()
+	expiresAt := now.Add(-c.retentionPeriod)
+	pos := -1
+	for i, el := range stats {
+		diff := el.RanAt.Sub(expiresAt)
+		if diff < 0 {
+			pos = i
+		}
+	}
+	return pos
+}
+
+func (c *LockFreeJobCache) runCompactJobStatsCycle() error {
+	for el := range c.jobs.Iter() {
+		job := (*Job)(el.Value)
+		c.compactJobStats(job)
+	}
+	return nil
+}
+
+func (c *LockFreeJobCache) compactJobStats(job *Job) error {
+	job.lock.RLock()
+	defer job.lock.RUnlock()
+	pos := c.locateJobStatsIndexForRetention(job.Stats)
+	if pos >= 0 {
+		log.Errorf("JobStats TTL: removing %d items", pos+1)
+		tmp := make([]*JobStat, len(job.Stats)-pos-1)
+		copy(tmp, job.Stats[pos+1:])
+		job.Stats = tmp
+	}
+	return nil
+}
+
+func (c *LockFreeJobCache) RetentionEvery(retentionWaitTime time.Duration) {
+	wait := time.Tick(retentionWaitTime)
+	var err error
+	for {
+		<-wait
+		err = c.runCompactJobStatsCycle()
+		if err != nil {
+			log.Errorf("Error occured during invoking retention. Err: %s", err)
 		}
 	}
 }
