@@ -323,7 +323,7 @@ func (c *LockFreeJobCache) compactJobStats(job *Job) error {
 	defer job.lock.RUnlock()
 	pos := c.locateJobStatsIndexForRetention(job.Stats)
 	if pos >= 0 {
-		log.Errorf("JobStats TTL: removing %d items", pos+1)
+		log.Infof("JobStats TTL: removing %d items", pos+1)
 		tmp := make([]*JobStat, len(job.Stats)-pos-1)
 		copy(tmp, job.Stats[pos+1:])
 		job.Stats = tmp
