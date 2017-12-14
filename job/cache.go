@@ -206,10 +206,10 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.
 	// Occasionally, save items in cache to db.
 	go c.PersistEvery(persistWaitTime)
 
-	// Run retention every hour to clean up old job stats entries
+	// Run retention every minute to clean up old job stats entries
 	if jobstatTtl > 0 {
 		c.retentionPeriod = jobstatTtl
-		go c.RetentionEvery(60 * time.Second)
+		go c.RetentionEvery(1 * time.Minute)
 	}
 
 	// Process-level defer for shutting down the db.

@@ -9,7 +9,7 @@ import (
 
 func TestCacheStart(t *testing.T) {
 	cache := NewMockCache()
-	cache.Start(time.Duration(time.Hour))
+	cache.Start(time.Duration(time.Hour), time.Duration(time.Hour))
 }
 
 func TestCacheDeleteJobNotFound(t *testing.T) {
@@ -47,7 +47,7 @@ func TestCacheStartStartsARecurringJobWithStartDateInThePast(t *testing.T) {
 	jobs = append(jobs, j)
 	mockDb.response = jobs
 
-	cache.Start(0)
+	cache.Start(0, -1)
 	time.Sleep(time.Second * 2)
 
 	j.lock.RLock()
