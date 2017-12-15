@@ -12,6 +12,10 @@
 			"Rev": "7f4b1adc791766938c29457bed0703fb9134421a"
 		},
 		{
+			"ImportPath": "github.com/beorn7/perks/quantile",
+			"Rev": "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
+		},
+		{
 			"ImportPath": "github.com/boltdb/bolt",
 			"Comment": "v1.3.0-58-ge9cf4fa",
 			"Rev": "e9cf4fae01b5a8ff89d0ec6b32f0d9c9f79aefdd"
@@ -46,6 +50,10 @@
 			"Rev": "48545177e92ae3e7bcdbd50b42f7a139e6a268da"
 		},
 		{
+			"ImportPath": "github.com/golang/protobuf/proto",
+			"Rev": "c9c7427a2a70d2eb3bafa0ab2dc163e45f143317"
+		},
+		{
 			"ImportPath": "github.com/gorilla/context",
 			"Rev": "215affda49addc4c8ef7e2534915df2c8c35c6cd"
 		},
@@ -55,8 +63,8 @@
 		},
 		{
 			"ImportPath": "github.com/hashicorp/consul/api",
-			"Comment": "v0.9.0-7-g3117d9ec",
-			"Rev": "3117d9ec2b86d8436512b824305d7b5978f05d48"
+			"Comment": "v1.0.2-2-g7a5ddc41",
+			"Rev": "7a5ddc41129913f41081d0d4807fdc6382de52b3"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/go-cleanhttp",
@@ -77,12 +85,52 @@
 			"Rev": "f4e566c536cf69158e808ec28ef4182a37fdc981"
 		},
 		{
+			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/pbutil",
+			"Comment": "v1.0.0-2-gc12348c",
+			"Rev": "c12348ce28de40eed0136aa2b644d0ee0650e56c"
+		},
+		{
 			"ImportPath": "github.com/mitchellh/go-homedir",
 			"Rev": "b8bc1bf767474819792c23f32d8286a45736f1c6"
 		},
 		{
 			"ImportPath": "github.com/nu7hatch/gouuid",
 			"Rev": "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
+		},
+		{
+			"ImportPath": "github.com/prometheus/client_golang/prometheus",
+			"Comment": "v0.9.0-pre1-15-g661e31b",
+			"Rev": "661e31bf844dfca9aeba15f27ea8aa0d485ad212"
+		},
+		{
+			"ImportPath": "github.com/prometheus/client_golang/prometheus/promhttp",
+			"Comment": "v0.9.0-pre1-15-g661e31b",
+			"Rev": "661e31bf844dfca9aeba15f27ea8aa0d485ad212"
+		},
+		{
+			"ImportPath": "github.com/prometheus/client_model/go",
+			"Comment": "model-0.0.2-14-g6f38060",
+			"Rev": "6f3806018612930941127f2a7c6c453ba2c527d2"
+		},
+		{
+			"ImportPath": "github.com/prometheus/common/expfmt",
+			"Rev": "49fee292b27bfff7f354ee0f64e1bc4850462edf"
+		},
+		{
+			"ImportPath": "github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg",
+			"Rev": "49fee292b27bfff7f354ee0f64e1bc4850462edf"
+		},
+		{
+			"ImportPath": "github.com/prometheus/common/model",
+			"Rev": "49fee292b27bfff7f354ee0f64e1bc4850462edf"
+		},
+		{
+			"ImportPath": "github.com/prometheus/procfs",
+			"Rev": "a1dba9ce8baed984a2495b658c82687f8157b98f"
+		},
+		{
+			"ImportPath": "github.com/prometheus/procfs/xfs",
+			"Rev": "a1dba9ce8baed984a2495b658c82687f8157b98f"
 		},
 		{
 			"ImportPath": "github.com/rafaeljusto/redigomock",
@@ -103,6 +151,11 @@
 			"ImportPath": "github.com/stretchr/testify/suite",
 			"Comment": "v1.0-21-gf552045",
 			"Rev": "f5520455607c0233cb6d7b056f71b22c1d265ef1"
+		},
+		{
+			"ImportPath": "github.com/urfave/negroni",
+			"Comment": "v0.3.0-2-gcc68f18",
+			"Rev": "cc68f18cd7e1157c71811df1396496a9db0e997d"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
@@ -132,6 +185,26 @@
 			"ImportPath": "gopkg.in/mgo.v2/internal/scram",
 			"Comment": "r2016.08.01-5-g3f83fa5",
 			"Rev": "3f83fa5005286a7fe593b055f0d7771a7dce4655"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/consul/vendor/github.com/hashicorp/go-cleanhttp",
+			"Comment": "v1.0.2-2-g7a5ddc41",
+			"Rev": "7a5ddc41129913f41081d0d4807fdc6382de52b3"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/consul/vendor/github.com/hashicorp/go-rootcerts",
+			"Comment": "v1.0.2-2-g7a5ddc41",
+			"Rev": "7a5ddc41129913f41081d0d4807fdc6382de52b3"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/consul/vendor/github.com/hashicorp/serf/coordinate",
+			"Comment": "v1.0.2-2-g7a5ddc41",
+			"Rev": "7a5ddc41129913f41081d0d4807fdc6382de52b3"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/consul/vendor/github.com/mitchellh/go-homedir",
+			"Comment": "v1.0.2-2-g7a5ddc41",
+			"Rev": "7a5ddc41129913f41081d0d4807fdc6382de52b3"
 		}
 	]
 }
