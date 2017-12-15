@@ -10,6 +10,7 @@ import (
 	"unsafe"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/ajvb/kala/metrics"
 	"github.com/cornelk/hashmap"
 )
 
@@ -23,6 +24,8 @@ type JobCache interface {
 	Set(j *Job) error
 	Delete(id string) error
 	Persist() error
+	SetMetrics(*metrics.Metrics)
+	GetMetrics() *metrics.Metrics
 }
 
 type JobsMap struct {
@@ -40,8 +43,9 @@ func NewJobsMap() *JobsMap {
 type MemoryJobCache struct {
 	// Jobs is a map from Job id's to pointers to the jobs.
 	// Used as the main "data store" within this cache implementation.
-	jobs  *JobsMap
-	jobDB JobDB
+	jobs    *JobsMap
+	jobDB   JobDB
+	metrics *metrics.Metrics
 }
 
 func NewMemoryJobCache(jobDB JobDB) *MemoryJobCache {
@@ -49,6 +53,17 @@ func NewMemoryJobCache(jobDB JobDB) *MemoryJobCache {
 		jobs:  NewJobsMap(),
 		jobDB: jobDB,
 	}
+}
+
+func (c *MemoryJobCache) GetMetrics() *metrics.Metrics {
+	if c.metrics == nil {
+		c.metrics = metrics.NewMetrics("")
+	}
+	return c.metrics
+}
+
+func (c *MemoryJobCache) SetMetrics(m *metrics.Metrics) {
+	c.metrics = m
 }
 
 func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
@@ -169,6 +184,7 @@ type LockFreeJobCache struct {
 	jobs            *hashmap.HashMap
 	jobDB           JobDB
 	retentionPeriod time.Duration
+	metrics         *metrics.Metrics
 }
 
 func NewLockFreeJobCache(jobDB JobDB) *LockFreeJobCache {
@@ -177,6 +193,17 @@ func NewLockFreeJobCache(jobDB JobDB) *LockFreeJobCache {
 		jobDB:           jobDB,
 		retentionPeriod: -1,
 	}
+}
+
+func (c *LockFreeJobCache) GetMetrics() *metrics.Metrics {
+	if c.metrics == nil {
+		c.metrics = metrics.NewMetrics("")
+	}
+	return c.metrics
+}
+
+func (c *LockFreeJobCache) SetMetrics(m *metrics.Metrics) {
+	c.metrics = m
 }
 
 func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.Duration) {

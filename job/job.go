@@ -288,7 +288,7 @@ func (j *Job) StartWaiting(cache JobCache) {
 	defer j.lock.Unlock()
 
 	log.Infof("Job %s:%s repeating in %s", j.Name, j.Id, waitDuration)
-
+	cache.GetMetrics().JobsTotal.WithLabelValues("scheduled").Inc()
 	j.NextRunAt = time.Now().Add(waitDuration)
 
 	jobRun := func() { j.Run(cache) }
