@@ -38,7 +38,6 @@ func GetMockJob() *Job {
 	}
 }
 
-
 func GetMockFailingJob() *Job {
 	return &Job{
 		Name:    "mock_failing_job",
@@ -80,6 +79,21 @@ func GetMockRecurringJobWithSchedule(scheduleTime time.Time, delay string) *Job 
 	genericMockJob.delayDuration = parsedDuration
 
 	return genericMockJob
+}
+
+func GetMockJobStats(oldDate time.Time, count int) []*JobStat {
+	stats := make([]*JobStat, 0)
+	for i := 1; i <= count; i++ {
+		el := &JobStat{
+			JobId:             "stats-id-" + string(i),
+			NumberOfRetries:   0,
+			ExecutionDuration: 10000,
+			Success:           true,
+			RanAt:             oldDate,
+		}
+		stats = append(stats, el)
+	}
+	return stats
 }
 
 func GetMockJobWithGenericSchedule() *Job {

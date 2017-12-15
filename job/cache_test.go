@@ -24,6 +24,30 @@ func TestCachePersist(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestCacheRetainShouldRemoveOldJobStats(t *testing.T) {
+	cache := NewMockCache()
+	mockDb := &MockDBGetAll{}
+	cache.jobDB = mockDb
+
+	pastDate := time.Date(2016, time.April, 12, 20, 00, 00, 0, time.UTC)
+	j := GetMockRecurringJobWithSchedule(pastDate, "PT1S")
+	j.Stats = GetMockJobStats(pastDate, 5)
+	j.Id = "0"
+
+	jobs := make([]*Job, 0, 0)
+	jobs = append(jobs, j)
+	mockDb.response = jobs
+
+	cache.Start(0, 1) // Retain 1 minute
+	time.Sleep(time.Second * 1)
+	assert.Equal(t, 5, len(j.Stats))
+	cache.Retain()
+
+	j.lock.RLock()
+	assert.Equal(t, 0, len(j.Stats))
+	j.lock.RUnlock()
+}
+
 type MockDBGetAll struct {
 	MockDB
 	response []*Job

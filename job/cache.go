@@ -209,7 +209,7 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.
 	// Run retention every minute to clean up old job stats entries
 	if jobstatTtl > 0 {
 		c.retentionPeriod = jobstatTtl
-		go c.RetentionEvery(1 * time.Minute)
+		go c.RetainEvery(1 * time.Minute)
 	}
 
 	// Process-level defer for shutting down the db.
@@ -310,7 +310,7 @@ func (c *LockFreeJobCache) locateJobStatsIndexForRetention(stats []*JobStat) (ma
 	return pos
 }
 
-func (c *LockFreeJobCache) runCompactJobStatsCycle() error {
+func (c *LockFreeJobCache) Retain() error {
 	for el := range c.jobs.Iter() {
 		job := (*Job)(el.Value)
 		c.compactJobStats(job)
@@ -331,12 +331,12 @@ func (c *LockFreeJobCache) compactJobStats(job *Job) error {
 	return nil
 }
 
-func (c *LockFreeJobCache) RetentionEvery(retentionWaitTime time.Duration) {
+func (c *LockFreeJobCache) RetainEvery(retentionWaitTime time.Duration) {
 	wait := time.Tick(retentionWaitTime)
 	var err error
 	for {
 		<-wait
-		err = c.runCompactJobStatsCycle()
+		err = c.Retain()
 		if err != nil {
 			log.Errorf("Error occured during invoking retention. Err: %s", err)
 		}
