@@ -38,13 +38,14 @@ func TestCacheRetainShouldRemoveOldJobStats(t *testing.T) {
 	jobs = append(jobs, j)
 	mockDb.response = jobs
 
-	cache.Start(0, 1) // Retain 1 minute
-	time.Sleep(time.Second * 1)
+	cache.Start(0, 1*time.Minute) // Retain 1 minute
 	assert.Equal(t, 5, len(j.Stats))
+
+	time.Sleep(time.Second * 2)
 	cache.Retain()
 
 	j.lock.RLock()
-	assert.Equal(t, 0, len(j.Stats))
+	assert.Equal(t, 1, len(j.Stats)) // New job stats should not be cleaned up
 	j.lock.RUnlock()
 }
 
