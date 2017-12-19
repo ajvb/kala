@@ -116,6 +116,11 @@ func main() {
 					Value: 5,
 					Usage: "Sets the persisWaitTime in seconds",
 				},
+				cli.IntFlag{
+					Name:  "jobstat-ttl",
+					Value: -1,
+					Usage: "Sets the jobstat-ttl in minutes. The default -1 value indicates JobStat entries will be kept forever",
+				},
 			},
 			Action: func(c *cli.Context) {
 				if c.Bool("v") {
@@ -169,7 +174,7 @@ func main() {
 				// Create cache
 				cache := job.NewLockFreeJobCache(db)
 				log.Infof("Preparing cache")
-				cache.Start(time.Duration(c.Int("persist-every")) * time.Second)
+				cache.Start(time.Duration(c.Int("persist-every"))*time.Second, time.Duration(c.Int("jobstat-ttl"))*time.Minute)
 
 				log.Infof("Starting server on port %s", connectionString)
 				log.Fatal(api.StartServer(connectionString, cache, db, c.String("default-owner")))
