@@ -3,6 +3,7 @@ package job
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -57,7 +58,8 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 		if err != nil {
 			// Log Error in Metadata
 			// TODO - Error Reporting, email error
-			log.Errorf("Run Command got an Error: %s", err)
+			log.Errorln("Error running job:", j.currentStat.JobId)
+			log.Errorln(err)
 
 			j.meta.ErrorCount++
 			j.meta.LastError = time.Now()
@@ -158,8 +160,13 @@ func (j *JobRunner) runCmd() error {
 	if len(args) == 0 {
 		return ErrCmdIsEmpty
 	}
+
 	cmd := exec.Command(args[0], args[1:]...)
-	return cmd.Run()
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s: %s", err, strings.TrimSpace(string(out)))
+	}
+	return nil
 }
 
 func (j *JobRunner) shouldRetry() bool {
