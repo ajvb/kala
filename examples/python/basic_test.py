@@ -17,23 +17,22 @@ dt = datetime.isoformat(datetime.now(tzlocal()) + timedelta(0, 10))
 data["schedule"] = "%s/%s/%s" % ("R2", dt, "PT10S")
 
 if __name__ == "__main__":
-    print "Sending request to %s" % API_URL
-    print "Payload is: %s" % data
-
+    print ('Sending request to {0}'.format(API_URL))
+    print ('Payload is: {0}'.format(data))
     r = requests.post(API_URL, data=simplejson.dumps(data))
 
-    print "\n\n CREATING \n"
+    print("\n\nCreating...\n")
     job_id = simplejson.loads(r.content)['id']
-    print "Job was created with an id of %s" % job_id
+    print ('Job was created with an id of {0}'.format(job_id))
 
-    print "\n\n GETTING \n"
+    print("\n\nGetting...\n")
     m = requests.get(API_URL + job_id)
-    print m.content
+    print(m.content)
 
-    print "\n\n DELETING \n"
+    print ("\n\nDeleting...\n")
 
-    print "Waiting to delete...."
+    print("\n\nWaiting to delete...\n")
     sleep(21)
     n = requests.delete(API_URL + job_id)
 
-    print n.__dict__
+    print(n.__dict__)
