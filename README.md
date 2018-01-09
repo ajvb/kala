@@ -114,6 +114,12 @@ use Mongo by using the jobDB, jobDBAddress, jobDBUsername, and jobDBPassword par
 kala run --jobDB=mongo --jobDBAddress=server1.example.com,server2.example.com --jobDBUsername=admin --jobDBPassword=password
 ```
 
+use Postgres by using the jobDB, jobDBAddress params:
+
+```bash
+kala run --jobDB=postgres --jobDBAddress=server1.example.com/kala?sslmode=disable --jobDBUsername=admin --jobDBPassword=password
+```
+
 Kala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.
 
 ```bash
