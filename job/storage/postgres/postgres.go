@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	table = "jobs"
+	TableName = "jobs"
 )
 
 type DB struct {
@@ -27,7 +27,7 @@ func New(dsn string) *DB {
 		log.Fatal(err)
 	}
 	// passive attempt to create table
-	_, _ = connection.Query(fmt.Sprintf(`create table %s (job jsonb);`, table))
+	_, _ = connection.Exec(fmt.Sprintf(`create table %s (job jsonb);`, TableName))
 	return &DB{
 		conn: connection,
 	}
@@ -35,43 +35,39 @@ func New(dsn string) *DB {
 
 // GetAll returns all persisted Jobs.
 func (d DB) GetAll() ([]*job.Job, error) {
-	jobs := []*job.Job{}
-	query := fmt.Sprintf(`select jsonb_agg(j.job) from (select * from %[1]s) as j;`, table)
+	query := fmt.Sprintf(`select coalesce(json_agg(j.job), '[]'::json) from (select * from %[1]s) as j;`, TableName)
 	var r sql.NullString
 	err := d.conn.QueryRow(query).Scan(&r)
-	if err == nil {
-		if r.Valid {
-			err = json.Unmarshal([]byte(r.String), &jobs)
-		}
-	} else {
-		if err == sql.ErrNoRows {
-			err = nil
-		}
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	err = nil
+	jobs := []*job.Job{}
+	if r.Valid {
+		err = json.Unmarshal([]byte(r.String), &jobs)
 	}
 	return jobs, err
 }
 
 // Get returns a persisted Job.
 func (d DB) Get(id string) (*job.Job, error) {
-	result := &job.Job{}
 	template := `select to_jsonb(j.job) from (select * from %[1]s where job -> 'id' = $1) as j;`
-	query := fmt.Sprintf(template, table)
+	query := fmt.Sprintf(template, TableName)
 	var r sql.NullString
 	err := d.conn.QueryRow(query, id).Scan(&r)
-	if err == nil {
-		if r.Valid {
-			err = json.Unmarshal([]byte(r.String), &result)
-			if err == nil {
-				return result, nil
-			}
-		}
+	if err != nil {
+		return nil, err
 	}
-	return nil, err
+	result := &job.Job{}
+	if r.Valid {
+		err = json.Unmarshal([]byte(r.String), &result)
+	}
+	return result, err
 }
 
 // Delete deletes a persisted Job.
 func (d DB) Delete(id string) error {
-	query := fmt.Sprintf(`delete from %v where job -> = 'id' = $1;`, table)
+	query := fmt.Sprintf(`delete from %v where job -> = 'id' = $1;`, TableName)
 	_, err := d.conn.Exec(query, id)
 	return err
 }
@@ -79,7 +75,7 @@ func (d DB) Delete(id string) error {
 // Save persists a Job.
 func (d DB) Save(j *job.Job) error {
 	template := `insert into %[1]s (job) values($1);`
-	query := fmt.Sprintf(template, table)
+	query := fmt.Sprintf(template, TableName)
 	r, err := json.Marshal(j)
 	if err != nil {
 		return err
