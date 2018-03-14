@@ -1,5 +1,8 @@
 FROM golang
 
-RUN go get github.com/ajvb/kala
-ENTRYPOINT kala run
+WORKDIR /go/src/github.com/ajvb/kala
+COPY . .
+RUN go build && mv kala /usr/bin
+
+CMD ["kala", "run"]
 EXPOSE 8000
