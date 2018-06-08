@@ -21,7 +21,7 @@ import (
 )
 
 func init() {
-	log.SetLevel(log.WarnLevel)
+	log.SetLevel(log.InfoLevel)
 }
 
 // The current version of kala
