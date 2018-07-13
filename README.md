@@ -90,10 +90,12 @@ Once you have installed Kala onto the machine you would like to use, you can fol
 To Run Kala:
 ```bash
 $ kala run
-2015/06/10 18:31:31 main.go:59:func·001 :: INFO 002 Starting server on port :8000...
+INFO[0000] Preparing cache
+INFO[0000] Starting server on port :8000
 
 $ kala run -p 2222
-2015/06/10 18:31:31 main.go:59:func·001 :: INFO 002 Starting server on port :2222...
+INFO[0000] Preparing cache
+INFO[0000] Starting server on port :2222
 ```
 
 Kala uses BoltDB by default for the job database
