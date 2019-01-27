@@ -90,10 +90,12 @@ Once you have installed Kala onto the machine you would like to use, you can fol
 To Run Kala:
 ```bash
 $ kala run
-2015/06/10 18:31:31 main.go:59:func·001 :: INFO 002 Starting server on port :8000...
+INFO[0000] Preparing cache
+INFO[0000] Starting server on port :8000
 
 $ kala run -p 2222
-2015/06/10 18:31:31 main.go:59:func·001 :: INFO 002 Starting server on port :2222...
+INFO[0000] Preparing cache
+INFO[0000] Starting server on port :2222
 ```
 
 Kala uses BoltDB by default for the job database
@@ -112,6 +114,12 @@ use Mongo by using the jobDB, jobDBAddress, jobDBUsername, and jobDBPassword par
 
 ```bash
 kala run --jobDB=mongo --jobDBAddress=server1.example.com,server2.example.com --jobDBUsername=admin --jobDBPassword=password
+```
+
+use Postgres by using the jobDB, jobDBAddress params:
+
+```bash
+kala run --jobDB=postgres --jobDBAddress=server1.example.com/kala --jobDBUsername=admin --jobDBPassword=password
 ```
 
 Kala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.

@@ -7,6 +7,11 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/DATA-DOG/go-sqlmock",
+			"Comment": "v1.2.0-17-gd76b18b",
+			"Rev": "d76b18b42f285b792bf985118980ce9eacea9d10"
+		},
+		{
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.11.2-6-g7f4b1ad",
 			"Rev": "7f4b1adc791766938c29457bed0703fb9134421a"
@@ -78,6 +83,16 @@
 			"ImportPath": "github.com/hashicorp/serf/coordinate",
 			"Comment": "v0.8.1-63-gbbeddf0",
 			"Rev": "bbeddf0b3ab3072a60525afbd6b6f47d33839eee"
+		},
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Comment": "go1.0-cutoff-175-ge422674",
+			"Rev": "e42267488fe361b9dc034be7a6bffef5b195bceb"
+		},
+		{
+			"ImportPath": "github.com/lib/pq/oid",
+			"Comment": "go1.0-cutoff-175-ge422674",
+			"Rev": "e42267488fe361b9dc034be7a6bffef5b195bceb"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-shellwords",

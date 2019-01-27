@@ -12,6 +12,7 @@ import (
 	"github.com/ajvb/kala/job/storage/consul"
 	"github.com/ajvb/kala/job/storage/mongo"
 	"github.com/ajvb/kala/job/storage/redis"
+	"github.com/ajvb/kala/job/storage/postgres"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -20,7 +21,7 @@ import (
 )
 
 func init() {
-	log.SetLevel(log.WarnLevel)
+	log.SetLevel(log.InfoLevel)
 }
 
 // The current version of kala
@@ -85,7 +86,7 @@ func main() {
 				cli.StringFlag{
 					Name:  "jobDB",
 					Value: "boltdb",
-					Usage: "Implementation of job database, either 'boltdb', 'redis', 'mongo', or 'consul'.",
+					Usage: "Implementation of job database, either 'boltdb', 'redis', 'mongo', 'consul', or 'postgres'.",
 				},
 				cli.StringFlag{
 					Name:  "boltpath",
@@ -163,6 +164,9 @@ func main() {
 					}
 				case "consul":
 					db = consul.New(c.String("jobDBAddress"))
+				case "postgres":
+					dsn := fmt.Sprintf("postgres://%s:%s@%s", c.String("jobDBUsername"), c.String("jobDBPassword"), c.String("jobDBAddress"))
+					db = postgres.New(dsn)
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}
