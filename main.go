@@ -14,7 +14,7 @@ import (
 	"github.com/ajvb/kala/job/storage/redis"
 	"github.com/ajvb/kala/job/storage/postgres"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	redislib "github.com/garyburd/redigo/redis"
 	"gopkg.in/mgo.v2"

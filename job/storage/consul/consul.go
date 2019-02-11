@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/consul/api"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
