@@ -3,7 +3,7 @@ package job
 import (
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // ErrJobNotFound is raised when a Job is able to be found within a database.
