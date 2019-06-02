@@ -27,3 +27,7 @@ additional feature patches will take a while to merge. Still, patches
 are generally reviewed based on usefulness and complexity in addition
 to time-in-queue, so if you have a knockout idea, take a shot. Feel
 free to open an issue discussion your proposed patch beforehand.
+
+### Triage Issues [![Open Source Helpers](https://www.codetriage.com/ajvb/kala/badges/users.svg)](https://www.codetriage.com/ajvb/kala)
+
+You can triage issues which may include reproducing bug reports or asking for vital information, such as version numbers or reproduction instructions. If you would like to start triaging issues, one easy way to get started is to [subscribe to kala on CodeTriage](https://www.codetriage.com/ajvb/kala).
