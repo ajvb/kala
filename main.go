@@ -134,7 +134,7 @@ func main() {
 				var parsedPort string
 				port := c.String("port")
 				if port != "" {
-					if strings.HasPrefix(port, ":") {
+					if strings.Contains(port, ":") {
 						parsedPort = port
 					} else {
 						parsedPort = ":" + port
