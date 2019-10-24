@@ -1,3 +1,4 @@
+github.com/DATA-DOG/go-sqlmock v1.3.0 h1:ljjRxlddjfChBJdFKJs5LuCwCWPLaC1UZLwAo3PBBMk=
 github.com/DATA-DOG/go-sqlmock v1.3.0/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/boltdb/bolt v1.3.1-0.20170131192018-e9cf4fae01b5 h1:TRgs7RwJh0BrpASYsDd8l0bfmvokcmNA31TUXZsC7us=
 github.com/boltdb/bolt v1.3.1-0.20170131192018-e9cf4fae01b5/go.mod h1:clJnj/oiGkjum5o1McbSZDSLxVThjynRyGBgiAx27Ps=
@@ -31,9 +32,11 @@ github.com/mitchellh/go-homedir v0.0.0-20161203194507-b8bc1bf76747 h1:eQox4Rh4ew
 github.com/mitchellh/go-homedir v0.0.0-20161203194507-b8bc1bf76747/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
 github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d h1:VhgPp6v9qf9Agr/56bj7Y/xa04UccTW04VP0Qed4vnQ=
 github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d/go.mod h1:YUTz3bUH2ZwIWBy3CJBeOBEugqcmXREj14T+iG/4k4U=
+github.com/rafaeljusto/redigomock v0.0.0-20170720131524-7ae0511314e9 h1:AgFSzGRVSy1kZ8EBHycQc6qK9gVqhJnVI2H/dk2cY/Y=
 github.com/rafaeljusto/redigomock v0.0.0-20170720131524-7ae0511314e9/go.mod h1:JaY6n2sDr+z2WTsXkOmNRUfDy6FN0L6Nk7x06ndm4tY=
 github.com/sirupsen/logrus v0.11.3-0.20170215164324-7f4b1adc7917 h1:Htzuz6xXfkr899EdybTM/d2NuQqbA8Ysf+EYTo/8T+4=
 github.com/sirupsen/logrus v0.11.3-0.20170215164324-7f4b1adc7917/go.mod h1:pMByvHTf9Beacp5x1UXfOR9xyW/9antXMhjMPG0dEzc=
+github.com/stretchr/testify v0.0.0-20150812162424-f5520455607c h1:fBOeq3TotuOI9gVTCTzuY8SPYypfBTGDhsX5gW/FFdU=
 github.com/stretchr/testify v0.0.0-20150812162424-f5520455607c/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 golang.org/x/sys v0.0.0-20161023150541-c200b10b5d5e/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 gopkg.in/mgo.v2 v2.0.0-20160818020120-3f83fa500528 h1:/saqWwm73dLmuzbNhe92F0QsZ/KiFND+esHco2v1hiY=
