@@ -12,6 +12,7 @@ import (
 	"github.com/ajvb/kala/job/storage/boltdb"
 	"github.com/ajvb/kala/job/storage/consul"
 	"github.com/ajvb/kala/job/storage/mongo"
+	"github.com/ajvb/kala/job/storage/mysql"
 	"github.com/ajvb/kala/job/storage/postgres"
 	"github.com/ajvb/kala/job/storage/redis"
 
@@ -174,6 +175,9 @@ func main() {
 				case "postgres":
 					dsn := fmt.Sprintf("postgres://%s:%s@%s", c.String("jobDBUsername"), c.String("jobDBPassword"), c.String("jobDBAddress"))
 					db = postgres.New(dsn)
+				case "mysql":
+					dsn := fmt.Sprintf("%s:%s@%s", c.String("jobDBUsername"), c.String("jobDBPassword"), c.String("jobDBAddress"))
+					db = mysql.New(dsn)
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}
