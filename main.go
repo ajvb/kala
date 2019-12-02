@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/ajvb/kala/api"
@@ -65,19 +66,21 @@ func main() {
 			Name:  "run",
 			Usage: "run kala",
 			Flags: []cli.Flag{
-				cli.IntFlag{
-					Name:  "port, p",
-					Value: 8000,
-					Usage: "Port for Kala to run on.",
+				cli.StringFlag{
+					Name:   "port, p",
+					EnvVar: "KALA_PORT",
+					Value:  ":8000",
+					Usage:  "Port for Kala to run on.",
 				},
 				cli.BoolFlag{
 					Name:  "no-persist, np",
 					Usage: "No Persistence Mode - In this mode no data will be saved to the database. Perfect for testing.",
 				},
 				cli.StringFlag{
-					Name:  "interface, i",
-					Value: "",
-					Usage: "Interface to listen on, default is all.",
+					Name:   "interface, i",
+					EnvVar: "KALA_INTERFACE",
+					Value:  "",
+					Usage:  "Interface to listen on, default is all.",
 				},
 				cli.StringFlag{
 					Name:  "default-owner, do",
@@ -130,9 +133,13 @@ func main() {
 				}
 
 				var parsedPort string
-				port := c.Int("port")
-				if port != 0 {
-					parsedPort = fmt.Sprintf(":%d", port)
+				port := c.String("port")
+				if port != "" {
+					if strings.Contains(port, ":") {
+						parsedPort = port
+					} else {
+						parsedPort = ":" + port
+					}
 				} else {
 					parsedPort = ":8000"
 				}
