@@ -29,7 +29,7 @@ func New(dsn string) *DB {
 		log.Fatal(err)
 	}
 	// passive attempt to create table
-	_, _ = connection.Exec(fmt.Sprintf(`create table %s (id varchar(36), job JSON);`, TableName))
+	_, _ = connection.Exec(fmt.Sprintf(`create table %s (id varchar(36), job JSON, primary key (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`, TableName))
 	return &DB{
 		conn: connection,
 	}
@@ -49,6 +49,9 @@ func (d DB) GetAll() ([]*job.Job, error) {
 		if v.Valid {
 			j := job.Job{}
 			if err = json.Unmarshal([]byte(v.String), &j); err != nil {
+				break
+			}
+			if err = j.InitDelayDuration(false); err != nil {
 				break
 			}
 			jobs = append(jobs, &j)
@@ -83,7 +86,7 @@ func (d DB) Delete(id string) error {
 
 // Save persists a Job.
 func (d DB) Save(j *job.Job) error {
-	template := `insert into %[1]s (id, job) values(?, ?);`
+	template := `replace into %[1]s (id, job) values(?, ?);`
 	query := fmt.Sprintf(template, TableName)
 	r, err := json.Marshal(j)
 	if err != nil {

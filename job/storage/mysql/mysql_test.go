@@ -8,14 +8,11 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-
-	"github.com/lestrrat-go/test-mysqld"
-
 	"github.com/jmoiron/sqlx"
+	"github.com/lestrrat-go/test-mysqld"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ajvb/kala/job"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func NewTestDb() (*DB, sqlmock.Sqlmock) {
@@ -39,7 +36,7 @@ func TestSaveAndGetJob(t *testing.T) {
 	job, err := json.Marshal(genericMockJob)
 	if assert.NoError(t, err) {
 		m.ExpectBegin()
-		m.ExpectPrepare("insert .*").
+		m.ExpectPrepare("replace .*").
 			ExpectExec().
 			WithArgs(genericMockJob.Id, string(job)).
 			WillReturnResult(sqlmock.NewResult(1, 1))
@@ -75,7 +72,7 @@ func TestDeleteJob(t *testing.T) {
 	if assert.NoError(t, err) {
 
 		m.ExpectBegin()
-		m.ExpectPrepare("insert .*").
+		m.ExpectPrepare("replace .*").
 			ExpectExec().
 			WithArgs(genericMockJob.Id, string(job)).
 			WillReturnResult(sqlmock.NewResult(1, 1))
@@ -116,7 +113,6 @@ func TestSaveAndGetAllJobs(t *testing.T) {
 		jobTwo, err := json.Marshal(genericMockJobTwo)
 		if assert.NoError(t, err) {
 
-			// aggregate := fmt.Sprintf(`[%s,%s]`, jobOne, jobTwo)
 			m.ExpectQuery(".*").WillReturnRows(sqlmock.NewRows([]string{"jobs"}).AddRow(jobOne).AddRow(jobTwo))
 
 			jobs, err := db.GetAll()
@@ -162,6 +158,10 @@ func TestRealDb(t *testing.T) {
 			if assert.NoError(t, err) {
 
 				assert.Equal(t, 2, len(jobs))
+
+				if jobs[0].Id == genericMockJobTwo.Id {
+					jobs[0], jobs[1] = jobs[1], jobs[0]
+				}
 
 				assert.WithinDuration(t, jobs[0].NextRunAt, genericMockJobOne.NextRunAt, 400*time.Microsecond)
 				assert.Equal(t, jobs[0].Name, genericMockJobOne.Name)
@@ -211,6 +211,45 @@ func TestRealDb(t *testing.T) {
 						}
 					}
 				}
+			}
+		}
+	}
+}
+
+func TestPersistEpsilon(t *testing.T) {
+
+	dsn := os.Getenv("MYSQL_DSN")
+	if dsn == "" {
+		mysqld, err := mysqltest.NewMysqld(nil)
+		if assert.NoError(t, err) {
+			dsn = mysqld.Datasource("test", "", "", 0)
+			defer mysqld.Stop()
+		} else {
+			t.FailNow()
+		}
+	}
+
+	db := New(dsn)
+	defer db.Close()
+
+	cache := job.NewMemoryJobCache(db)
+
+	mockJob := job.GetMockRecurringJobWithSchedule(time.Now().Add(time.Second*1), "PT1H")
+	mockJob.Epsilon = "PT1H"
+	mockJob.Command = "asdf"
+	mockJob.Retries = 2
+
+	err := mockJob.Init(cache)
+	if assert.NoError(t, err) {
+
+		err := db.Save(mockJob)
+		if assert.NoError(t, err) {
+
+			retrieved, err := db.GetAll()
+			if assert.NoError(t, err) {
+
+				retrieved[0].Run(cache)
+
 			}
 		}
 	}
