@@ -6,11 +6,16 @@ jobs:
       - image: progrium/consul
         command: "-server -bootstrap"
       - image: mongo:3.4
+      - image: mysql:5.7
+        environment:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 1
+          MYSQL_DATABASE: test
 
     working_directory: /go/src/github.com/ajvb/kala
     environment:
       TEST_RESULTS: /tmp/test-results
       GO111MODULE: "on"
+      MYSQL_DSN: root:@/test
 
     steps:
       - checkout
@@ -35,6 +40,16 @@ jobs:
               sleep 1
             done
             echo Failed waiting for Mongo && exit 1
+      - run:
+          name: Waiting for Mysql to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Mysql && exit 1
 
       - run:
           name: Run unit tests
