@@ -297,3 +297,37 @@ func TestGetKalaStats(t *testing.T) {
 
 	cleanUp()
 }
+
+func TestDisableEnableJob(t *testing.T) {
+
+	ts := NewTestServer()
+	defer ts.Close()
+	kc := New(ts.URL)
+	j := NewJobMap()
+
+	id, err := kc.CreateJob(j)
+	assert.NoError(t, err)
+	assert.NotEqual(t, id, "")
+
+	respJob, err := kc.GetJob(id)
+	assert.Nil(t, err)
+	assert.Equal(t, respJob.Disabled, false)
+
+	ok, err := kc.DisableJob(id)
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	disJob, err := kc.GetJob(id)
+	assert.Nil(t, err)
+	assert.Equal(t, disJob.Disabled, true)
+
+	ok, err = kc.EnableJob(id)
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	enJob, err := kc.GetJob(id)
+	assert.Nil(t, err)
+	assert.Equal(t, enJob.Disabled, false)
+
+	cleanUp()
+}
