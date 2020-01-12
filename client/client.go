@@ -199,3 +199,35 @@ func (kc *KalaClient) GetKalaStats() (*job.KalaStats, error) {
 	_, err := kc.do(methodGet, kc.url("stats"), http.StatusOK, nil, ks)
 	return ks.Stats, err
 }
+
+// DisableJob is used to disable a Job in Kala using its ID.
+// Example:
+// 		c := New("http://127.0.0.1:8000")
+//		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
+//		ok, err := c.DisableJob(id)
+func (kc *KalaClient) DisableJob(id string) (bool, error) {
+	status, err := kc.do(methodPost, kc.url(jobPath, "disable", id), http.StatusNoContent, nil, nil)
+	if err != nil {
+		if err == GenericError {
+			return false, fmt.Errorf("Disable failed with a status code of %d", status)
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+// EnableJob is used to enable a disabled Job in Kala using its ID.
+// Example:
+// 		c := New("http://127.0.0.1:8000")
+//		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
+//		ok, err := c.EnableJob(id)
+func (kc *KalaClient) EnableJob(id string) (bool, error) {
+	status, err := kc.do(methodPost, kc.url(jobPath, "enable", id), http.StatusNoContent, nil, nil)
+	if err != nil {
+		if err == GenericError {
+			return false, fmt.Errorf("Enable failed with a status code of %d", status)
+		}
+		return false, err
+	}
+	return true, nil
+}

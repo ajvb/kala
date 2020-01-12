@@ -8,8 +8,8 @@ import (
 
 	"github.com/ajvb/kala/job"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/boltdb/bolt"
+	log "github.com/sirupsen/logrus"
 )
 
 var (

@@ -14,8 +14,8 @@ import (
 
 	"github.com/ajvb/kala/utils/iso8601"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/nu7hatch/gouuid"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -73,6 +73,13 @@ type Job struct {
 
 	jobTimer  *time.Timer
 	NextRunAt time.Time `json:"next_run_at"`
+
+	// If the job is disabled (or the system inoperative) and we pass
+	// the scheduled run point, when the job becomes active again,
+	// normally the job will run immediately.
+	// With this setting on, it will not run immediately, but will wait
+	// until the next scheduled run time comes along.
+	ResumeAtNextScheduledTime bool `json:"resume_at_next_scheduled_time"`
 
 	// Meta data about successful and failed runs.
 	Metadata Metadata `json:"metadata"`
@@ -304,6 +311,26 @@ func (j *Job) GetWaitDuration() time.Duration {
 	if waitDuration < 0 {
 		if j.timesToRepeat == 0 {
 			return 0
+		}
+
+		if j.ResumeAtNextScheduledTime {
+
+			// In cases where the scheduled point is very long ago,
+			// and the delayDuration interval is very small,
+			// it can take an extremely long time to compute the next scheduled run time.
+			// One potential case (programmer error) is having the scheduleTime be zero.
+			// (This would be due to not calling InitDelayDuration on a job.)
+			// For now, we spot this and handle it as a special case.
+			if j.scheduleTime.IsZero() {
+				return 0
+			}
+
+			newRunPoint := j.scheduleTime
+			for newRunPoint.Before(time.Now()) {
+				newRunPoint = newRunPoint.Add(j.delayDuration.ToDuration())
+			}
+
+			return newRunPoint.Sub(time.Now())
 		}
 
 		if j.Metadata.LastAttemptedRun.IsZero() {
