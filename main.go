@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"runtime"
 
 	"github.com/ajvb/kala/cmd"
 
@@ -17,7 +16,6 @@ func init() {
 var Version = "0.1"
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
 	cmd.App.Version = Version
 	cmd.App.Run(os.Args)
 }
