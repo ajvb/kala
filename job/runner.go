@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/mattn/go-shellwords"
+	log "github.com/sirupsen/logrus"
 )
 
 type JobRunner struct {
@@ -176,7 +176,7 @@ func (j *JobRunner) shouldRetry() bool {
 	}
 
 	// Check Epsilon
-	if j.job.Epsilon != "" {
+	if j.job.Epsilon != "" && j.job.Schedule != "" {
 		if j.job.epsilonDuration.ToDuration() != 0 {
 			timeSinceStart := time.Now().Sub(j.job.NextRunAt)
 			timeLeftToRetry := j.job.epsilonDuration.ToDuration() - timeSinceStart
