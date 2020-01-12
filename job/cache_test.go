@@ -81,3 +81,59 @@ func TestCacheStartStartsARecurringJobWithStartDateInThePast(t *testing.T) {
 	assert.Equal(t, j.Metadata.SuccessCount, uint(1))
 	j.lock.RUnlock()
 }
+
+func TestCacheStartCanResumeJobAtNextScheduledPoint(t *testing.T) {
+
+	cache := NewMockCache()
+	mockDb := &MockDBGetAll{}
+	cache.jobDB = mockDb
+
+	pastDate := time.Now().Add(-1 * time.Second)
+	j := GetMockRecurringJobWithSchedule(pastDate, "PT3S")
+	j.Id = "0"
+	j.ResumeAtNextScheduledTime = true
+	j.InitDelayDuration(false)
+
+	jobs := make([]*Job, 0, 0)
+	jobs = append(jobs, j)
+	mockDb.response = jobs
+
+	cache.Start(0, -1)
+
+	// After 1 second, the job should not have run.
+	time.Sleep(time.Second * 1)
+	j.lock.RLock()
+	assert.Equal(t, 0, int(j.Metadata.SuccessCount))
+	j.lock.RUnlock()
+
+	// After 2 more seconds, it should have run.
+	time.Sleep(time.Second * 2)
+	j.lock.RLock()
+	assert.Equal(t, 1, int(j.Metadata.SuccessCount))
+	j.lock.RUnlock()
+
+	// Disable to prevent from running
+	j.Disable()
+
+	// It shouldn't run while it's disabled.
+	time.Sleep(time.Second * 3)
+	j.lock.RLock()
+	assert.Equal(t, 1, int(j.Metadata.SuccessCount))
+	j.lock.RUnlock()
+
+	// Re-enable
+	j.Enable(cache)
+
+	// It shouldn't re-run right away; should wait for its next run point.
+	time.Sleep(time.Second * 1)
+	j.lock.RLock()
+	assert.Equal(t, 1, int(j.Metadata.SuccessCount))
+	j.lock.RUnlock()
+
+	// Now it should have run again.
+	time.Sleep(time.Second * 2)
+	j.lock.RLock()
+	assert.Equal(t, 2, int(j.Metadata.SuccessCount))
+	j.lock.RUnlock()
+
+}
