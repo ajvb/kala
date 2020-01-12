@@ -2,11 +2,11 @@ package job
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
-	"net/http/httptest"
-	"net/http"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -967,7 +967,7 @@ func TestRemoteJobBadStatusSuccess(t *testing.T) {
 	defer testServer.Close()
 
 	mockRemoteJob := GetMockRemoteJob(RemoteProperties{
-		Url: testServer.URL,
+		Url:                   testServer.URL,
 		ExpectedResponseCodes: []int{500},
 	})
 

@@ -9,8 +9,8 @@ import (
 	"time"
 	"unsafe"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/cornelk/hashmap"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
