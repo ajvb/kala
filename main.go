@@ -192,7 +192,8 @@ func main() {
 				cache.Start(time.Duration(c.Int("persist-every"))*time.Second, time.Duration(c.Int("jobstat-ttl"))*time.Minute)
 
 				log.Infof("Starting server on port %s", connectionString)
-				log.Fatal(api.StartServer(connectionString, cache, db, c.String("default-owner")))
+				srv := api.MakeServer(connectionString, cache, db, c.String("default-owner"))
+				log.Fatal(srv.ListenAndServe())
 			},
 		},
 	}

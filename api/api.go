@@ -10,9 +10,9 @@ import (
 	"github.com/ajvb/kala/api/middleware"
 	"github.com/ajvb/kala/job"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -319,12 +319,15 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB, defaultOwne
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
 }
 
-func StartServer(listenAddr string, cache job.JobCache, db job.JobDB, defaultOwner string) error {
+func MakeServer(listenAddr string, cache job.JobCache, db job.JobDB, defaultOwner string) *http.Server {
 	r := mux.NewRouter()
 	// Allows for the use for /job as well as /job/
 	r.StrictSlash(true)
 	SetupApiRoutes(r, cache, db, defaultOwner)
 	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log.Logger{}})
 	n.UseHandler(r)
-	return http.ListenAndServe(listenAddr, n)
+	return &http.Server{
+		Addr:    listenAddr,
+		Handler: n,
+	}
 }
