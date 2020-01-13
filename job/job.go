@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ajvb/kala/utils/iso8601"
+	"github.com/mixer/clock"
 
 	"github.com/nu7hatch/gouuid"
 	log "github.com/sirupsen/logrus"
@@ -71,7 +72,7 @@ type Job struct {
 	Epsilon         string `json:"epsilon"`
 	epsilonDuration *iso8601.Duration
 
-	jobTimer  *time.Timer
+	jobTimer  clock.Timer
 	NextRunAt time.Time `json:"next_run_at"`
 
 	// If the job is disabled (or the system inoperative) and we pass
@@ -260,7 +261,7 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 		}
 	}
 	if checkTime {
-		diff := j.scheduleTime.Sub(time.Now())
+		diff := j.scheduleTime.Sub(pkgClock.Now())
 		if diff < 0 {
 			return fmt.Errorf("Job %s:%s cannot be scheduled %s ago", j.Name, j.Id, diff.String())
 		}
@@ -296,17 +297,17 @@ func (j *Job) StartWaiting(cache JobCache) {
 
 	log.Infof("Job %s:%s repeating in %s", j.Name, j.Id, waitDuration)
 
-	j.NextRunAt = time.Now().Add(waitDuration)
+	j.NextRunAt = pkgClock.Now().Add(waitDuration)
 
 	jobRun := func() { j.Run(cache) }
-	j.jobTimer = time.AfterFunc(waitDuration, jobRun)
+	j.jobTimer = pkgClock.AfterFunc(waitDuration, jobRun)
 }
 
 func (j *Job) GetWaitDuration() time.Duration {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 
-	waitDuration := time.Duration(j.scheduleTime.UnixNano() - time.Now().UnixNano())
+	waitDuration := time.Duration(j.scheduleTime.UnixNano() - pkgClock.Now().UnixNano())
 
 	if waitDuration < 0 {
 		if j.timesToRepeat == 0 {
@@ -326,11 +327,11 @@ func (j *Job) GetWaitDuration() time.Duration {
 			}
 
 			newRunPoint := j.scheduleTime
-			for newRunPoint.Before(time.Now()) {
+			for newRunPoint.Before(pkgClock.Now()) {
 				newRunPoint = newRunPoint.Add(j.delayDuration.ToDuration())
 			}
 
-			return newRunPoint.Sub(time.Now())
+			return newRunPoint.Sub(pkgClock.Now())
 		}
 
 		if j.Metadata.LastAttemptedRun.IsZero() {
@@ -339,7 +340,7 @@ func (j *Job) GetWaitDuration() time.Duration {
 			lastRun := j.Metadata.LastAttemptedRun
 			// Needs to be recalculated each time because of Months.
 			lastRun = lastRun.Add(j.delayDuration.ToDuration())
-			waitDuration = lastRun.Sub(time.Now())
+			waitDuration = lastRun.Sub(pkgClock.Now())
 		}
 	}
 

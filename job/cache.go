@@ -154,7 +154,7 @@ func (c *MemoryJobCache) Persist() error {
 }
 
 func (c *MemoryJobCache) PersistEvery(persistWaitTime time.Duration) {
-	wait := time.Tick(persistWaitTime)
+	wait := pkgClock.Tick(persistWaitTime)
 	var err error
 	for {
 		<-wait
@@ -288,7 +288,7 @@ func (c *LockFreeJobCache) Persist() error {
 }
 
 func (c *LockFreeJobCache) PersistEvery(persistWaitTime time.Duration) {
-	wait := time.Tick(persistWaitTime)
+	wait := pkgClock.Tick(persistWaitTime)
 	var err error
 	for {
 		<-wait
@@ -300,7 +300,7 @@ func (c *LockFreeJobCache) PersistEvery(persistWaitTime time.Duration) {
 }
 
 func (c *LockFreeJobCache) locateJobStatsIndexForRetention(stats []*JobStat) (marker int) {
-	now := time.Now()
+	now := pkgClock.Now()
 	expiresAt := now.Add(-c.retentionPeriod)
 	pos := -1
 	for i, el := range stats {
@@ -334,7 +334,7 @@ func (c *LockFreeJobCache) compactJobStats(job *Job) error {
 }
 
 func (c *LockFreeJobCache) RetainEvery(retentionWaitTime time.Duration) {
-	wait := time.Tick(retentionWaitTime)
+	wait := pkgClock.Tick(retentionWaitTime)
 	var err error
 	for {
 		<-wait

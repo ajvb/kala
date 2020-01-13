@@ -97,6 +97,6 @@ func GetMockJobStats(oldDate time.Time, count int) []*JobStat {
 }
 
 func GetMockJobWithGenericSchedule() *Job {
-	fiveMinutesFromNow := time.Now().Add(time.Minute * 5)
+	fiveMinutesFromNow := pkgClock.Now().Add(time.Minute * 5)
 	return GetMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
 }
