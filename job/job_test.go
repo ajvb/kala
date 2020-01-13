@@ -220,7 +220,7 @@ func TestJobRunAndRepeat(t *testing.T) {
 func TestRecurringJobIsRepeating(t *testing.T) {
 	cache := NewMockCache()
 
-	oneSecondFromNow := pkgClock.Now().Add(time.Second)
+	oneSecondFromNow := pkgClock.Now().Add(time.Millisecond * 900)
 	j := GetMockRecurringJobWithSchedule(oneSecondFromNow, "PT1S")
 	j.Init(cache)
 
