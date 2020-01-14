@@ -70,7 +70,9 @@ func TestNextRunAt(t *testing.T) {
 	j2.Disable()
 
 	kalaStat := NewKalaStats(cache)
+	j.lock.RLock()
 	assert.Equal(t, j.NextRunAt.UnixNano(), kalaStat.NextRunAt.UnixNano())
 	assert.Equal(t, j.Metadata.LastAttemptedRun.UnixNano(), kalaStat.LastAttemptedRun.UnixNano())
 	assert.NotEqual(t, j2.NextRunAt.UnixNano(), kalaStat.NextRunAt.UnixNano())
+	j.lock.RUnlock()
 }

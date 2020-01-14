@@ -226,15 +226,18 @@ func TestJobRunAndRepeat(t *testing.T) {
 }
 
 func TestRecurringJobIsRepeating(t *testing.T) {
+	clk := clock.NewMockClock(time.Now())
+
 	cache := NewMockCache()
 
-	oneSecondFromNow := time.Now().Add(time.Millisecond * 900)
+	oneSecondFromNow := clk.Now().Add(time.Millisecond * 900)
 	j := GetMockRecurringJobWithSchedule(oneSecondFromNow, "PT1S")
 	j.Init(cache)
 
 	for i := 0; i < 2; i++ {
+		clk.AddTime(time.Millisecond * 1100)
+		now := clk.Now()
 		time.Sleep(time.Second)
-		now := time.Now()
 		j.lock.RLock()
 		assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
 		assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)

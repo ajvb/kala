@@ -60,11 +60,17 @@ func TestRecur(t *testing.T) {
 
 				clk.SetTime(parseTime(t, chk))
 				briefPause()
+
+				j.lock.RLock()
 				assert.Equal(t, i, int(j.Metadata.SuccessCount))
+				j.lock.RUnlock()
 
 				clk.AddTime(time.Second * 6)
 				briefPause()
+
+				j.lock.RLock()
 				assert.Equal(t, i+1, int(j.Metadata.SuccessCount))
+				j.lock.RUnlock()
 			}
 
 		}()
