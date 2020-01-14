@@ -30,7 +30,7 @@ func TestSaveAndGetJob(t *testing.T) {
 	cache := job.NewLockFreeJobCache(db)
 	defer db.Close()
 
-	genericMockJob := job.GetMockJobWithGenericSchedule()
+	genericMockJob := job.GetMockJobWithGenericSchedule(time.Now())
 	genericMockJob.Init(cache)
 
 	job, err := json.Marshal(genericMockJob)
@@ -65,7 +65,7 @@ func TestDeleteJob(t *testing.T) {
 
 	cache := job.NewLockFreeJobCache(db)
 
-	genericMockJob := job.GetMockJobWithGenericSchedule()
+	genericMockJob := job.GetMockJobWithGenericSchedule(time.Now())
 	genericMockJob.Init(cache)
 
 	job, err := json.Marshal(genericMockJob)
@@ -105,8 +105,8 @@ func TestDeleteJob(t *testing.T) {
 func TestSaveAndGetAllJobs(t *testing.T) {
 	db, m := NewTestDb()
 
-	genericMockJobOne := job.GetMockJobWithGenericSchedule()
-	genericMockJobTwo := job.GetMockJobWithGenericSchedule()
+	genericMockJobOne := job.GetMockJobWithGenericSchedule(time.Now())
+	genericMockJobTwo := job.GetMockJobWithGenericSchedule(time.Now())
 
 	jobOne, err := json.Marshal(genericMockJobOne)
 	if assert.NoError(t, err) {
@@ -139,8 +139,8 @@ func TestRealDb(t *testing.T) {
 	db := New(dsn)
 	cache := job.NewLockFreeJobCache(db)
 
-	genericMockJobOne := job.GetMockJobWithGenericSchedule()
-	genericMockJobTwo := job.GetMockJobWithGenericSchedule()
+	genericMockJobOne := job.GetMockJobWithGenericSchedule(time.Now())
+	genericMockJobTwo := job.GetMockJobWithGenericSchedule(time.Now())
 
 	genericMockJobOne.Init(cache)
 	genericMockJobTwo.Init(cache)

@@ -23,6 +23,7 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-shellwords v1.0.0
 	github.com/mitchellh/go-homedir v0.0.0-20161203194507-b8bc1bf76747
+	github.com/mixer/clock v0.0.0-20190507173039-c311c17adb1f
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/rafaeljusto/redigomock v0.0.0-20170720131524-7ae0511314e9

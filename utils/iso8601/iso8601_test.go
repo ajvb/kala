@@ -1,7 +1,6 @@
 package iso8601_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -102,27 +101,41 @@ func TestString(t *testing.T) {
 	assert.Equal(t, d.String(), "P1W")
 }
 
-func TestToDuration(t *testing.T) {
+func TestRelativeTo(t *testing.T) {
 	t.Parallel()
 
+	anchor, err := time.Parse(time.RFC3339, "2019-01-02T15:04:05Z")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("Checking relative to anchor date: %s", anchor.Format(time.RFC822))
+
 	d := iso8601.Duration{Years: 1}
-	assert.Equal(t, d.ToDuration(), time.Hour*24*365)
+	t.Logf("Anchor plus duration '%s' is: %s", d.String(), d.Add(anchor).Format(time.RFC822))
+	assert.Equal(t, d.RelativeTo(anchor), time.Hour*24*365)
 
 	d = iso8601.Duration{Weeks: 1}
-	assert.Equal(t, d.ToDuration(), time.Hour*24*7)
+	t.Logf("Anchor plus duration '%s' is: %s", d.String(), d.Add(anchor).Format(time.RFC822))
+	assert.Equal(t, d.RelativeTo(anchor), time.Hour*24*7)
 
 	d = iso8601.Duration{Days: 1}
-	assert.Equal(t, d.ToDuration(), time.Hour*24)
+	t.Logf("Anchor plus duration '%s' is: %s", d.String(), d.Add(anchor).Format(time.RFC822))
+	assert.Equal(t, d.RelativeTo(anchor), time.Hour*24)
 
 	d = iso8601.Duration{Hours: 1}
-	assert.Equal(t, d.ToDuration(), time.Hour)
+	t.Logf("Anchor plus duration '%s' is: %s", d.String(), d.Add(anchor).Format(time.RFC822))
+	assert.Equal(t, d.RelativeTo(anchor), time.Hour)
 
 	d = iso8601.Duration{Minutes: 1}
-	assert.Equal(t, d.ToDuration(), time.Minute)
+	t.Logf("Anchor plus duration '%s' is: %s", d.String(), d.Add(anchor).Format(time.RFC822))
+	assert.Equal(t, d.RelativeTo(anchor), time.Minute)
 
 	d = iso8601.Duration{Seconds: 1}
-	assert.Equal(t, d.ToDuration(), time.Second)
+	t.Logf("Anchor plus duration '%s' is: %s", d.String(), d.Add(anchor).Format(time.RFC822))
+	assert.Equal(t, d.RelativeTo(anchor), time.Second)
 
 	d = iso8601.Duration{Months: 2}
-	fmt.Println(d.ToDuration())
+	t.Logf("Anchor plus duration '%s' is: %s", d.String(), d.Add(anchor).Format(time.RFC822))
+	assert.Equal(t, d.RelativeTo(anchor), time.Hour*24*59)
 }

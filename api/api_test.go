@@ -47,7 +47,7 @@ func generateNewRemoteJobMap() map[string]interface{} {
 
 func generateJobAndCache() (*job.LockFreeJobCache, *job.Job) {
 	cache := job.NewMockCache()
-	j := job.GetMockJobWithGenericSchedule()
+	j := job.GetMockJobWithGenericSchedule(time.Now())
 	j.Init(cache)
 	return cache, j
 }
@@ -161,7 +161,7 @@ func (a *ApiTestSuite) TestDeleteAllJobsSuccess() {
 	t := a.T()
 	db := &job.MockDB{}
 	cache, jobOne := generateJobAndCache()
-	jobTwo := job.GetMockJobWithGenericSchedule()
+	jobTwo := job.GetMockJobWithGenericSchedule(time.Now())
 	jobTwo.Init(cache)
 
 	r := mux.NewRouter()
@@ -269,7 +269,7 @@ func (a *ApiTestSuite) TestHandleListJobStatsRequestNotFound() {
 
 func (a *ApiTestSuite) TestHandleListJobsRequest() {
 	cache, jobOne := generateJobAndCache()
-	jobTwo := job.GetMockJobWithGenericSchedule()
+	jobTwo := job.GetMockJobWithGenericSchedule(time.Now())
 	jobTwo.Init(cache)
 
 	r := mux.NewRouter()
@@ -383,7 +383,7 @@ func (a *ApiTestSuite) TestHandleDisableJobRequestNotFound() {
 
 func (a *ApiTestSuite) TestHandleKalaStatsRequest() {
 	cache, _ := generateJobAndCache()
-	jobTwo := job.GetMockJobWithGenericSchedule()
+	jobTwo := job.GetMockJobWithGenericSchedule(time.Now())
 	jobTwo.Init(cache)
 	jobTwo.Run(cache)
 

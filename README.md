@@ -1,13 +1,10 @@
 # Kala
 
+[![GoDoc](https://godoc.org/github.com/ajvb/kala?status.svg)](https://godoc.org/github.com/ajvb/kala)
 [![Circle CI](https://circleci.com/gh/ajvb/kala.svg?style=svg)](https://circleci.com/gh/ajvb/kala)
 [![Coverage Status](https://coveralls.io/repos/ajvb/kala/badge.svg?branch=master&service=github)](https://coveralls.io/github/ajvb/kala?branch=master)
 
-#### Donate
-
-[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=ajvb&url=https://github.com/ajvb/kala&title=Kala&language=&tags=github&category=software)
-
-#### Currently in Alpha stage. Do not use in production environments.
+#### Not battle-tested. Use at your own risk.
 
 Kala is a simplistic, modern, and performant job scheduler written in Go. It lives in a single binary and does not have any dependencies.
 
@@ -16,21 +13,13 @@ Kala was inspired by the desire for a simpler [Chronos](https://github.com/airbn
 It has a simple JSON over HTTP API, so it is language agnostic. It has Job Stats, Configurable Retries, uses ISO 8601 Date and Interval
 notation, Dependant Jobs, and is Persistent (using BoltDB). Eventually it will have a Web UI.
 
-#### Have any feedback or bugs to report?
-
-Please create an issue within Github, or also feel free to email me at aj <at> ajvb.me
-
-
-Mailing List: https://groups.google.com/forum/#!forum/kala-scheduler
-
-
 #### I need [fault tolerance, distributed-features, this to work at scale]
 
 I recommend checking out [Chronos](https://github.com/airbnb/chronos). This is designed to be the Chronos for start-ups.
 
 ## Installing Kala
 
-*Requires Go 1.0+ and git*
+*Kala uses Go Modules*
 
 1. Get Kala
 
@@ -43,45 +32,6 @@ I recommend checking out [Chronos](https://github.com/airbnb/chronos). This is d
 	```
 	kala run
 	```
-
-## Development
-
-1. Change directory to Kala source
-
-	```
-	cd $GOPATH/src/github.com/ajvb/kala
-	```
-
-2. Install godep
-
-	```
-	go get github.com/tools/godep
-	```
-
-3. Restore Godeps
-
-	```
-	godep restore
-	```
-
-4. Build the local Kala binary
-
-	```
-	go build
-	```
-
-5. Run local Kala
-
-	```
-	./kala run
-	```
-
-6. **Optional:** Replace the preinstalled Kala with local Kala
-
-	```
-	go install
-	```
-
 
 # Getting Started
 
@@ -185,8 +135,6 @@ All routes have a prefix of `/api/v1`
 
 ## Things to Note
 
-* Currently, daylight savings time is not supported in the interval format.
-* Currently, leap years are not supported in the interval format.
 * If schedule is omitted, the job will run immediately.
 
 
@@ -292,7 +240,10 @@ Examples:
 |Deleting all Jobs | DELETE | /api/v1/job/all/ |
 |Getting metrics about a certain Job | GET | /api/v1/job/stats/{id}/ |
 |Starting a Job manually | POST | /api/v1/job/start/{id}/ |
+|Disabling a Job | POST | /api/v1/job/disable/{id}/ |
+|Enabling a Job | POST | /api/v1/job/enable/{id}/ |
 |Getting app-level metrics | GET | /api/v1/stats/ |
+
 
 ## /job
 
@@ -360,6 +311,20 @@ Example:
 $ curl http://127.0.0.1:8000/api/v1/job/start/5d5be920-c716-4c99-60e1-055cad95b40f/ -X POST
 ```
 
+## /job/disable/{id}
+
+Example:
+```bash
+$ curl http://127.0.0.1:8000/api/v1/job/disable/5d5be920-c716-4c99-60e1-055cad95b40f/ -X POST
+```
+
+## /job/enable/{id}
+
+Example:
+```bash
+$ curl http://127.0.0.1:8000/api/v1/job/enable/5d5be920-c716-4c99-60e1-055cad95b40f/ -X POST
+```
+
 ## /stats
 
 Example:
@@ -367,10 +332,6 @@ Example:
 $ curl http://127.0.0.1:8000/api/v1/stats/
 {"Stats":{"ActiveJobs":2,"DisabledJobs":0,"Jobs":2,"ErrorCount":0,"SuccessCount":0,"NextRunAt":"2017-06-04T19:25:16.82873873-07:00","LastAttemptedRun":"0001-01-01T00:00:00Z","CreatedAt":"2017-06-03T19:58:21.433668791-07:00"}}
 ```
-
-# Documentation
-
-[Contributor Documentation can be found here](http://godoc.org/github.com/ajvb/kala)
 
 ## Debugging Jobs
 
@@ -398,20 +359,6 @@ Check out this [example for how to add dependent jobs](https://github.com/ajvb/k
 * If a child job is deleted, it's parent job will continue to stay around.
 * If a parent job is deleted, unless its child jobs have another parent, they will be deleted as well.
 
-# Contributing
-
-TODO
-
-# TODO's
-
-### For User
-- [x] Python Client Library
-- [x] Node Client Library
-- [ ] Create single release binary
-
-### For Contributors
-- [ ] Contributors Documentation
-
 # Original Contributors and Contact
 
 Original Author and Core Maintainer:
@@ -422,3 +369,7 @@ Original Reviewers:
 
 * Sam Dolan / [@samdolan](https://github.com/samdolan/)
 * Steve Phillips / [@elimisteve](http://twitter.com/elimisteve)
+
+#### Donate
+
+[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=ajvb&url=https://github.com/ajvb/kala&title=Kala&language=&tags=github&category=software)

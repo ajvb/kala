@@ -10,7 +10,7 @@ import (
 func TestJobStats(t *testing.T) {
 	cache := NewMockCache()
 
-	j := GetMockJobWithGenericSchedule()
+	j := GetMockJobWithGenericSchedule(time.Now())
 	j.Init(cache)
 
 	j.Run(cache)
@@ -28,13 +28,13 @@ func TestKalaStats(t *testing.T) {
 	cache := NewMockCache()
 
 	for i := 0; i < 5; i++ {
-		j := GetMockJobWithGenericSchedule()
+		j := GetMockJobWithGenericSchedule(time.Now())
 		j.Init(cache)
 		j.Run(cache)
 	}
 	now := time.Now()
 	for i := 0; i < 5; i++ {
-		j := GetMockJobWithGenericSchedule()
+		j := GetMockJobWithGenericSchedule(time.Now())
 		j.Init(cache)
 		j.Disable()
 	}
@@ -70,7 +70,9 @@ func TestNextRunAt(t *testing.T) {
 	j2.Disable()
 
 	kalaStat := NewKalaStats(cache)
+	j.lock.RLock()
 	assert.Equal(t, j.NextRunAt.UnixNano(), kalaStat.NextRunAt.UnixNano())
 	assert.Equal(t, j.Metadata.LastAttemptedRun.UnixNano(), kalaStat.LastAttemptedRun.UnixNano())
 	assert.NotEqual(t, j2.NextRunAt.UnixNano(), kalaStat.NextRunAt.UnixNano())
+	j.lock.RUnlock()
 }
