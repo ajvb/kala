@@ -12,91 +12,99 @@ import (
 
 var recurTableTests = []struct {
 	Name        string
+	Location    string
 	Start       string
 	Interval    string
 	Checkpoints []string
 }{
 	{
 		Name:     "Daily",
-		Start:    "2020-Jan-13 14:09 PST",
+		Location: "America/Los_Angeles",
+		Start:    "2020-Jan-13 14:09",
 		Interval: "P1D",
 		Checkpoints: []string{
-			"2020-Jan-14 14:09 PST",
-			"2020-Jan-15 14:09 PST",
-			"2020-Jan-16 14:09 PST",
+			"2020-Jan-14 14:09",
+			"2020-Jan-15 14:09",
+			"2020-Jan-16 14:09",
 		},
 	},
 	{
-		Name:     "Daily with DST",
-		Start:    "2020-Mar-05 14:09 PST",
+		Name:     "Daily across DST boundary",
+		Location: "America/Los_Angeles",
+		Start:    "2020-Mar-05 14:09",
 		Interval: "P1D",
 		Checkpoints: []string{
-			"2020-Mar-06 14:09 PST",
-			"2020-Mar-07 14:09 PST",
-			"2020-Mar-08 14:09 PDT",
-			"2020-Mar-09 14:09 PDT",
+			"2020-Mar-06 14:09",
+			"2020-Mar-07 14:09",
+			"2020-Mar-08 14:09",
+			"2020-Mar-09 14:09",
 		},
 	},
 	{
-		Name:     "24 Hourly with DST",
-		Start:    "2020-Mar-05 14:09 PST",
+		Name:     "24 Hourly across DST boundary",
+		Location: "America/Los_Angeles",
+		Start:    "2020-Mar-05 14:09",
 		Interval: "PT24H",
 		Checkpoints: []string{
-			"2020-Mar-06 14:09 PST",
-			"2020-Mar-07 14:09 PST",
-			"2020-Mar-08 15:09 PDT",
-			"2020-Mar-09 15:09 PDT",
+			"2020-Mar-06 14:09",
+			"2020-Mar-07 14:09",
+			"2020-Mar-08 15:09",
+			"2020-Mar-09 15:09",
 		},
 	},
 	{
 		Name:     "Weekly",
-		Start:    "2020-Jan-13 14:09 PST",
+		Location: "America/Los_Angeles",
+		Start:    "2020-Jan-13 14:09",
 		Interval: "P1W",
 		Checkpoints: []string{
-			"2020-Jan-20 14:09 PST",
-			"2020-Jan-27 14:09 PST",
-			"2020-Feb-03 14:09 PST",
+			"2020-Jan-20 14:09",
+			"2020-Jan-27 14:09",
+			"2020-Feb-03 14:09",
 		},
 	},
 	{
 		Name:     "Monthly",
-		Start:    "2020-Jan-20 14:09 PST",
+		Location: "America/Los_Angeles",
+		Start:    "2020-Jan-20 14:09",
 		Interval: "P1M",
 		Checkpoints: []string{
-			"2020-Feb-20 14:09 PST",
-			"2020-Mar-20 14:09 PDT",
-			"2020-Apr-20 14:09 PDT",
-			"2020-May-20 14:09 PDT",
-			"2020-Jun-20 14:09 PDT",
-			"2020-Jul-20 14:09 PDT",
-			"2020-Aug-20 14:09 PDT",
-			"2020-Sep-20 14:09 PDT",
-			"2020-Oct-20 14:09 PDT",
-			"2020-Nov-20 14:09 PST",
-			"2020-Dec-20 14:09 PST",
-			"2021-Jan-20 14:09 PST",
+			"2020-Feb-20 14:09",
+			"2020-Mar-20 14:09",
+			"2020-Apr-20 14:09",
+			"2020-May-20 14:09",
+			"2020-Jun-20 14:09",
+			"2020-Jul-20 14:09",
+			"2020-Aug-20 14:09",
+			"2020-Sep-20 14:09",
+			"2020-Oct-20 14:09",
+			"2020-Nov-20 14:09",
+			"2020-Dec-20 14:09",
+			"2021-Jan-20 14:09",
 		},
 	},
 	{
 		Name:     "Monthly with Normalization",
-		Start:    "2020-Jul-31 14:09 PDT",
+		Location: "America/Los_Angeles",
+		Start:    "2020-Jul-31 14:09",
 		Interval: "P1M",
 		Checkpoints: []string{
-			"2020-Aug-31 14:09 PDT",
-			"2020-Oct-01 14:09 PDT",
-			"2020-Nov-01 14:09 PST",
+			"2020-Aug-31 14:09",
+			"2020-Oct-01 14:09",
+			"2020-Nov-01 14:09",
 		},
 	},
 	{
-		Name:     "Yearly",
-		Start:    "2020-Jan-20 14:09 PST",
+		Name:     "Yearly across Leap Year boundary",
+		Location: "America/Los_Angeles",
+		Start:    "2020-Jan-20 14:09",
 		Interval: "P1Y",
 		Checkpoints: []string{
-			"2021-Jan-20 14:09 PST",
-			"2022-Jan-20 14:09 PST",
-			"2023-Jan-20 14:09 PST",
-			"2024-Jan-20 14:09 PST",
-			"2025-Jan-20 14:09 PST",
+			"2021-Jan-20 14:09",
+			"2022-Jan-20 14:09",
+			"2023-Jan-20 14:09",
+			"2024-Jan-20 14:09",
+			"2025-Jan-20 14:09",
 		},
 	},
 }
@@ -107,7 +115,7 @@ func TestRecur(t *testing.T) {
 
 		func() {
 
-			now := parseTime(t, testStruct.Start)
+			now := parseTimeInLocation(t, testStruct.Start, testStruct.Location)
 
 			clk := clock.NewMockClock(now)
 
@@ -122,7 +130,7 @@ func TestRecur(t *testing.T) {
 
 			for i, chk := range checkpoints {
 
-				clk.SetTime(parseTime(t, chk))
+				clk.SetTime(parseTimeInLocation(t, chk, testStruct.Location))
 				briefPause()
 
 				j.lock.RLock()

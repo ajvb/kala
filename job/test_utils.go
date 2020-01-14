@@ -103,12 +103,21 @@ func GetMockJobWithGenericSchedule(now time.Time) *Job {
 }
 
 func parseTime(t *testing.T, value string) time.Time {
-	now, err := time.Parse("2006-Jan-02 15:04 MST", value)
+	now, err := time.Parse("2006-Jan-02 15:04", value)
 	if err != nil {
-		now, err = time.Parse("2006-Jan-02 15:04", value)
-		if err != nil {
-			t.Fatal(err)
-		}
+		t.Fatal(err)
+	}
+	return now
+}
+
+func parseTimeInLocation(t *testing.T, value string, location string) time.Time {
+	loc, err := time.LoadLocation(location)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now, err := time.ParseInLocation("2006-Jan-02 15:04", value, loc)
+	if err != nil {
+		t.Fatal(err)
 	}
 	return now
 }
