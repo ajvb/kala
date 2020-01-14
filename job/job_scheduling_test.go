@@ -22,7 +22,7 @@ var getWaitDurationTableTests = []struct {
 				// Schedule time is passed
 				Schedule: "R/2015-10-17T11:44:54.389361-07:00/PT10S",
 				Metadata: Metadata{
-					LastAttemptedRun: pkgClock.Now(),
+					LastAttemptedRun: time.Now(),
 				},
 			}
 		},
@@ -35,7 +35,7 @@ var getWaitDurationTableTests = []struct {
 				// Schedule time is passed
 				Schedule: "R/2015-10-17T11:44:54.389361-07:00/PT1M",
 				Metadata: Metadata{
-					LastAttemptedRun: pkgClock.Now(),
+					LastAttemptedRun: time.Now(),
 				},
 			}
 		},
@@ -61,7 +61,7 @@ var getWaitDurationTableTests = []struct {
 				// Schedule time is passed
 				Schedule: "R/2015-10-17T11:44:54.389361-07:00/P1D",
 				Metadata: Metadata{
-					LastAttemptedRun: pkgClock.Now(),
+					LastAttemptedRun: time.Now(),
 				},
 			}
 		},

@@ -34,7 +34,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 	j.job.lock.RLock()
 	defer j.job.lock.RUnlock()
 
-	j.meta.LastAttemptedRun = pkgClock.Now()
+	j.meta.LastAttemptedRun = j.job.clk.Time().Now()
 
 	if j.job.Disabled {
 		log.Infof("Job %s tried to run, but exited early because its disabled.", j.job.Name)
@@ -62,7 +62,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 			log.Errorln(err)
 
 			j.meta.ErrorCount++
-			j.meta.LastError = pkgClock.Now()
+			j.meta.LastError = j.job.clk.Time().Now()
 
 			// Handle retrying
 			if j.shouldRetry() {
@@ -83,7 +83,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 	log.Infof("Job %s:%s finished.", j.job.Name, j.job.Id)
 	j.meta.SuccessCount++
 	j.meta.NumberOfFinishedRuns++
-	j.meta.LastSuccess = pkgClock.Now()
+	j.meta.LastSuccess = j.job.clk.Time().Now()
 
 	j.collectStats(true)
 
@@ -178,8 +178,8 @@ func (j *JobRunner) shouldRetry() bool {
 	// Check Epsilon
 	if j.job.Epsilon != "" && j.job.Schedule != "" {
 		if !j.job.epsilonDuration.IsZero() {
-			timeSinceStart := pkgClock.Now().Sub(j.job.NextRunAt)
-			timeLeftToRetry := j.job.epsilonDuration.RelativeTo(pkgClock.Now()) - timeSinceStart
+			timeSinceStart := j.job.clk.Time().Now().Sub(j.job.NextRunAt)
+			timeLeftToRetry := j.job.epsilonDuration.RelativeTo(j.job.clk.Time().Now()) - timeSinceStart
 			if timeLeftToRetry < 0 {
 				return false
 			}
@@ -198,7 +198,7 @@ func (j *JobRunner) runSetup() {
 }
 
 func (j *JobRunner) collectStats(success bool) {
-	j.currentStat.ExecutionDuration = pkgClock.Now().Sub(j.currentStat.RanAt)
+	j.currentStat.ExecutionDuration = j.job.clk.Time().Now().Sub(j.currentStat.RanAt)
 	j.currentStat.Success = success
 	j.currentStat.NumberOfRetries = j.job.Retries - j.currentRetries
 }

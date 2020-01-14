@@ -17,7 +17,7 @@ var testDbPath = ""
 func TestScheduleParsing(t *testing.T) {
 	cache := NewMockCache()
 
-	fiveMinutesFromNow := pkgClock.Now().Add(5 * time.Minute)
+	fiveMinutesFromNow := time.Now().Add(5 * time.Minute)
 
 	genericMockJob := GetMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
 
@@ -32,7 +32,7 @@ func TestScheduleParsing(t *testing.T) {
 func TestBrokenSchedule(t *testing.T) {
 	cache := NewMockCache()
 
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(time.Now())
 	mockJob.Schedule = "hfhgasyuweu123"
 
 	err := mockJob.Init(cache)
@@ -44,7 +44,7 @@ func TestBrokenSchedule(t *testing.T) {
 func TestBrokenEpsilon(t *testing.T) {
 	cache := NewMockCache()
 
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(time.Now())
 	mockJob.Epsilon = "asdasd"
 
 	err := mockJob.Init(cache)
@@ -56,8 +56,8 @@ func TestBrokenEpsilon(t *testing.T) {
 func TestBrokenScheduleTimeHasAlreadyPassed(t *testing.T) {
 	cache := NewMockCache()
 
-	fiveMinutesFromNow := pkgClock.Now()
-	pkgClock.Sleep(time.Millisecond * 30)
+	fiveMinutesFromNow := time.Now()
+	time.Sleep(time.Millisecond * 30)
 	mockJob := GetMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
 
 	err := mockJob.Init(cache)
@@ -69,7 +69,7 @@ func TestBrokenScheduleTimeHasAlreadyPassed(t *testing.T) {
 func TestBrokenScheduleBrokenRepeat(t *testing.T) {
 	cache := NewMockCache()
 
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(time.Now())
 	mockJob.Schedule = strings.Replace(mockJob.Schedule, "R2", "RRR", 1)
 
 	err := mockJob.Init(cache)
@@ -81,7 +81,7 @@ func TestBrokenScheduleBrokenRepeat(t *testing.T) {
 func TestBrokenScheduleBrokenInitialScheduleTime(t *testing.T) {
 	cache := NewMockCache()
 
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(time.Now())
 	mockJob.Schedule = "R0/hfhgasyuweu123/PT10S"
 
 	err := mockJob.Init(cache)
@@ -107,21 +107,20 @@ func TestDelayParsing(t *testing.T) {
 	now := parseTime(t, "2019-Jan-02 15:04")
 
 	clk := clock.NewMockClock(now)
-	restoreClock := mockPkgClock(clk)
-	defer restoreClock()
 
-	testTime := pkgClock.Now().Add(time.Minute * 1)
+	testTime := clk.Now().Add(time.Minute * 1)
 
 	for _, delayTest := range delayParsingTests {
 		cache := NewMockCache()
 		genericMockJob := GetMockJobWithSchedule(1, testTime, delayTest.intervalStr)
+		genericMockJob.clk.SetClock(clk)
 		genericMockJob.Init(cache)
-		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.RelativeTo(pkgClock.Now()), "Parsed duration was incorrect")
+		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.RelativeTo(clk.Now()), "Parsed duration was incorrect")
 	}
 }
 
 func TestBrokenDelayHandling(t *testing.T) {
-	testTime := pkgClock.Now().Add(time.Minute * 1)
+	testTime := time.Now().Add(time.Minute * 1)
 	brokenIntervals := []string{
 		"DTT",
 		"000D",
@@ -142,7 +141,7 @@ func TestBrokenDelayHandling(t *testing.T) {
 func TestJobInit(t *testing.T) {
 	cache := NewMockCache()
 
-	genericMockJob := GetMockJobWithGenericSchedule()
+	genericMockJob := GetMockJobWithGenericSchedule(time.Now())
 
 	err := genericMockJob.Init(cache)
 	assert.Nil(t, err, "err should be nil")
@@ -154,7 +153,7 @@ func TestJobInit(t *testing.T) {
 func TestJobDisable(t *testing.T) {
 	cache := NewMockCache()
 
-	genericMockJob := GetMockJobWithGenericSchedule()
+	genericMockJob := GetMockJobWithGenericSchedule(time.Now())
 	genericMockJob.Init(cache)
 
 	assert.False(t, genericMockJob.Disabled, "Job should start with disabled == false")
@@ -167,11 +166,11 @@ func TestJobDisable(t *testing.T) {
 func TestJobRun(t *testing.T) {
 	cache := NewMockCache()
 
-	j := GetMockJobWithGenericSchedule()
+	j := GetMockJobWithGenericSchedule(time.Now())
 	j.Init(cache)
 	j.Run(cache)
 
-	now := pkgClock.Now()
+	now := time.Now()
 
 	assert.Equal(t, j.Metadata.SuccessCount, uint(1))
 	assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
@@ -182,13 +181,13 @@ func TestJobWithRepeatOfZeroAndNoInterval(t *testing.T) {
 	cache := NewMockCache()
 
 	j := GetMockJob()
-	parsedTime := pkgClock.Now().Add(time.Minute * 5).Format(time.RFC3339)
+	parsedTime := time.Now().Add(time.Minute * 5).Format(time.RFC3339)
 	scheduleStr := fmt.Sprintf("R%d/%s/", 0, parsedTime)
 	j.Schedule = scheduleStr
 	j.Init(cache)
 	j.Run(cache)
 
-	now := pkgClock.Now()
+	now := time.Now()
 
 	assert.Equal(t, j.Metadata.SuccessCount, uint(1))
 	assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
@@ -199,7 +198,7 @@ func TestJobWithRepeatOfZeroThatIsDoneAfterRun(t *testing.T) {
 	cache := NewMockCache()
 
 	j := GetMockJob()
-	parsedTime := pkgClock.Now().Add(time.Minute * 5).Format(time.RFC3339)
+	parsedTime := time.Now().Add(time.Minute * 5).Format(time.RFC3339)
 	scheduleStr := fmt.Sprintf("R%d/%s/", 0, parsedTime)
 	j.Schedule = scheduleStr
 	j.Init(cache)
@@ -212,13 +211,13 @@ func TestJobWithRepeatOfZeroThatIsDoneAfterRun(t *testing.T) {
 func TestJobRunAndRepeat(t *testing.T) {
 	cache := NewMockCache()
 
-	oneSecondFromNow := pkgClock.Now().Add(time.Second)
+	oneSecondFromNow := time.Now().Add(time.Second)
 	j := GetMockJobWithSchedule(2, oneSecondFromNow, "PT1S")
 	j.Init(cache)
 
 	for i := 0; i < 3; i++ {
-		pkgClock.Sleep(time.Second)
-		now := pkgClock.Now()
+		time.Sleep(time.Second)
+		now := time.Now()
 		j.lock.RLock()
 		assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
 		assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)
@@ -229,13 +228,13 @@ func TestJobRunAndRepeat(t *testing.T) {
 func TestRecurringJobIsRepeating(t *testing.T) {
 	cache := NewMockCache()
 
-	oneSecondFromNow := pkgClock.Now().Add(time.Millisecond * 900)
+	oneSecondFromNow := time.Now().Add(time.Millisecond * 900)
 	j := GetMockRecurringJobWithSchedule(oneSecondFromNow, "PT1S")
 	j.Init(cache)
 
 	for i := 0; i < 2; i++ {
-		pkgClock.Sleep(time.Second)
-		now := pkgClock.Now()
+		time.Sleep(time.Second)
+		now := time.Now()
 		j.lock.RLock()
 		assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
 		assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)
@@ -251,18 +250,18 @@ func TestRecurringJobIsRepeating(t *testing.T) {
 func TestTwoTimesRecurringJobIsDoneAfterThirdRun(t *testing.T) {
 	cache := NewMockCache()
 
-	oneSecondFromNow := pkgClock.Now().Add(time.Second)
+	oneSecondFromNow := time.Now().Add(time.Second)
 	j := GetMockJobWithSchedule(2, oneSecondFromNow, "PT1S")
 	j.Init(cache)
 
 	for i := 0; i < 2; i++ {
-		pkgClock.Sleep(time.Second)
+		time.Sleep(time.Second)
 		j.lock.RLock()
 		assert.Equal(t, j.IsDone, false)
 		j.lock.RUnlock()
 	}
 
-	pkgClock.Sleep(time.Second)
+	time.Sleep(time.Second)
 
 	j.lock.RLock()
 	assert.Equal(t, j.IsDone, true)
@@ -272,16 +271,16 @@ func TestTwoTimesRecurringJobIsDoneAfterThirdRun(t *testing.T) {
 func TestJobEpsilon(t *testing.T) {
 	cache := NewMockCache()
 
-	oneSecondFromNow := pkgClock.Now().Add(time.Second)
+	oneSecondFromNow := time.Now().Add(time.Second)
 	j := GetMockJobWithSchedule(0, oneSecondFromNow, "P1DT1S")
 	j.Epsilon = "PT2S"
 	j.Command = "bash -c 'sleep 1 && cd /etc && touch l'"
 	j.Retries = 200
 	j.Init(cache)
 
-	pkgClock.Sleep(time.Second * 4)
+	time.Sleep(time.Second * 4)
 
-	now := pkgClock.Now()
+	now := time.Now()
 
 	j.lock.RLock()
 	assert.Equal(t, j.Metadata.SuccessCount, uint(0))
@@ -307,8 +306,8 @@ func TestOneOffJobs(t *testing.T) {
 
 	j.Init(cache)
 	// Find a better way to test a goroutine
-	pkgClock.Sleep(time.Second)
-	now := pkgClock.Now()
+	time.Sleep(time.Second)
+	now := time.Now()
 
 	j.lock.RLock()
 	assert.Equal(t, j.Metadata.SuccessCount, uint(1))
@@ -325,20 +324,20 @@ func TestOneOffJobs(t *testing.T) {
 func TestDependentJobsSimple(t *testing.T) {
 
 	clk := NewHybridClock()
-	restoreClock := mockPkgClock(clk)
 	clk.Play()
-	defer restoreClock()
 
 	cache := NewMockCache()
 
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
+	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	mockChildJob := GetMockJob()
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
+	mockChildJob.clk.SetClock(clk)
 	mockChildJob.Init(cache)
 
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
@@ -351,7 +350,8 @@ func TestDependentJobsSimple(t *testing.T) {
 
 	j.Run(cache)
 	clk.AddTime(time.Second * 2)
-	n := pkgClock.Now()
+	briefPause()
+	n := clk.Now()
 
 	mcj, err := cache.Get(mockChildJob.Id)
 	assert.NoError(t, err)
@@ -377,14 +377,13 @@ func TestDependentJobsParentDoesNotExist(t *testing.T) {
 func TestDependentJobsTwoChilds(t *testing.T) {
 
 	clk := NewHybridClock()
-	restoreClock := mockPkgClock(clk)
 	clk.Play()
-	defer restoreClock()
 
 	cache := NewMockCache()
 
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
+	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
@@ -392,6 +391,7 @@ func TestDependentJobsTwoChilds(t *testing.T) {
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
+	mockChildJobOne.clk.SetClock(clk)
 	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
@@ -399,6 +399,7 @@ func TestDependentJobsTwoChilds(t *testing.T) {
 	mockChildJobTwo.ParentJobs = []string{
 		mockJob.Id,
 	}
+	mockChildJobTwo.clk.SetClock(clk)
 	mockChildJobTwo.Init(cache)
 
 	// Check that it gets placed in the array.
@@ -416,7 +417,8 @@ func TestDependentJobsTwoChilds(t *testing.T) {
 
 	j.Run(cache)
 	clk.AddTime(time.Second * 2)
-	n := pkgClock.Now()
+	briefPause()
+	n := clk.Now()
 
 	assert.WithinDuration(t, mockChildJobOne.Metadata.LastAttemptedRun, n, 4*time.Second)
 	assert.WithinDuration(t, mockChildJobOne.Metadata.LastSuccess, n, 4*time.Second)
@@ -431,14 +433,13 @@ func TestDependentJobsTwoChilds(t *testing.T) {
 func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 
 	clk := NewHybridClock()
-	restoreClock := mockPkgClock(clk)
 	clk.Play()
-	defer restoreClock()
 
 	cache := NewMockCache()
 
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
+	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	mockChildJob := GetMockJob()
@@ -446,6 +447,7 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
+	mockChildJob.clk.SetClock(clk)
 	mockChildJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
@@ -453,6 +455,7 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 	mockChildJobOne.ParentJobs = []string{
 		mockChildJob.Id,
 	}
+	mockChildJobOne.clk.SetClock(clk)
 	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
@@ -460,6 +463,7 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 	mockChildJobTwo.ParentJobs = []string{
 		mockChildJob.Id,
 	}
+	mockChildJobTwo.clk.SetClock(clk)
 	mockChildJobTwo.Init(cache)
 
 	// Check that it gets placed in the array.
@@ -484,7 +488,8 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 
 	j.Run(cache)
 	clk.AddTime(time.Second * 2)
-	n := pkgClock.Now()
+	briefPause()
+	n := clk.Now()
 
 	assert.WithinDuration(t, mockChildJob.Metadata.LastAttemptedRun, n, 4*time.Second)
 	assert.WithinDuration(t, mockChildJob.Metadata.LastSuccess, n, 4*time.Second)
@@ -505,14 +510,13 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 func TestDependentJobsFiveChain(t *testing.T) {
 
 	clk := NewHybridClock()
-	restoreClock := mockPkgClock(clk)
 	clk.Play()
-	defer restoreClock()
 
 	cache := NewMockCache()
 
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
+	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
@@ -520,6 +524,7 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
+	mockChildJobOne.clk.SetClock(clk)
 	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
@@ -527,6 +532,7 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	mockChildJobTwo.ParentJobs = []string{
 		mockChildJobOne.Id,
 	}
+	mockChildJobTwo.clk.SetClock(clk)
 	mockChildJobTwo.Init(cache)
 
 	mockChildJobThree := GetMockJob()
@@ -534,6 +540,7 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	mockChildJobThree.ParentJobs = []string{
 		mockChildJobTwo.Id,
 	}
+	mockChildJobThree.clk.SetClock(clk)
 	mockChildJobThree.Init(cache)
 
 	mockChildJobFour := GetMockJob()
@@ -541,6 +548,7 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	mockChildJobFour.ParentJobs = []string{
 		mockChildJobThree.Id,
 	}
+	mockChildJobFour.clk.SetClock(clk)
 	mockChildJobFour.Init(cache)
 
 	mockChildJobFive := GetMockJob()
@@ -548,6 +556,7 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	mockChildJobFive.ParentJobs = []string{
 		mockChildJobFour.Id,
 	}
+	mockChildJobFive.clk.SetClock(clk)
 	mockChildJobFive.Init(cache)
 
 	// Check that it gets placed in the array.
@@ -587,7 +596,8 @@ func TestDependentJobsFiveChain(t *testing.T) {
 
 	j.Run(cache)
 	clk.AddTime(time.Second * 2)
-	n := pkgClock.Now()
+	briefPause()
+	n := clk.Now()
 
 	assert.WithinDuration(t, mockChildJobOne.Metadata.LastAttemptedRun, n, 4*time.Second)
 	assert.WithinDuration(t, mockChildJobOne.Metadata.LastSuccess, n, 4*time.Second)
@@ -609,14 +619,13 @@ func TestDependentJobsFiveChain(t *testing.T) {
 func TestDependentJobsChainWithFailingJob(t *testing.T) {
 
 	clk := NewHybridClock()
-	restoreClock := mockPkgClock(clk)
 	clk.Play()
-	defer restoreClock()
 
 	cache := NewMockCache()
 
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
+	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
@@ -626,6 +635,7 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
+	mockChildJobOne.clk.SetClock(clk)
 	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
@@ -633,6 +643,7 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 	mockChildJobTwo.ParentJobs = []string{
 		mockChildJobOne.Id,
 	}
+	mockChildJobTwo.clk.SetClock(clk)
 	mockChildJobTwo.Init(cache)
 
 	mockChildJobThree := GetMockJob()
@@ -640,6 +651,7 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 	mockChildJobThree.ParentJobs = []string{
 		mockChildJobTwo.Id,
 	}
+	mockChildJobThree.clk.SetClock(clk)
 	mockChildJobThree.Init(cache)
 
 	// Check that it gets placed in the array.
@@ -667,7 +679,8 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 
 	j.Run(cache)
 	clk.AddTime(time.Second)
-	n := pkgClock.Now()
+	briefPause()
+	n := clk.Now()
 
 	assert.WithinDuration(t, mockChildJobOne.Metadata.LastAttemptedRun, n, 2*time.Second)
 	assert.True(t, mockChildJobOne.Metadata.LastSuccess.IsZero())
@@ -681,14 +694,13 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 
 	clk := NewHybridClock()
-	restoreClock := mockPkgClock(clk)
 	clk.Play()
-	defer restoreClock()
 
 	cache := NewMockCache()
 
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
+	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
@@ -698,6 +710,7 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
+	mockChildJobOne.clk.SetClock(clk)
 	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
@@ -705,6 +718,7 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	mockChildJobTwo.ParentJobs = []string{
 		mockChildJobOne.Id,
 	}
+	mockChildJobTwo.clk.SetClock(clk)
 	mockChildJobTwo.Init(cache)
 
 	mockChildJobThree := GetMockJob()
@@ -712,6 +726,7 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	mockChildJobThree.ParentJobs = []string{
 		mockChildJobTwo.Id,
 	}
+	mockChildJobThree.clk.SetClock(clk)
 	mockChildJobThree.Init(cache)
 
 	mockChildJobFour := GetMockJob()
@@ -719,6 +734,7 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	mockChildJobFour.ParentJobs = []string{
 		mockChildJobThree.Id,
 	}
+	mockChildJobFour.clk.SetClock(clk)
 	mockChildJobFour.Init(cache)
 
 	mockChildJobFive := GetMockJob()
@@ -726,6 +742,7 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	mockChildJobFive.ParentJobs = []string{
 		mockChildJobFour.Id,
 	}
+	mockChildJobFive.clk.SetClock(clk)
 	mockChildJobFive.Init(cache)
 
 	// Check that it gets placed in the array.
@@ -764,8 +781,9 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	assert.True(t, len(cFour.DependentJobs) == 1)
 
 	j.Run(cache)
-	clk.After(time.Second * 3)
-	n := pkgClock.Now()
+	clk.AddTime(time.Second * 3)
+	briefPause()
+	n := clk.Now()
 
 	// TODO use abtime
 	assert.WithinDuration(t, mockChildJobOne.Metadata.LastAttemptedRun, n, 6*time.Second)
@@ -788,18 +806,18 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 
 	clk := NewHybridClock()
-	restoreClock := mockPkgClock(clk)
 	clk.Play()
-	defer restoreClock()
 
 	cache := NewMockCache()
 
-	mockJobOne := GetMockJobWithGenericSchedule()
+	mockJobOne := GetMockJobWithGenericSchedule(clk.Now())
 	mockJobOne.Name = "mock_parent_one"
+	mockJobOne.clk.SetClock(clk)
 	mockJobOne.Init(cache)
 
-	mockJobTwo := GetMockJobWithGenericSchedule()
+	mockJobTwo := GetMockJobWithGenericSchedule(clk.Now())
 	mockJobTwo.Name = "mock_parent_two"
+	mockJobTwo.clk.SetClock(clk)
 	mockJobTwo.Init(cache)
 
 	mockChildJob := GetMockJob()
@@ -808,6 +826,7 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 		mockJobOne.Id,
 		mockJobTwo.Id,
 	}
+	mockChildJob.clk.SetClock(clk)
 	mockChildJob.Init(cache)
 
 	// Check that it gets placed in the array.
@@ -829,7 +848,8 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 
 	parentOne.Run(cache)
 	clk.AddTime(time.Second)
-	n := pkgClock.Now()
+	briefPause()
+	n := clk.Now()
 
 	assert.WithinDuration(t, parentOne.Metadata.LastAttemptedRun, n, 3*time.Second)
 	assert.WithinDuration(t, parentOne.Metadata.LastSuccess, n, 3*time.Second)
@@ -839,9 +859,11 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 	assert.True(t, parentTwo.Metadata.LastSuccess.IsZero())
 
 	clk.AddTime(time.Second * 3)
+	briefPause()
 	parentTwo.Run(cache)
 	clk.AddTime(time.Second)
-	n = pkgClock.Now()
+	briefPause()
+	n = clk.Now()
 
 	assert.WithinDuration(t, parentTwo.Metadata.LastAttemptedRun, n, 3*time.Second)
 	assert.WithinDuration(t, parentTwo.Metadata.LastSuccess, n, 3*time.Second)
@@ -854,7 +876,7 @@ func TestDependentJobsChildGetsDeleted(t *testing.T) {
 
 	cache := NewMockCache()
 
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(time.Now())
 	mockJob.Name = "mock_parent_job"
 	mockJob.Init(cache)
 
@@ -868,7 +890,7 @@ func TestDependentJobsChildGetsDeleted(t *testing.T) {
 	assert.True(t, len(mockJob.DependentJobs) == 1)
 
 	cache.Delete(mockChildJob.Id)
-	pkgClock.Sleep(time.Millisecond)
+	time.Sleep(time.Second)
 
 	// Check to make sure its deleted
 	_, err := cache.Get(mockChildJob.Id)
@@ -885,16 +907,15 @@ func TestDependentJobsChildGetsDeleted(t *testing.T) {
 func TestDependentJobsChildGetsDisabled(t *testing.T) {
 
 	clk := NewHybridClock()
-	restoreClock := mockPkgClock(clk)
 	clk.Play()
-	defer restoreClock()
 
 	cache := NewMockCache()
 
 	// Creates parent job with a schedule
 	// Sets up timer to run job
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
+	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	// Creates child job
@@ -903,6 +924,7 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
+	mockChildJob.clk.SetClock(clk)
 	mockChildJob.Init(cache)
 
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
@@ -915,9 +937,10 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, j.DependentJobs[0], mockChildJob.Id)
 
-	n := pkgClock.Now()
+	n := clk.Now()
 	j.Run(cache)
 	clk.AddTime(time.Second * 2)
+	briefPause()
 
 	// Child job should not have been run
 	assert.True(t, mockChildJob.Metadata.LastSuccess.IsZero())
@@ -932,11 +955,11 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 
 	cache := NewMockCache()
 
-	mockJob := GetMockJobWithGenericSchedule()
+	mockJob := GetMockJobWithGenericSchedule(time.Now())
 	mockJob.Name = "mock_parent_job"
 	mockJob.Init(cache)
 
-	mockJobBackup := GetMockJobWithGenericSchedule()
+	mockJobBackup := GetMockJobWithGenericSchedule(time.Now())
 	mockJobBackup.Name = "mock_parent_job_backup"
 	mockJobBackup.Init(cache)
 
@@ -960,7 +983,7 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 	assert.True(t, len(mockJobBackup.DependentJobs) == 1)
 
 	cache.Delete(mockJob.Id)
-	pkgClock.Sleep(time.Millisecond)
+	time.Sleep(time.Second)
 
 	// Make sure it is deleted
 	_, err := cache.Get(mockJob.Id)
@@ -1036,7 +1059,7 @@ func waitForJob(j *Job) {
 			break
 		}
 		j.lock.RUnlock()
-		pkgClock.Sleep(1)
+		time.Sleep(1)
 	}
 }
 
@@ -1059,7 +1082,7 @@ func TestOnFailureJobTriggersOnFailure(t *testing.T) {
 			break
 		}
 		onFailureJob.lock.RUnlock()
-		pkgClock.Sleep(1)
+		time.Sleep(1)
 	}
 
 	j.lock.RLock()

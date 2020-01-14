@@ -10,11 +10,11 @@ import (
 func TestJobStats(t *testing.T) {
 	cache := NewMockCache()
 
-	j := GetMockJobWithGenericSchedule()
+	j := GetMockJobWithGenericSchedule(time.Now())
 	j.Init(cache)
 
 	j.Run(cache)
-	now := pkgClock.Now()
+	now := time.Now()
 
 	assert.NotNil(t, j.Stats[0])
 	assert.Equal(t, j.Stats[0].JobId, j.Id)
@@ -28,20 +28,20 @@ func TestKalaStats(t *testing.T) {
 	cache := NewMockCache()
 
 	for i := 0; i < 5; i++ {
-		j := GetMockJobWithGenericSchedule()
+		j := GetMockJobWithGenericSchedule(time.Now())
 		j.Init(cache)
 		j.Run(cache)
 	}
-	now := pkgClock.Now()
+	now := time.Now()
 	for i := 0; i < 5; i++ {
-		j := GetMockJobWithGenericSchedule()
+		j := GetMockJobWithGenericSchedule(time.Now())
 		j.Init(cache)
 		j.Disable()
 	}
 
 	kalaStat := NewKalaStats(cache)
-	createdAt := pkgClock.Now()
-	nextRunAt := pkgClock.Now().Add(
+	createdAt := time.Now()
+	nextRunAt := time.Now().Add(
 		time.Duration(time.Minute * 5),
 	)
 
@@ -59,12 +59,12 @@ func TestKalaStats(t *testing.T) {
 func TestNextRunAt(t *testing.T) {
 	cache := NewMockCache()
 
-	sched := pkgClock.Now().Add(time.Second)
+	sched := time.Now().Add(time.Second)
 	j := GetMockJobWithSchedule(2, sched, "P1DT10M10S")
 	j.Init(cache)
 	j.Disable()
 
-	sched2 := pkgClock.Now().Add(2 * time.Second)
+	sched2 := time.Now().Add(2 * time.Second)
 	j2 := GetMockJobWithSchedule(2, sched2, "P1DT10M10S")
 	j2.Init(cache)
 	j2.Disable()

@@ -46,11 +46,10 @@ func TestRecur(t *testing.T) {
 			now := parseTime(t, testStruct.Start)
 
 			clk := clock.NewMockClock(now)
-			restoreClock := mockPkgClock(clk)
-			defer restoreClock()
 
 			start := now.Add(time.Second * 5)
 			j := GetMockRecurringJobWithSchedule(start, testStruct.Interval)
+			j.clk.SetClock(clk)
 
 			cache := NewMockCache()
 			j.Init(cache)

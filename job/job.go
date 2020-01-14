@@ -75,6 +75,9 @@ type Job struct {
 	jobTimer  clock.Timer
 	NextRunAt time.Time `json:"next_run_at"`
 
+	// The clock for this job; used to mock time during tests.
+	clk Clock
+
 	// If the job is disabled (or the system inoperative) and we pass
 	// the scheduled run point, when the job becomes active again,
 	// normally the job will run immediately.
@@ -261,7 +264,7 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 		}
 	}
 	if checkTime {
-		diff := j.scheduleTime.Sub(pkgClock.Now())
+		diff := j.scheduleTime.Sub(j.clk.Time().Now())
 		if diff < 0 {
 			return fmt.Errorf("Job %s:%s cannot be scheduled %s ago", j.Name, j.Id, diff.String())
 		}
@@ -275,7 +278,7 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 			log.Errorf("Error converting delayDuration to a iso8601.Duration: %s", err)
 			return err
 		}
-		log.Debugf("Delay duration is %s", j.delayDuration.RelativeTo(pkgClock.Now()))
+		log.Debugf("Delay duration is %s", j.delayDuration.RelativeTo(j.clk.Time().Now()))
 	}
 
 	if j.Epsilon != "" {
@@ -297,17 +300,17 @@ func (j *Job) StartWaiting(cache JobCache) {
 
 	log.Infof("Job %s:%s repeating in %s", j.Name, j.Id, waitDuration)
 
-	j.NextRunAt = pkgClock.Now().Add(waitDuration)
+	j.NextRunAt = j.clk.Time().Now().Add(waitDuration)
 
 	jobRun := func() { j.Run(cache) }
-	j.jobTimer = pkgClock.AfterFunc(waitDuration, jobRun)
+	j.jobTimer = j.clk.Time().AfterFunc(waitDuration, jobRun)
 }
 
 func (j *Job) GetWaitDuration() time.Duration {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 
-	waitDuration := time.Duration(j.scheduleTime.UnixNano() - pkgClock.Now().UnixNano())
+	waitDuration := time.Duration(j.scheduleTime.UnixNano() - j.clk.Time().Now().UnixNano())
 
 	if waitDuration < 0 {
 		if j.timesToRepeat == 0 {
@@ -327,20 +330,20 @@ func (j *Job) GetWaitDuration() time.Duration {
 			}
 
 			newRunPoint := j.scheduleTime
-			for newRunPoint.Before(pkgClock.Now()) {
+			for newRunPoint.Before(j.clk.Time().Now()) {
 				newRunPoint = j.delayDuration.Add(newRunPoint)
 			}
 
-			return newRunPoint.Sub(pkgClock.Now())
+			return newRunPoint.Sub(j.clk.Time().Now())
 		}
 
 		if j.Metadata.LastAttemptedRun.IsZero() {
-			waitDuration = j.delayDuration.RelativeTo(pkgClock.Now())
+			waitDuration = j.delayDuration.RelativeTo(j.clk.Time().Now())
 		} else {
 			lastRun := j.Metadata.LastAttemptedRun
 			// Needs to be recalculated each time because of Months.
 			lastRun = j.delayDuration.Add(lastRun)
-			waitDuration = lastRun.Sub(pkgClock.Now())
+			waitDuration = lastRun.Sub(j.clk.Time().Now())
 		}
 	}
 
