@@ -2,6 +2,7 @@ package job
 
 import (
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/ajvb/kala/utils/iso8601"
@@ -99,4 +100,17 @@ func GetMockJobStats(oldDate time.Time, count int) []*JobStat {
 func GetMockJobWithGenericSchedule() *Job {
 	fiveMinutesFromNow := pkgClock.Now().Add(time.Minute * 5)
 	return GetMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
+}
+
+func parseTime(t *testing.T, value string) time.Time {
+	now, err := time.Parse("2006-Jan-02 15:04", value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return now
+}
+
+// Used to hand off execution briefly so that jobs can run and so on.
+func briefPause() {
+	time.Sleep(time.Millisecond * 100)
 }

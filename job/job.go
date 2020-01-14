@@ -275,7 +275,7 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 			log.Errorf("Error converting delayDuration to a iso8601.Duration: %s", err)
 			return err
 		}
-		log.Debugf("Delay duration is %s", j.delayDuration.ToDuration())
+		log.Debugf("Delay duration is %s", j.delayDuration.RelativeTo(pkgClock.Now()))
 	}
 
 	if j.Epsilon != "" {
@@ -328,18 +328,18 @@ func (j *Job) GetWaitDuration() time.Duration {
 
 			newRunPoint := j.scheduleTime
 			for newRunPoint.Before(pkgClock.Now()) {
-				newRunPoint = newRunPoint.Add(j.delayDuration.ToDuration())
+				newRunPoint = j.delayDuration.Add(newRunPoint)
 			}
 
 			return newRunPoint.Sub(pkgClock.Now())
 		}
 
 		if j.Metadata.LastAttemptedRun.IsZero() {
-			waitDuration = j.delayDuration.ToDuration()
+			waitDuration = j.delayDuration.RelativeTo(pkgClock.Now())
 		} else {
 			lastRun := j.Metadata.LastAttemptedRun
 			// Needs to be recalculated each time because of Months.
-			lastRun = lastRun.Add(j.delayDuration.ToDuration())
+			lastRun = j.delayDuration.Add(lastRun)
 			waitDuration = lastRun.Sub(pkgClock.Now())
 		}
 	}

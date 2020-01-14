@@ -177,9 +177,9 @@ func (j *JobRunner) shouldRetry() bool {
 
 	// Check Epsilon
 	if j.job.Epsilon != "" && j.job.Schedule != "" {
-		if j.job.epsilonDuration.ToDuration() != 0 {
+		if !j.job.epsilonDuration.IsZero() {
 			timeSinceStart := pkgClock.Now().Sub(j.job.NextRunAt)
-			timeLeftToRetry := j.job.epsilonDuration.ToDuration() - timeSinceStart
+			timeLeftToRetry := j.job.epsilonDuration.RelativeTo(pkgClock.Now()) - timeSinceStart
 			if timeLeftToRetry < 0 {
 				return false
 			}

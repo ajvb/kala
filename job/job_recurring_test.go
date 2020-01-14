@@ -73,16 +73,3 @@ func TestRecur(t *testing.T) {
 	}
 
 }
-
-func parseTime(t *testing.T, value string) time.Time {
-	now, err := time.Parse("2006-Jan-02 15:04", value)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return now
-}
-
-// Used to hand off execution briefly so that jobs can run and so on.
-func briefPause() {
-	time.Sleep(time.Millisecond * 100)
-}

@@ -120,65 +120,31 @@ func (d *Duration) HasTimePart() bool {
 	return d.Hours != 0 || d.Minutes != 0 || d.Seconds != 0
 }
 
-func (d *Duration) ToDuration() time.Duration {
-	day := time.Hour * 24
-	year := day * 365
-
-	tot := time.Duration(0)
-
-	tot += year * time.Duration(d.Years)
-	tot += day * 7 * time.Duration(d.Weeks)
-	tot += day * time.Duration(d.Days)
-	tot += time.Hour * time.Duration(d.Hours)
-	tot += time.Minute * time.Duration(d.Minutes)
-	tot += time.Second * time.Duration(d.Seconds)
-
-	tot += d.getMonthDuration()
-
-	return tot
+func (d *Duration) RelativeTo(t time.Time) time.Duration {
+	after := d.Add(t)
+	return after.Sub(t)
 }
 
-func (d *Duration) getMonthDuration() time.Duration {
-	if d.Months == 0 {
-		return time.Duration(0)
-	}
-
-	now := time.Now()
-	currentMonth := int(now.Month())
-	currentYear := int(now.Year())
-
-	value := time.Duration(0)
-	for i := 0; i < d.Months; i++ {
-		currentMonth += 1
-		if currentMonth == 13 {
-			currentMonth = 1
-			currentYear += 1
-		}
-		value += time.Hour * 24 * time.Duration(daysInMonth(currentYear, currentMonth))
-	}
-
-	return value
+func (d *Duration) Add(t time.Time) time.Time {
+	result := t
+	result = result.AddDate(d.Years, d.Months, d.Days+d.Weeks*7)
+	result = result.Add(time.Hour * time.Duration(d.Hours))
+	result = result.Add(time.Minute * time.Duration(d.Minutes))
+	result = result.Add(time.Second * time.Duration(d.Seconds))
+	return result
 }
 
-func daysInMonth(year, month int) int {
-	if IntInSlice(month, []int{1, 3, 5, 7, 8, 10, 12}) {
-		return 31
-	}
-	if IntInSlice(month, []int{4, 6, 9, 11}) {
-		return 30
-	}
-	// Leap year for Feb
-	if ((year % 400) == 0) || ((year%100) != 0) && ((year%4) == 0) {
-		return 29
-	}
-	return 28
-}
-
-func IntInSlice(num int, slice []int) bool {
-	for i := range slice {
-		if slice[i] == num {
-			return true
-		}
+func (d *Duration) IsZero() bool {
+	switch {
+	case d.Years != 0:
+	case d.Months != 0:
+	case d.Weeks != 0:
+	case d.Days != 0:
+	case d.Hours != 0:
+	case d.Minutes != 0:
+	case d.Seconds != 0:
+	default:
+		return true
 	}
 	return false
 }

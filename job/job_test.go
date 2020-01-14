@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	// "github.com/mixer/clock"
+	"github.com/mixer/clock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -101,13 +101,22 @@ var delayParsingTests = []struct {
 }
 
 func TestDelayParsing(t *testing.T) {
+
+	// We set the time because, now that durations are relative to a date,
+	// a P1Y duration will equal 366 days when crossing a leap year boundary.
+	now := parseTime(t, "2019-Jan-02 15:04")
+
+	clk := clock.NewMockClock(now)
+	restoreClock := mockPkgClock(clk)
+	defer restoreClock()
+
 	testTime := pkgClock.Now().Add(time.Minute * 1)
 
 	for _, delayTest := range delayParsingTests {
 		cache := NewMockCache()
 		genericMockJob := GetMockJobWithSchedule(1, testTime, delayTest.intervalStr)
 		genericMockJob.Init(cache)
-		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.ToDuration(), "Parsed duration was incorrect")
+		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.RelativeTo(pkgClock.Now()), "Parsed duration was incorrect")
 	}
 }
 
