@@ -2,6 +2,7 @@ package job
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -112,8 +113,10 @@ func (j *JobRunner) RemoteRun() error {
 	// Calculate a response timeout
 	timeout := j.responseTimeout()
 
-	httpClient := http.Client{
-		Timeout: timeout,
+	ctx, cncl := context.Background(), func() {}
+	if timeout > 0 {
+		ctx, cncl = context.WithTimeout(ctx, timeout)
+		defer cncl()
 	}
 
 	// Normalize the method passed by the user
@@ -128,7 +131,7 @@ func (j *JobRunner) RemoteRun() error {
 	j.setHeaders(req)
 
 	// Do the request
-	res, err := httpClient.Do(req)
+	res, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}
