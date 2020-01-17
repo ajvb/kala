@@ -34,3 +34,14 @@ func (clk *Clock) Time() clock.Clock {
 
 	return clk.Clock
 }
+
+func (clk *Clock) TimeSet() bool {
+	clk.lock.RLock()
+	defer clk.lock.RUnlock()
+	return clk.Clock != nil
+}
+
+type Clocker interface {
+	Time() clock.Clock
+	TimeSet() bool
+}

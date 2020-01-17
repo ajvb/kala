@@ -169,6 +169,7 @@ type LockFreeJobCache struct {
 	jobs            *hashmap.HashMap
 	jobDB           JobDB
 	retentionPeriod time.Duration
+	Clock
 }
 
 func NewLockFreeJobCache(jobDB JobDB) *LockFreeJobCache {
