@@ -168,6 +168,13 @@ func (j *Job) Init(cache JobCache) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
+	// use the cache's clock if available (useful for tests)
+	if clker, ok := cache.(Clocker); ok {
+		if clker.TimeSet() {
+			j.clk.SetClock(clker.Time())
+		}
+	}
+
 	//validate job type and params
 	err := j.validation()
 	if err != nil {

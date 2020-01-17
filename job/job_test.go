@@ -112,8 +112,8 @@ func TestDelayParsing(t *testing.T) {
 
 	for _, delayTest := range delayParsingTests {
 		cache := NewMockCache()
+		cache.Clock.SetClock(clk)
 		genericMockJob := GetMockJobWithSchedule(1, testTime, delayTest.intervalStr)
-		genericMockJob.clk.SetClock(clk)
 		genericMockJob.Init(cache)
 		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.RelativeTo(clk.Now()), "Parsed duration was incorrect")
 	}
@@ -229,6 +229,7 @@ func TestRecurringJobIsRepeating(t *testing.T) {
 	clk := clock.NewMockClock(time.Now())
 
 	cache := NewMockCache()
+	cache.Clock.SetClock(clk)
 
 	oneSecondFromNow := clk.Now().Add(time.Millisecond * 900)
 	j := GetMockRecurringJobWithSchedule(oneSecondFromNow, "PT1S")
@@ -330,17 +331,16 @@ func TestDependentJobsSimple(t *testing.T) {
 	clk.Play()
 
 	cache := NewMockCache()
+	cache.Clock.SetClock(clk)
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
-	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	mockChildJob := GetMockJob()
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJob.clk.SetClock(clk)
 	mockChildJob.Init(cache)
 
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
@@ -383,10 +383,10 @@ func TestDependentJobsTwoChilds(t *testing.T) {
 	clk.Play()
 
 	cache := NewMockCache()
+	cache.Clock.SetClock(clk)
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
-	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
@@ -394,7 +394,6 @@ func TestDependentJobsTwoChilds(t *testing.T) {
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJobOne.clk.SetClock(clk)
 	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
@@ -402,7 +401,6 @@ func TestDependentJobsTwoChilds(t *testing.T) {
 	mockChildJobTwo.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJobTwo.clk.SetClock(clk)
 	mockChildJobTwo.Init(cache)
 
 	// Check that it gets placed in the array.
@@ -439,10 +437,10 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 	clk.Play()
 
 	cache := NewMockCache()
+	cache.Clock.SetClock(clk)
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
-	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	mockChildJob := GetMockJob()
@@ -450,7 +448,6 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJob.clk.SetClock(clk)
 	mockChildJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
@@ -458,7 +455,6 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 	mockChildJobOne.ParentJobs = []string{
 		mockChildJob.Id,
 	}
-	mockChildJobOne.clk.SetClock(clk)
 	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
@@ -466,7 +462,6 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 	mockChildJobTwo.ParentJobs = []string{
 		mockChildJob.Id,
 	}
-	mockChildJobTwo.clk.SetClock(clk)
 	mockChildJobTwo.Init(cache)
 
 	// Check that it gets placed in the array.
@@ -516,10 +511,10 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	clk.Play()
 
 	cache := NewMockCache()
+	cache.Clock.SetClock(clk)
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
-	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
@@ -527,7 +522,6 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJobOne.clk.SetClock(clk)
 	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
@@ -535,7 +529,6 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	mockChildJobTwo.ParentJobs = []string{
 		mockChildJobOne.Id,
 	}
-	mockChildJobTwo.clk.SetClock(clk)
 	mockChildJobTwo.Init(cache)
 
 	mockChildJobThree := GetMockJob()
@@ -543,7 +536,6 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	mockChildJobThree.ParentJobs = []string{
 		mockChildJobTwo.Id,
 	}
-	mockChildJobThree.clk.SetClock(clk)
 	mockChildJobThree.Init(cache)
 
 	mockChildJobFour := GetMockJob()
@@ -551,7 +543,6 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	mockChildJobFour.ParentJobs = []string{
 		mockChildJobThree.Id,
 	}
-	mockChildJobFour.clk.SetClock(clk)
 	mockChildJobFour.Init(cache)
 
 	mockChildJobFive := GetMockJob()
@@ -559,7 +550,6 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	mockChildJobFive.ParentJobs = []string{
 		mockChildJobFour.Id,
 	}
-	mockChildJobFive.clk.SetClock(clk)
 	mockChildJobFive.Init(cache)
 
 	// Check that it gets placed in the array.
@@ -625,10 +615,10 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 	clk.Play()
 
 	cache := NewMockCache()
+	cache.Clock.SetClock(clk)
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
-	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
@@ -638,7 +628,6 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJobOne.clk.SetClock(clk)
 	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
@@ -646,7 +635,6 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 	mockChildJobTwo.ParentJobs = []string{
 		mockChildJobOne.Id,
 	}
-	mockChildJobTwo.clk.SetClock(clk)
 	mockChildJobTwo.Init(cache)
 
 	mockChildJobThree := GetMockJob()
@@ -654,7 +642,6 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 	mockChildJobThree.ParentJobs = []string{
 		mockChildJobTwo.Id,
 	}
-	mockChildJobThree.clk.SetClock(clk)
 	mockChildJobThree.Init(cache)
 
 	// Check that it gets placed in the array.
@@ -700,10 +687,10 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	clk.Play()
 
 	cache := NewMockCache()
+	cache.Clock.SetClock(clk)
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
-	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	mockChildJobOne := GetMockJob()
@@ -713,7 +700,6 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJobOne.clk.SetClock(clk)
 	mockChildJobOne.Init(cache)
 
 	mockChildJobTwo := GetMockJob()
@@ -721,7 +707,6 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	mockChildJobTwo.ParentJobs = []string{
 		mockChildJobOne.Id,
 	}
-	mockChildJobTwo.clk.SetClock(clk)
 	mockChildJobTwo.Init(cache)
 
 	mockChildJobThree := GetMockJob()
@@ -729,7 +714,6 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	mockChildJobThree.ParentJobs = []string{
 		mockChildJobTwo.Id,
 	}
-	mockChildJobThree.clk.SetClock(clk)
 	mockChildJobThree.Init(cache)
 
 	mockChildJobFour := GetMockJob()
@@ -737,7 +721,6 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	mockChildJobFour.ParentJobs = []string{
 		mockChildJobThree.Id,
 	}
-	mockChildJobFour.clk.SetClock(clk)
 	mockChildJobFour.Init(cache)
 
 	mockChildJobFive := GetMockJob()
@@ -745,7 +728,6 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	mockChildJobFive.ParentJobs = []string{
 		mockChildJobFour.Id,
 	}
-	mockChildJobFive.clk.SetClock(clk)
 	mockChildJobFive.Init(cache)
 
 	// Check that it gets placed in the array.
@@ -812,15 +794,14 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 	clk.Play()
 
 	cache := NewMockCache()
+	cache.Clock.SetClock(clk)
 
 	mockJobOne := GetMockJobWithGenericSchedule(clk.Now())
 	mockJobOne.Name = "mock_parent_one"
-	mockJobOne.clk.SetClock(clk)
 	mockJobOne.Init(cache)
 
 	mockJobTwo := GetMockJobWithGenericSchedule(clk.Now())
 	mockJobTwo.Name = "mock_parent_two"
-	mockJobTwo.clk.SetClock(clk)
 	mockJobTwo.Init(cache)
 
 	mockChildJob := GetMockJob()
@@ -829,7 +810,6 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 		mockJobOne.Id,
 		mockJobTwo.Id,
 	}
-	mockChildJob.clk.SetClock(clk)
 	mockChildJob.Init(cache)
 
 	// Check that it gets placed in the array.
@@ -913,12 +893,12 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 	clk.Play()
 
 	cache := NewMockCache()
+	cache.Clock.SetClock(clk)
 
 	// Creates parent job with a schedule
 	// Sets up timer to run job
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
-	mockJob.clk.SetClock(clk)
 	mockJob.Init(cache)
 
 	// Creates child job
@@ -927,7 +907,6 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 	mockChildJob.ParentJobs = []string{
 		mockJob.Id,
 	}
-	mockChildJob.clk.SetClock(clk)
 	mockChildJob.Init(cache)
 
 	assert.Equal(t, mockJob.DependentJobs[0], mockChildJob.Id)
