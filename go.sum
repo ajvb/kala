@@ -8,6 +8,8 @@ github.com/codegangsta/negroni v0.1.1-0.20150319171304-c7477ad8e330 h1:M/anPvoT8
 github.com/codegangsta/negroni v0.1.1-0.20150319171304-c7477ad8e330/go.mod h1:v0y3T5G7Y1UlFfyxFn/QLRU4a2EuNau2iZY63YTKWo0=
 github.com/cornelk/hashmap v0.0.0-20170323055448-5fee90babde7 h1:E7WMEgOCyImrPWn6fDGeqPkNeJZ9Kj7jJCcm+OeqrIQ=
 github.com/cornelk/hashmap v0.0.0-20170323055448-5fee90babde7/go.mod h1:7e2Xeo2DYqB6QTAmEyHW2o/0kHrlup7v4lNEN7AuX3A=
+github.com/cornelk/hashmap v1.0.1 h1:RXGcy29hEdLLV8T6aK4s+BAd4tq4+3Hq50N2GoG0uIg=
+github.com/cornelk/hashmap v1.0.1/go.mod h1:8wbysTUDnwJGrPZ1Iwsou3m+An6sldFrJItjRhfegCw=
 github.com/dchest/siphash v1.1.0 h1:1Rs9eTUlZLPBEvV+2sTaM8O0NWn0ppbgqS7p11aWawI=
 github.com/dchest/siphash v1.1.0/go.mod h1:q+IRvb2gOSrUnYoPqHiyHXS0FOBBOdl6tONBlVnOnt4=
 github.com/garyburd/redigo v1.0.1-0.20170208211623-48545177e92a h1:iKfFuP8kanXML1YrGqVS7nZJJ2ScdVNlm++ds20J/hY=
