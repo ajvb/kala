@@ -7,7 +7,7 @@ require (
 	github.com/boltdb/bolt v1.3.1-0.20170131192018-e9cf4fae01b5
 	github.com/codegangsta/cli v1.8.1-0.20150711215404-bca61c476e3c
 	github.com/codegangsta/negroni v0.1.1-0.20150319171304-c7477ad8e330
-	github.com/cornelk/hashmap v0.0.0-20170323055448-5fee90babde7
+	github.com/cornelk/hashmap v1.0.1
 	github.com/dchest/siphash v1.1.0
 	github.com/garyburd/redigo v1.0.1-0.20170208211623-48545177e92a
 	github.com/go-sql-driver/mysql v1.4.1
