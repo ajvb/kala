@@ -188,8 +188,7 @@ func init() {
 				case "postgres":
 					dsn := fmt.Sprintf("postgres://%s:%s@%s", c.String("jobDBUsername"), c.String("jobDBPassword"), c.String("jobDBAddress"))
 					db = postgres.New(dsn)
-				case "mariadb":
-				case "mysql":
+				case "mysql", "mariadb":
 					dsn := fmt.Sprintf("%s:%s@%s", c.String("jobDBUsername"), c.String("jobDBPassword"), c.String("jobDBAddress"))
 					if c.String("jobDBTlsCAPath") != "" {
 						// https://godoc.org/github.com/go-sql-driver/mysql#RegisterTLSConfig
