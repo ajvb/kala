@@ -84,7 +84,7 @@ use MariaDB, MySQL by using the `jobDB`, `jobDBAddress`, `jobDBTlsCAPath`, `jobD
 ```bash
 kala run --jobDB=mariadb --jobDBAddress=(server1.example.com)/kala --jobDBUsername=admin --jobDBPassword=password
 
-kala run --jobDB=mysql --jobDBAddress=tcp(server1.example.com:3306)/kala --jobDBUsername=admin --jobDBPassword=password --jobDBTlsCAPath=/path/to/server-ca.pem --jobDBTlsCertPath=/path/to/client-cert.pem --jobDBTlsKeyPath=/path/to/client-key.pem --jobDBTlsServerName=server1.example.com
+kala run --jobDB=mysql --jobDBAddress="tcp(server1.example.com:3306)/kala?tls=custom" --jobDBUsername=admin --jobDBPassword=password --jobDBTlsCAPath=/path/to/server-ca.pem --jobDBTlsCertPath=/path/to/client-cert.pem --jobDBTlsKeyPath=/path/to/client-key.pem --jobDBTlsServerName=server1.example.com
 ```
 
 Kala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.
