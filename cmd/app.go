@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
 
 	"github.com/ajvb/kala/api"
 	"github.com/ajvb/kala/job"
@@ -80,7 +83,7 @@ func init() {
 				cli.StringFlag{
 					Name:  "jobDB",
 					Value: "boltdb",
-					Usage: "Implementation of job database, either 'boltdb', 'redis', 'mongo', 'consul', or 'postgres'.",
+					Usage: "Implementation of job database, either 'boltdb', 'redis', 'mongo', 'consul', 'postgres', 'mariadb', or 'mysql'.",
 				},
 				cli.StringFlag{
 					Name:  "boltpath",
@@ -95,12 +98,32 @@ func init() {
 				cli.StringFlag{
 					Name:  "jobDBUsername",
 					Value: "",
-					Usage: "Username for the job database, in 'username' format. Currently only needed for Mongo.",
+					Usage: "Username for the job database, in 'username' format.",
 				},
 				cli.StringFlag{
 					Name:  "jobDBPassword",
 					Value: "",
 					Usage: "Password for the job database, in 'password' format.",
+				},
+				cli.StringFlag{
+					Name:  "jobDBTlsCAPath",
+					Value: "",
+					Usage: "Path to tls server CA file for the job database.",
+				},
+				cli.StringFlag{
+					Name:  "jobDBTlsCertPath",
+					Value: "",
+					Usage: "Path to tls client cert file for the job database.",
+				},
+				cli.StringFlag{
+					Name:  "jobDBTlsKeyPath",
+					Value: "",
+					Usage: "Path to tls client key file for the job database.",
+				},
+				cli.StringFlag{
+					Name:  "jobDBTlsServerName",
+					Value: "",
+					Usage: "Server name to verify cert for the job database.",
 				},
 				cli.BoolFlag{
 					Name:  "verbose, v",
@@ -165,9 +188,33 @@ func init() {
 				case "postgres":
 					dsn := fmt.Sprintf("postgres://%s:%s@%s", c.String("jobDBUsername"), c.String("jobDBPassword"), c.String("jobDBAddress"))
 					db = postgres.New(dsn)
+				case "mariadb":
 				case "mysql":
 					dsn := fmt.Sprintf("%s:%s@%s", c.String("jobDBUsername"), c.String("jobDBPassword"), c.String("jobDBAddress"))
-					db = mysql.New(dsn)
+					if c.String("jobDBTlsCAPath") != "" {
+						// https://godoc.org/github.com/go-sql-driver/mysql#RegisterTLSConfig
+						rootCertPool := x509.NewCertPool()
+						pem, err := ioutil.ReadFile(c.String("jobDBTlsCAPath"))
+						if err != nil {
+								log.Fatal(err)
+						}
+						if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
+								log.Fatal("Failed to append PEM.")
+						}
+						clientCert := make([]tls.Certificate, 0, 1)
+						certs, err := tls.LoadX509KeyPair(c.String("jobDBTlsCertPath"), c.String("jobDBTlsKeyPath"))
+						if err != nil {
+								log.Fatal(err)
+						}
+						clientCert = append(clientCert, certs)
+						db = mysql.New(dsn, &tls.Config{
+							RootCAs: rootCertPool,
+							Certificates: clientCert,
+							ServerName: c.String("jobDBTlsServerName"),
+						})
+					} else {
+						db = mysql.New(dsn, nil)
+					}
 				default:
 					log.Fatalf("Unknown Job DB implementation '%s'", c.String("jobDB"))
 				}

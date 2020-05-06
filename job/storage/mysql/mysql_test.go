@@ -136,7 +136,7 @@ func TestRealDb(t *testing.T) {
 		}
 	}
 
-	db := New(dsn)
+	db := New(dsn, nil)
 	cache := job.NewLockFreeJobCache(db)
 
 	genericMockJobOne := job.GetMockJobWithGenericSchedule(time.Now())
@@ -229,7 +229,7 @@ func TestPersistEpsilon(t *testing.T) {
 		}
 	}
 
-	db := New(dsn)
+	db := New(dsn, nil)
 	defer db.Close()
 
 	cache := job.NewMemoryJobCache(db)
