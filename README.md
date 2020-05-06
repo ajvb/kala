@@ -38,7 +38,8 @@ I recommend checking out [Chronos](https://github.com/airbnb/chronos). This is d
 Once you have installed Kala onto the machine you would like to use, you can follow the below steps to start using it.
 
 To Run Kala:
-```bash
+
+```console
 $ kala run
 INFO[0000] Preparing cache
 INFO[0000] Starting server on port :8000
@@ -48,28 +49,42 @@ INFO[0000] Preparing cache
 INFO[0000] Starting server on port :2222
 ```
 
-Kala uses BoltDB by default for the job database
-use Redis by using the jobDB and jobDBAddress params:
+Kala uses BoltDB by default for the job database by using `jobDB` and `boltpath` params:
+
+```bash
+kala run --jobDB=boltdb --boltpath=/path/to/dir
+```
+
+use Redis by using the `jobDB` and `jobDBAddress` params:
 
 ```bash
 kala run --jobDB=redis --jobDBAddress=127.0.0.1:6379
 ```
-use Consul by using the jobDB and jobDBAddress params:
+
+use Consul by using the `jobDB` and `jobDBAddress` params:
 
 ```bash
 kala run --jobDB=consul --jobDBAddress=127.0.0.1:8500
 ```
 
-use Mongo by using the jobDB, jobDBAddress, jobDBUsername, and jobDBPassword params:
+use Mongo by using the `jobDB`, `jobDBAddress`, `jobDBUsername`, and `jobDBPassword` params:
 
 ```bash
 kala run --jobDB=mongo --jobDBAddress=server1.example.com,server2.example.com --jobDBUsername=admin --jobDBPassword=password
 ```
 
-use Postgres by using the jobDB, jobDBAddress params:
+use Postgres by using the `jobDB`, `jobDBAddress` params:
 
 ```bash
 kala run --jobDB=postgres --jobDBAddress=server1.example.com/kala --jobDBUsername=admin --jobDBPassword=password
+```
+
+use MariaDB, MySQL by using the `jobDB`, `jobDBAddress`, `jobDBTlsCAPath`, `jobDBTlsCertPath`, `jobDBTlsKeyPath`, `jobDBTlsServerName` params:
+
+```bash
+kala run --jobDB=mariadb --jobDBAddress=(server1.example.com)/kala --jobDBUsername=admin --jobDBPassword=password
+
+kala run --jobDB=mysql --jobDBAddress=tcp(server1.example.com:3306)/kala --jobDBUsername=admin --jobDBPassword=password --jobDBTlsCAPath=/path/to/server-ca.pem --jobDBTlsCertPath=/path/to/client-cert.pem --jobDBTlsKeyPath=/path/to/client-key.pem --jobDBTlsServerName=server1.example.com
 ```
 
 Kala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.
