@@ -129,7 +129,6 @@ func briefPause() {
 
 func awaitJobRan(t *testing.T, j *Job, timeout time.Duration) {
 	t.Helper()
-	briefPause()
 	select {
 	case <-j.ranChan:
 	case <-time.After(timeout):
