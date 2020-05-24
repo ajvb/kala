@@ -40,189 +40,171 @@ var store = new Reef.Store({
 var app = new Reef('#app', {
   store: store,
   router: router,
-  template: function() {/*
-    <div id="nav"></div>
-    <section class="section">
-      <div class="container">
-        <h1 class="title">
-          ${routeTitle}
-        </h1>
-        <div id="jobsTable" class="${jobsClasses}"></div>
-        <div id="metricsPanel" class="${metricsClasses}"></div>
-      </div>
-    </section>
-    <div id="jobDetailModal"></div>
-  */}.extractComment().propsInjector(function(props, route){
-    return Object.assign(props, {
-      routeTitle: route.title,
-      jobsClasses: route.id === 'jobs' ? '' : 'is-hidden',
-      metricsClasses: route.id === 'metrics' ? '' : 'is-hidden',
-    })
-  }),
+  template: function(props, route) {
+    return html`
+      <div id="nav"></div>
+      <section class="section">
+        <div class="container">
+          <h1 class="title">
+            ${route.title}
+          </h1>
+          <div id="jobsTable" class="${route.id === 'jobs' ? '' : 'is-hidden'}"></div>
+          <div id="metricsPanel" class="${route.id === 'metrics' ? '' : 'is-hidden'}"></div>
+        </div>
+      </section>
+      <div id="jobDetailModal"></div>
+    `
+  },
 });
 
 var navbar = new Reef('#nav', {
   store: store,
   attachTo: app,
-  template: function(){/*
-    <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
-      <div class="navbar-brand">
-        <a class="navbar-item" href="/webui/">
-          <img src="logo.png" height="28">
-        </a>
-
-        <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-        </a>
-      </div>
-
-      <div class="navbar-menu">
-        <div class="navbar-start">
-          <a class="navbar-item" href="metrics">
-            Metrics
+  template: function(props, route){
+    return html`
+      <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+          <a class="navbar-item" href="/webui/">
+            <img src="logo.png" height="28">
           </a>
-          <a class="navbar-item" href="jobs">
-            Jobs
+
+          <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
           </a>
-          <div class="navbar-item">
-            <a class="button is-primary">
-              <strong>Create</strong>
-            </a>
-          </div>
         </div>
 
-        <div class="navbar-end">
-          <div class="navbar-item">
-            <div class="buttons">
-              <a class="button is-link" href="https://github.com/ajvb/kala">
-                <span class="icon">
-                  <i class="fab fa-github"></i>
-                </span>
-                <span>GitHub</span>
+        <div class="navbar-menu">
+          <div class="navbar-start">
+            <a class="navbar-item" href="metrics">
+              Metrics
+            </a>
+            <a class="navbar-item" href="jobs">
+              Jobs
+            </a>
+            <div class="navbar-item">
+              <a class="button is-primary">
+                <strong>Create</strong>
               </a>
             </div>
           </div>
+
+          <div class="navbar-end">
+            <div class="navbar-item">
+              <div class="buttons">
+                <a class="button is-link" href="https://github.com/ajvb/kala">
+                  <span class="icon">
+                    <i class="fab fa-github"></i>
+                  </span>
+                  <span>GitHub</span>
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </nav>
-  */}.extractComment().propsInjector()
+      </nav>
+    `
+  },
 });
 
 var jobsTable = new Reef('#jobsTable', {
   store: store,
   attachTo: app,
-  template: function() {/*
-    <table class="table is-fullwidth is-striped">
-      <thead>
+  template: function(props, route) {
+    var rows = Object.entries(props.jobs).reduce(function(acc, entry){
+      var id = entry[0];
+      var job = entry[1];
+      return acc + html`
         <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Owner</th>
-          <th>Type</th>
-          <th>Status</th>
-          <th>Runs</th>
-          <th>Done</th>
+          <td><a onclick="return store.do('showJobDetail', '${id}')">${id}</a></td>
+          <td>${job.name}</td>
+          <td>${job.owner}</td>
+          <td>${jobType(job.type)}</td>
+          <td>${job.disabled ? 'Disabled' : 'Enabled'}</td>
+          <td>${job.stats ? job.stats.length : 0}</td>
+          <td>${job.is_done}</td>
         </tr>
-      </thead>
-      <tbody>
-        ${rows}
-      </tbody>
-    </table>
-  */}.extractComment().propsInjector(function(props){
-    var tmpl = function(){/*
-      <tr>
-        <td><a onclick="return store.do('showJobDetail', '${id}')">${id}</a></td>
-        <td>${name}</td>
-        <td>${owner}</td>
-        <td>${type}</td>
-        <td>${disabled}</td>
-        <td>${runs}</td>
-        <td>${done}</td>
-      </tr>
-    */}.extractComment().propsInjector()
-    props.rows = Object.entries(props.jobs).reduce(function(acc, entry){
-      var record = {
-        id: entry[0],
-        name: entry[1].name,
-        owner: entry[1].owner,
-        type: jobType(entry[1].type),
-        disabled: entry[1].disabled ? 'Disabled' : 'Enabled',
-        runs: entry[1].stats ? entry[1].stats.length : 0,
-        done: entry[1].is_done,
-      }
-      return acc+tmpl(record);
-    }, "");
-    return props;
-  })
+      `
+    }, '');
+    return html`
+      <table class="table is-fullwidth is-striped">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Owner</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Runs</th>
+            <th>Done</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    `
+  },
 });
 
 var jobDetail = new Reef('#jobDetailModal', {
   store: store,
   attachTo: app,
-  template: function() {/*
-    <div class="modal ${active}">
-      <div class="modal-background" onclick="store.do('clearJobDetail')"></div>
-       <div class="modal-card">
-        <header class="modal-card-head">
-          <p class="modal-card-title">
-            ${title}
-            <span class="tag ${statusClass}">${statusText}</span>
-          </p>
-          <button class="delete" aria-label="close" onclick="store.do('clearJobDetail')"></button>
-        </header>
-        <section class="modal-card-body">
-          <pre>${prettyJob}</pre>
-        </section>
-        <footer class="modal-card-foot">
-          <button class="button is-primary">Stats</button>
-          <button class="button is-primary" onclick="toggleJobDisabled('${id}')">${changeStatusText}</button>
-          <button class="button is-primary" onclick="runJob('${id}')">Run Manually</button>
-          <button class="button is-danger" onclick="deleteJob('${id}')">Delete</button>
-        </footer>
-      </div>
-      <button class="modal-close is-large" aria-label="close" onclick="store.do('clearJobDetail')"></button>
-    </div>
-  */}.extractComment().propsInjector(function(props){
-    return !props.jobDetail ? props : Object.assign(props, {
-      prettyJob: JSON.stringify(props.jobDetail, undefined, 4),
-      title: props.jobDetail.name,
-      active: 'is-active',
-      statusClass: props.jobDetail.disabled ? 'is-warning' : 'is-success',
-      statusText: props.jobDetail.disabled ? 'Disabled' : 'Enabled',
-      changeStatusText: props.jobDetail.disabled ? 'Enable' : 'Disable',
-      id: props.jobDetail.id,
-    })
-    // if (props.jobDetail) {
-    //   props.prettyJob = JSON.stringify(props.jobDetail, undefined, 4);
-    //   props.title = props.jobDetail.name;
-    //   props.active = 'is-active';
-    //   var disabled = props.jobDetail.disabled;
-    //   props.statusClass = disabled ? 'is-warning' : 'is-success';
-    //   props.statusText = disabled ? 'Disabled' : 'Enabled';
-    //   props.changeStatusText = disabled ? 'Enable' : 'Disable';
-    //   props.id = props.jobDetail.id;
-    // }
-    // return props;
-  }),
-})
+  template: function(props, route) {
+    if (props.jobDetail) {
+      var id = props.jobDetail && props.jobDetail.id;
+      return html`
+        <div class="modal ${props.jobDetail ? 'is-active' : ''}">
+          <div class="modal-background" onclick="store.do('clearJobDetail')"></div>
+           <div class="modal-card">
+            <header class="modal-card-head">
+              <p class="modal-card-title">
+                ${props.jobDetail.name}
+                <span class="tag ${props.jobDetail.disabled ? 'is-warning' : 'is-success'}">
+                  ${props.jobDetail.disabled ? 'Disabled' : 'Enabled'}
+                </span>
+              </p>
+              <button class="delete" aria-label="close" onclick="store.do('clearJobDetail')"></button>
+            </header>
+            <section class="modal-card-body">
+              <pre>${JSON.stringify(props.jobDetail, undefined, 4)}</pre>
+            </section>
+            <footer class="modal-card-foot">
+              <button class="button is-primary">Stats</button>
+              <button class="button is-primary" onclick="toggleJobDisabled('${id}')">
+                ${props.jobDetail.disabled ? 'Enable' : 'Disable'}
+              </button>
+              <button class="button is-primary" onclick="runJob('${id}')">Run Manually</button>
+              <button class="button is-danger" onclick="deleteJob('${id}')">Delete</button>
+            </footer>
+          </div>
+          <button class="modal-close is-large" aria-label="close" onclick="store.do('clearJobDetail')"></button>
+        </div>
+      `
+    } else {
+      return '';
+    }
+  },
+});
 
 var metricsPanel = new Reef('#metricsPanel', {
   store: store,
   attachTo: app,
-  template: function() {/*
-    <table class="table">
-      <thead>
-        <tr>
-          <td>Metric</td>
-          <td>Value</td>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
-  */}.extractComment().propsInjector(),
+  template: function(props, route) {
+    return html`
+      <table class="table">
+        <thead>
+          <tr>
+            <td>Metric</td>
+            <td>Value</td>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    `
+  },
 });
 
 function toggleJobDisabled(id) {
