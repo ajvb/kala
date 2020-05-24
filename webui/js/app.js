@@ -47,13 +47,16 @@ var app = new Reef('#app', {
         <h1 class="title">
           ${routeTitle}
         </h1>
-        <div id="jobsTable"></div>
+        <div id="jobsTable" class="${jobsClasses}"></div>
+        <div id="metricsPanel" class="${metricsClasses}"></div>
       </div>
     </section>
     <div id="jobDetailModal"></div>
   */}.extractComment().propsInjector(function(props, route){
     return Object.assign(props, {
       routeTitle: route.title,
+      jobsClasses: route.id === 'jobs' ? '' : 'is-hidden',
+      metricsClasses: route.id === 'metrics' ? '' : 'is-hidden',
     })
   }),
 });
@@ -111,7 +114,7 @@ var jobsTable = new Reef('#jobsTable', {
   store: store,
   attachTo: app,
   template: function() {/*
-    <table class="table">
+    <table class="table is-fullwidth is-striped">
       <thead>
         <tr>
           <th>ID</th>
@@ -204,6 +207,23 @@ var jobDetail = new Reef('#jobDetailModal', {
     // return props;
   }),
 })
+
+var metricsPanel = new Reef('#metricsPanel', {
+  store: store,
+  attachTo: app,
+  template: function() {/*
+    <table class="table">
+      <thead>
+        <tr>
+          <td>Metric</td>
+          <td>Value</td>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  */}.extractComment().propsInjector(),
+});
 
 function toggleJobDisabled(id) {
   var job = store.data.jobs[id];
