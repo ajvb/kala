@@ -126,3 +126,12 @@ func parseTimeInLocation(t *testing.T, value string, location string) time.Time 
 func briefPause() {
 	time.Sleep(time.Millisecond * 100)
 }
+
+func awaitJobRan(t *testing.T, j *Job, timeout time.Duration) {
+	t.Helper()
+	select {
+	case <-j.ranChan:
+	case <-time.After(timeout):
+		t.Fatal("Job failed to run")
+	}
+}
