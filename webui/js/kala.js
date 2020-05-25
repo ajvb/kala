@@ -10,17 +10,26 @@
       return fetch(ApiJobEndpoint)
         .then(function(response) {
           return response.json()
-        }).catch(function(ex) {
-        console.error('parsing jobs failed: ', ex)
-      });
+        })
+        .catch(function(ex) {
+          console.error('parsing jobs failed: ', ex)
+        });
     },
     getJob: function(id) {
       return fetch(ApiJobEndpoint + id + '/')
         .then(function(response) {
           return response.json()
-        }).catch(function(ex) {
-        console.error('parsing job failed: ', ex)
-      });
+        })
+        .then(function(json) {
+          if (json.error) {
+            throw new Error(json.error);
+          }
+          return json.job;
+        })
+        .catch(function(ex) {
+          console.error('parsing job failed: ', ex)
+          throw new Error(ex);
+        });
     },
     disableJob: function(id) {
       return fetch(ApiJobEndpoint + 'disable/' + id + '/', {
@@ -63,6 +72,9 @@
           return response.json()
         })
         .then(function(json) {
+          if (json.error) {
+            throw new Error(json.error);
+          }
           return json.id;
         })
         .catch(function(ex) {

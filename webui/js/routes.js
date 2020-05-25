@@ -15,6 +15,11 @@ var router = new Reef.Router({
       id: 'metrics',
       title: 'Metrics',
       url: '/metrics/'
+    },
+    {
+      id: 'create',
+      title: 'Create Job',
+      url: '/create/'
     }
   ],
   useHash: true,

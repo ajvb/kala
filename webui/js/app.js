@@ -4,8 +4,11 @@ var app = new Reef('#app', {
   store: store,
   router: router,
   template: function(props, route) {
-    var activeForRoute = function(routeID) {
-      return route && route.id === routeID ? '' : 'is-hidden'
+    var activeForRoutes = function() {
+      var args = Array.prototype.slice.call(arguments);
+      return args.some(function(routeID) {
+        return routeID === route.id
+      }) ? '' : 'is-hidden'
     }
     return html`
       <div id="nav"></div>
@@ -13,8 +16,8 @@ var app = new Reef('#app', {
         <div class="container">
           <h1 class="title">
             ${route.title}
-            <span class="is-pulled-right">
-              <button class="button is-rounded is-info is-outlined" onclick="actions.refresh('${route.id}')">
+            <span class="is-pulled-right ${activeForRoutes('jobs', 'metrics')}">
+              <button class="button is-rounded is-info is-outlined" onclick="actions.refresh('${route.id}')" ${props.loading && 'disabled'}>
                 <span class="icon">
                   <i class="fas fa-sync"></i>
                 </span>
@@ -24,8 +27,9 @@ var app = new Reef('#app', {
           </h1>
           <div class="box">
             <div class="container" style="min-height: 300px">
-              <div id="jobsTable" class="${activeForRoute('jobs')}"></div>
-              <div id="metricsPanel" class="${activeForRoute('metrics')}"></div>
+              <div id="jobsTable" class="${activeForRoutes('jobs')}"></div>
+              <div id="metricsPanel" class="${activeForRoutes('metrics')}"></div>
+              <div id="createPage" class="${activeForRoutes('create')}"></div>
               <div class="loader-wrapper ${props.loading ? 'is-active' : ''}">
                 <div class="loader is-loading"></div>
               </div>
@@ -44,7 +48,7 @@ var navbar = new Reef('#nav', {
   attachTo: app,
   template: function(props, route) {
     var activeForRoute = function(routeID) {
-      return route && route.id === routeID ? 'is-active' : ''
+      return route.id === routeID ? 'is-active' : ''
     }
     return html`
       <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
@@ -68,7 +72,7 @@ var navbar = new Reef('#nav', {
             <a class="navbar-item ${activeForRoute('jobs')}" href="jobs">
               Jobs
             </a>
-            <a class="navbar-item ${activeForRoute('create')}" href="jobs">
+            <a class="navbar-item ${activeForRoute('create')}" href="create">
               Create
             </a>
           </div>
@@ -76,7 +80,7 @@ var navbar = new Reef('#nav', {
           <div class="navbar-end">
             <div class="navbar-item">
               <div class="buttons">
-                <a class="button is-link" href="https://github.com/ajvb/kala">
+                <a class="button is-white is-outlined" href="https://github.com/ajvb/kala">
                   <span class="icon">
                     <i class="fab fa-github"></i>
                   </span>
@@ -154,13 +158,16 @@ var jobDetail = new Reef('#jobDetailModal', {
               <pre>${JSON.stringify(props.jobDetail, undefined, 4)}</pre>
             </section>
             <footer class="modal-card-foot">
-              <button class="button is-primary">Stats</button>
+              <!-- <button class="button is-primary">Stats</button> -->
               <button class="button is-primary" onclick="actions.toggleJobDisabled('${id}')">
                 ${props.jobDetail.disabled ? 'Enable' : 'Disable'}
               </button>
-              <button class="button is-primary" onclick="actions.runJob('${id}')">Run Manually</button>
+              <button class="button is-primary" onclick="actions.runJob('${id}')" ${props.jobDetail.disabled && 'disabled'}>Run Manually</button>
               <button class="button is-danger" onclick="actions.deleteJob('${id}')">Delete</button>
             </footer>
+            <div class="loader-wrapper ${props.loading ? 'is-active' : ''}">
+              <div class="loader is-loading"></div>
+            </div>
           </div>
           <button class="modal-close is-large" aria-label="close" onclick="store.do('clearJobDetail')"></button>
         </div>
@@ -218,6 +225,155 @@ var metricsPanel = new Reef('#metricsPanel', {
           </tr>
         </tbody>
       </table>
+    `
+  },
+});
+
+var createPanel = new Reef('#createPage', {
+  store: store,
+  attachTo: app,
+  template: function(props, route) {
+    var detailPanelForType = function(createType) {
+      var err = function(fieldName, output) {
+        var err = props.createErr[fieldName]
+        return err ? (output || err) : ''
+      }
+      if (createType === 'local') {
+        return html`
+          <div class="field">
+            <label class="label">Command</label>
+            <div class="control">
+              <input class="input ${props.createErr['command'] && 'is-danger'}" type="text" placeholder="bash -c 'date'" name="command">
+            </div>
+            <p class="help is-danger">${props.createErr['command'] || ''}</p>
+          </div>
+        `
+      } else if (createType === 'remote') {
+        var methods = ["GET", "POST", "HEAD", "PUT", "DELETE", "CONNECT", "OPTIONS", "PATCH", "TRACE"].reduce(function(acc, method, idx) {
+          return acc + html`<option value="${method}" ${idx === 0 && 'defaultSelected'}>${method}</option>`
+        }, '')
+        return html`
+          <fieldset>
+            <div class="field">
+              <label class="label">URL</label>
+              <div class="control">
+                <input class="input" type="url" name="url">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Method</label>
+              <div class="control">
+                <div class="select">
+                  <select name="method">
+                    ${methods}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Headers</label>
+              <div class="control">
+                <textarea rows="3" class="textarea ${props.createErr['headers'] && 'is-danger'}" type="text" name="headers" placeholder="{&quot;key&quot;: [&quot;val1&quot;, &quot;val2&quot;]}"></textarea>
+              </div>
+              <p class="help is-danger">${props.createErr['headers'] || ''}</p>
+            </div>
+            <div class="field">
+              <label class="label">Body</label>
+              <div class="control">
+                <textarea rows="6" class="textarea" type="text" name="body"></textarea>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Timeout</label>
+              <div class="control">
+                <input class="input" type="number" placeholder="seconds" name="timeout">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Expected Response Codes</label>
+              <div class="control">
+                <input class="input" type="text" placeholder="200,201,204" name="expected_response_codes">
+              </div>
+            </div>
+          </fieldset>
+        `
+      } else {
+        return html`<div>Unsupported type!</div>`
+      }
+    }
+    var checkedForType = function(t) {
+      return props.createType === t ? 'checked="checked"' : ''
+    }
+    return html`
+      <form id="createForm" onsubmit="return actions.submitCreateJob('#createForm')">
+        <div class="columns">
+          <div class="column is-one-third">
+            <div class="field">
+              <label class="label">Job Name</label>
+              <div class="control">
+                <input class="input ${props.createErr['name'] && 'is-danger'}" type="text" name="jobname">
+              </div>
+              <p class="help is-danger">${props.createErr['name'] || ''}</p>
+            </div>
+            <div class="field">
+              <div class="control">
+                <label class="radio">
+                  <input type="radio" name="type" value="0" onchange="store.do('setCreateTypeLocal')" ${checkedForType('local')}>
+                  Local
+                </label>
+                <label class="radio">
+                  <input type="radio" name="type" value="1" onchange="store.do('setCreateTypeRemote')" ${checkedForType('remote')}>
+                  Remote
+                </label>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Owner's Email</label>
+              <div class="control">
+                <input class="input" type="text" name="owner">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Schedule</label>
+              <div class="control">
+                <input class="input" type="text" name="schedule">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Epsilon</label>
+              <div class="control">
+                <input class="input" type="text" name="epsilon">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label">Retries</label>
+              <div class="control">
+                <input class="input" type="number" name="retries">
+              </div>
+            </div>
+            <div class="field">
+              <div class="control">
+                <label class="checkbox">
+                  <input type="checkbox" name="resume_at_next_scheduled_time">
+                  Resume At Next Scheduled Time
+                </label>
+              </div>
+            </div>
+            <div class="field">
+              <div class="control">
+                <label class="checkbox">
+                  <input type="checkbox" name="doReset" defaultChecked>
+                  Reset Form
+                </label>
+              </div>
+            </div>
+            <button class="button is-success" type="submit">Create</button>
+          </div>
+          <div class="column">
+            ${detailPanelForType(props.createType)}
+          </div>
+        </div>
+      </form>
     `
   },
 });
