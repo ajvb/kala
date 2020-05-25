@@ -233,6 +233,9 @@ func (j *JobRunner) responseTimeout() time.Duration {
 
 // setHeaders sets default and user specific headers to the http request
 func (j *JobRunner) setHeaders(req *http.Request) {
+	if j.job.RemoteProperties.Headers == nil {
+		j.job.RemoteProperties.Headers = http.Header{}
+	}
 	// A valid assumption is that the user is sending something in json cause we're past 2017
 	if j.job.RemoteProperties.Headers["Content-Type"] == nil {
 		j.job.RemoteProperties.Headers["Content-Type"] = []string{"application/json"}
