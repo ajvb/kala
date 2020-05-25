@@ -1,55 +1,36 @@
 Reef.debug(true);
 
-var store = new Reef.Store({
-  data: {
-    jobs: {},
-    jobDetail: null,
-  },
-  setters: {
-    setJobs: function(props, jobs) {
-      props.jobs = jobs;
-    },
-    setJob: function(props, job) {
-      props.jobs[job.id] = job;
-    },
-    showJobDetail: function(props, jobID) {
-      props.jobDetail = props.jobs[jobID];
-    },
-    clearJobDetail: function(props) {
-      props.jobDetail = null;
-    },
-    setJobDisabled: function(props, jobID, disabled) {
-      if (props.jobs[jobID]) {
-        props.jobs[jobID].disabled = disabled;
-        if (props.jobDetail.id === jobID) {
-          props.jobDetail.disabled = disabled;
-        }
-      }
-    },
-    deleteJob: function(props, jobID) {
-      if (props.jobs[jobID]) {
-        delete props.jobs[jobID];
-        if (props.jobDetail.id === jobID) {
-          props.jobDetail = null;
-        }
-      }
-    },
-  },
-});
-
 var app = new Reef('#app', {
   store: store,
   router: router,
   template: function(props, route) {
+    var activeForRoute = function(routeID) {
+      return route && route.id === routeID ? '' : 'is-hidden'
+    }
     return html`
       <div id="nav"></div>
       <section class="section">
         <div class="container">
           <h1 class="title">
             ${route.title}
+            <span class="is-pulled-right">
+              <button class="button is-rounded is-info is-outlined" onclick="actions.refresh('${route.id}')">
+                <span class="icon">
+                  <i class="fas fa-sync"></i>
+                </span>
+                <span>Refresh</span>
+              </button>
+            </span>
           </h1>
-          <div id="jobsTable" class="${route.id === 'jobs' ? '' : 'is-hidden'}"></div>
-          <div id="metricsPanel" class="${route.id === 'metrics' ? '' : 'is-hidden'}"></div>
+          <div class="box">
+            <div class="container" style="min-height: 300px">
+              <div id="jobsTable" class="${activeForRoute('jobs')}"></div>
+              <div id="metricsPanel" class="${activeForRoute('metrics')}"></div>
+              <div class="loader-wrapper ${props.loading ? 'is-active' : ''}">
+                <div class="loader is-loading"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
       <div id="jobDetailModal"></div>
@@ -59,8 +40,12 @@ var app = new Reef('#app', {
 
 var navbar = new Reef('#nav', {
   store: store,
+  router: router,
   attachTo: app,
-  template: function(props, route){
+  template: function(props, route) {
+    var activeForRoute = function(routeID) {
+      return route && route.id === routeID ? 'is-active' : ''
+    }
     return html`
       <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
@@ -77,17 +62,15 @@ var navbar = new Reef('#nav', {
 
         <div class="navbar-menu">
           <div class="navbar-start">
-            <a class="navbar-item" href="metrics">
+            <a class="navbar-item ${activeForRoute('metrics')}" href="metrics">
               Metrics
             </a>
-            <a class="navbar-item" href="jobs">
+            <a class="navbar-item ${activeForRoute('jobs')}" href="jobs">
               Jobs
             </a>
-            <div class="navbar-item">
-              <a class="button is-primary">
-                <strong>Create</strong>
-              </a>
-            </div>
+            <a class="navbar-item ${activeForRoute('create')}" href="jobs">
+              Create
+            </a>
           </div>
 
           <div class="navbar-end">
@@ -112,7 +95,7 @@ var jobsTable = new Reef('#jobsTable', {
   store: store,
   attachTo: app,
   template: function(props, route) {
-    var rows = Object.entries(props.jobs).reduce(function(acc, entry){
+    var rows = Object.entries(props.jobs || {}).reduce(function(acc, entry) {
       var id = entry[0];
       var job = entry[1];
       return acc + html`
@@ -172,11 +155,11 @@ var jobDetail = new Reef('#jobDetailModal', {
             </section>
             <footer class="modal-card-foot">
               <button class="button is-primary">Stats</button>
-              <button class="button is-primary" onclick="toggleJobDisabled('${id}')">
+              <button class="button is-primary" onclick="actions.toggleJobDisabled('${id}')">
                 ${props.jobDetail.disabled ? 'Enable' : 'Disable'}
               </button>
-              <button class="button is-primary" onclick="runJob('${id}')">Run Manually</button>
-              <button class="button is-danger" onclick="deleteJob('${id}')">Delete</button>
+              <button class="button is-primary" onclick="actions.runJob('${id}')">Run Manually</button>
+              <button class="button is-danger" onclick="actions.deleteJob('${id}')">Delete</button>
             </footer>
           </div>
           <button class="modal-close is-large" aria-label="close" onclick="store.do('clearJobDetail')"></button>
@@ -193,64 +176,54 @@ var metricsPanel = new Reef('#metricsPanel', {
   attachTo: app,
   template: function(props, route) {
     return html`
-      <table class="table">
+      <table class="table is-bordered">
         <thead>
           <tr>
-            <td>Metric</td>
-            <td>Value</td>
+            <th>Metric</th>
+            <th>Value</th>
           </tr>
         </thead>
         <tbody>
+          <tr>
+            <td>Active Jobs</td>
+            <td>${props.metrics.active_jobs || '0'}</td>
+          </tr>
+          <tr>
+            <td>Disabled Jobs</td>
+            <td>${props.metrics.disabled_jobs || '0'}</td>
+          </tr>
+          <tr>
+            <td>Jobs</td>
+            <td>${props.metrics.jobs || '0'}</td>
+          </tr>
+          <tr>
+            <td>Error Count</td>
+            <td>${props.metrics.error_count || '0'}</td>
+          </tr>
+          <tr>
+            <td>Success Count</td>
+            <td>${props.metrics.success_count || '0'}</td>
+          </tr>
+          <tr>
+            <td>Next Run At</td>
+            <td>${props.metrics.next_run_at}</td>
+          </tr>
+          <tr>
+            <td>Last Attempted Run At</td>
+            <td>${props.metrics.last_attempted_run}</td>
+          </tr>
+          <tr>
+            <td>Metrics Generated At</td>
+            <td>${props.metrics.created}</td>
+          </tr>
         </tbody>
       </table>
     `
   },
 });
 
-function toggleJobDisabled(id) {
-  var job = store.data.jobs[id];
-  if (job) {
-    job.disabled ? enableJob(job.id) : disableJob(job.id);
-  }
-}
-
-function disableJob(id) {
-  kala.disableJob(id).then(function(){
-    store.do('setJobDisabled', id, true);
+// Initial data load
+actions.getJobs()
+  .then(function() {
+    actions.getMetrics()
   });
-}
-
-function enableJob(id) {
-  kala.enableJob(id).then(function(){
-    store.do('setJobDisabled', id, false);
-  }); 
-}
-
-function runJob(id) {
-  kala.runJob(id)
-    .then(function(){
-      return kala.getJob(id);
-    }).then(function(job){
-      store.do('setJob', job);
-    })
-}
-
-function deleteJob(id) {
-  kala.deleteJob(id)
-    .then(function(){
-      store.do('deleteJob', id);
-    });
-}
-
-function createJob(body) {
-  kala.createJob(body)
-    .then(function(id){
-      return kala.getJob(id);
-    }).then(function(job){
-      store.do('setJob', job);
-    });
-}
-
-kala.getJobs().then(function(resp){
-  store.do('setJobs', resp.jobs);
-});

@@ -1,5 +1,5 @@
 function jobType(num) {
-  switch(num) {
+  switch (num) {
     case 0:
       return 'Local'
     case 1:
@@ -11,7 +11,7 @@ function jobType(num) {
 
 function html(strings) {
   var args = arguments;
-  return strings.reduce(function(acc, str, idx){
-    return acc + str + (args[idx+1] || '');
+  return strings.reduce(function(acc, str, idx) {
+    return acc + str + (args[idx + 1] || '');
   }, '')
 }
