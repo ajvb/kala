@@ -5,7 +5,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"sync"
 	"testing"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/ajvb/kala/client"
 	"github.com/ajvb/kala/job"
 	"github.com/mixer/clock"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestIntegrationTest(t *testing.T) {
@@ -30,12 +28,9 @@ func TestIntegrationTest(t *testing.T) {
 	go kalaApi.ListenAndServe()
 	kalaClient := client.New("http://" + addr)
 
-	var hitCount int
-	var lock sync.Mutex
+	hit := make(chan struct{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lock.Lock()
-		hitCount++
-		lock.Unlock()
+		hit <- struct{}{}
 		w.WriteHeader(200)
 	}))
 
@@ -53,25 +48,38 @@ func TestIntegrationTest(t *testing.T) {
 			ExpectedResponseCodes: []int{200},
 		},
 	}
-	kalaClient.CreateJob(body)
+	_, err := kalaClient.CreateJob(body)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	clk.AddTime(time.Minute)
-	time.Sleep(time.Millisecond * 250)
-	lock.Lock()
-	assert.Equal(t, 0, hitCount)
-	lock.Unlock()
+	select {
+	case <-hit:
+		t.Fatalf("Did not expect job to have run yet.")
+	case <-time.After(time.Second):
+	}
+
+	clk.AddTime(time.Minute)
+	select {
+	case <-hit:
+		t.Fatalf("Still did not expect job to have run yet.")
+	case <-time.After(time.Second):
+	}
 
 	clk.AddTime(time.Minute * 3)
-	time.Sleep(time.Millisecond * 500)
-	lock.Lock()
-	assert.Equal(t, 1, hitCount)
-	lock.Unlock()
+	select {
+	case <-hit:
+	case <-time.After(time.Second * 5):
+		t.Fatalf("Expected job to have run.")
+	}
 
 	clk.AddTime(time.Minute * 5)
-	time.Sleep(time.Millisecond * 500)
-	lock.Lock()
-	assert.Equal(t, 2, hitCount)
-	lock.Unlock()
+	select {
+	case <-hit:
+	case <-time.After(time.Second * 5):
+		t.Fatalf("Expected job to have run again.")
+	}
 
 }
 
