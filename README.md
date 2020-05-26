@@ -4,6 +4,8 @@
 [![Circle CI](https://circleci.com/gh/ajvb/kala.svg?style=svg)](https://circleci.com/gh/ajvb/kala)
 [![Coverage Status](https://coveralls.io/repos/ajvb/kala/badge.svg?branch=master&service=github)](https://coveralls.io/github/ajvb/kala?branch=master)
 
+![Dashboard](assets/job-list.png)
+
 #### Not battle-tested. Use at your own risk.
 
 Kala is a simplistic, modern, and performant job scheduler written in Go. It lives in a single binary and does not have any dependencies.
