@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"crypto/tls"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 
 	"github.com/jmoiron/sqlx"
 
@@ -23,7 +24,14 @@ type DB struct {
 }
 
 // New instantiates a new DB.
-func New(dsn string) *DB {
+func New(dsn string, tlsConfig *tls.Config) *DB {
+	if tlsConfig != nil {
+		log.Infof("Register TLS config")
+		err := mysql.RegisterTLSConfig("custom", tlsConfig)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 	connection, err := sqlx.Open("mysql", dsn)
 	if err != nil {
 		log.Fatal(err)
