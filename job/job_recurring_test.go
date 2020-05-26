@@ -3,7 +3,6 @@ package job
 
 import (
 	"fmt"
-	"runtime"
 	"testing"
 	"time"
 
