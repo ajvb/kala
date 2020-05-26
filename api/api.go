@@ -6,13 +6,16 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/pprof"
+	"runtime"
 
 	"github.com/ajvb/kala/api/middleware"
 	"github.com/ajvb/kala/job"
 
-	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
+	"github.com/phyber/negroni-gzip/gzip"
 	log "github.com/sirupsen/logrus"
+	"github.com/urfave/negroni"
 )
 
 const (
@@ -319,14 +322,31 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, db job.JobDB, defaultOwne
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
 }
 
-func MakeServer(listenAddr string, cache job.JobCache, db job.JobDB, defaultOwner string) *http.Server {
+func MakeServer(listenAddr string, cache job.JobCache, db job.JobDB, defaultOwner string, profile bool) *http.Server {
 	r := mux.NewRouter()
 	// Allows for the use for /job as well as /job/
 	r.StrictSlash(true)
 	SetupApiRoutes(r, cache, db, defaultOwner)
 	r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(http.Dir("./webui/"))))
-	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log.Logger{}})
+
+	if profile {
+		runtime.SetMutexProfileFraction(5)
+		// Register pprof handlers
+		r.HandleFunc("/debug/pprof/", pprof.Index)
+		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		r.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+		r.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+		r.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+		r.Handle("/debug/pprof/block", pprof.Handler("block"))
+		r.Handle("/debug/pprof/mutex", pprof.Handler("mutex"))
+	}
+
+	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log.Logger{}}, gzip.Gzip(gzip.DefaultCompression))
 	n.UseHandler(r)
+
 	return &http.Server{
 		Addr:    listenAddr,
 		Handler: n,

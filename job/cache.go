@@ -62,7 +62,7 @@ func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 	}
 	for _, j := range allJobs {
 		if j.ShouldStartWaiting() {
-			j.StartWaiting(c)
+			j.StartWaiting(c, false)
 		}
 		err = c.Set(j)
 		if err != nil {
@@ -195,7 +195,7 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.
 			continue
 		}
 		if j.ShouldStartWaiting() {
-			j.StartWaiting(c)
+			j.StartWaiting(c, false)
 		}
 		log.Infof("Job %s:%s added to cache.", j.Name, j.Id)
 		err := c.Set(j)

@@ -109,6 +109,13 @@ var recurTableTests = []struct {
 	},
 }
 
+// This test works by using a series of checkpoints, spaced <interval> apart.
+// A job is scheduled 5 seconds after the first checkpoint.
+// By moving the clock to each checkpoint, and then 6 seconds later,
+// you can verify that the job hasn't run between the two checkpoints,
+// and only runs at the scheduled point.
+//
+// This is useful for ensuring that durations behave correctly on a grand scale.
 func TestRecur(t *testing.T) {
 
 	for _, testStruct := range recurTableTests {
@@ -122,27 +129,41 @@ func TestRecur(t *testing.T) {
 			start := now.Add(time.Second * 5)
 			j := GetMockRecurringJobWithSchedule(start, testStruct.Interval)
 			j.clk.SetClock(clk)
+			j.succeedInstantly = true // Eliminate any potential variance due to the overhead of shelling out.
 
 			cache := NewMockCache()
 			j.Init(cache)
+			j.ranChan = make(chan struct{})
 
 			checkpoints := append([]string{testStruct.Start}, testStruct.Checkpoints...)
 
 			for i, chk := range checkpoints {
 
 				clk.SetTime(parseTimeInLocation(t, chk, testStruct.Location))
-				briefPause()
+
+				select {
+				case <-j.ranChan:
+					t.Fatalf("Expected job not run on checkpoint %d of test %s.", i, testStruct.Name)
+				case <-time.After(time.Second * 1):
+				}
 
 				j.lock.RLock()
 				assert.Equal(t, i, int(j.Metadata.SuccessCount), fmt.Sprintf("1st Test of %s index %d", testStruct.Name, i))
 				j.lock.RUnlock()
 
 				clk.AddTime(time.Second * 6)
-				briefPause()
+
+				select {
+				case <-j.ranChan:
+				case <-time.After(time.Second * 5):
+					t.Fatalf("Expected job to have run on checkpoint %d of test %s.", i, testStruct.Name)
+				}
 
 				j.lock.RLock()
 				assert.Equal(t, i+1, int(j.Metadata.SuccessCount), fmt.Sprintf("2nd Test of %s index %d", testStruct.Name, i))
 				j.lock.RUnlock()
+
+				time.Sleep(time.Millisecond * 500)
 			}
 
 		}()

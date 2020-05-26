@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/codegangsta/negroni"
 	log "github.com/sirupsen/logrus"
+	"github.com/urfave/negroni"
 )
 
 // Logger is a middleware handler that logs the request as it goes in and the response as it goes out.

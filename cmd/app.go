@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"fmt"
-	"strings"
-	"time"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
+	"strings"
+	"time"
 
 	"github.com/ajvb/kala/api"
 	"github.com/ajvb/kala/job"
@@ -17,9 +17,9 @@ import (
 	"github.com/ajvb/kala/job/storage/postgres"
 	"github.com/ajvb/kala/job/storage/redis"
 
-	"github.com/codegangsta/cli"
 	redislib "github.com/garyburd/redigo/redis"
 	log "github.com/sirupsen/logrus"
+	"github.com/urfave/cli"
 	"gopkg.in/mgo.v2"
 )
 
@@ -47,11 +47,12 @@ func init() {
 					Command: cmd,
 				}
 
-				err := j.RunCmd()
+				out, err := j.RunCmd()
 				if err != nil {
 					log.Fatalf("Command Failed with err: %s", err)
 				} else {
 					fmt.Println("Command Succeeded!")
+					fmt.Println("Output: ", out)
 				}
 			},
 		},
@@ -139,6 +140,10 @@ func init() {
 					Value: -1,
 					Usage: "Sets the jobstat-ttl in minutes. The default -1 value indicates JobStat entries will be kept forever",
 				},
+				cli.BoolFlag{
+					Name:  "profile",
+					Usage: "Activate pprof handlers",
+				},
 			},
 			Action: func(c *cli.Context) {
 				if c.Bool("v") {
@@ -190,26 +195,27 @@ func init() {
 					db = postgres.New(dsn)
 				case "mysql", "mariadb":
 					dsn := fmt.Sprintf("%s:%s@%s", c.String("jobDBUsername"), c.String("jobDBPassword"), c.String("jobDBAddress"))
+					log.Debug("Mysql/Maria DSN: ", dsn)
 					if c.String("jobDBTlsCAPath") != "" {
 						// https://godoc.org/github.com/go-sql-driver/mysql#RegisterTLSConfig
 						rootCertPool := x509.NewCertPool()
 						pem, err := ioutil.ReadFile(c.String("jobDBTlsCAPath"))
 						if err != nil {
-								log.Fatal(err)
+							log.Fatal(err)
 						}
 						if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
-								log.Fatal("Failed to append PEM.")
+							log.Fatal("Failed to append PEM.")
 						}
 						clientCert := make([]tls.Certificate, 0, 1)
 						certs, err := tls.LoadX509KeyPair(c.String("jobDBTlsCertPath"), c.String("jobDBTlsKeyPath"))
 						if err != nil {
-								log.Fatal(err)
+							log.Fatal(err)
 						}
 						clientCert = append(clientCert, certs)
 						db = mysql.New(dsn, &tls.Config{
-							RootCAs: rootCertPool,
+							RootCAs:      rootCertPool,
 							Certificates: clientCert,
-							ServerName: c.String("jobDBTlsServerName"),
+							ServerName:   c.String("jobDBTlsServerName"),
 						})
 					} else {
 						db = mysql.New(dsn, nil)
@@ -228,7 +234,7 @@ func init() {
 				cache.Start(time.Duration(c.Int("persist-every"))*time.Second, time.Duration(c.Int("jobstat-ttl"))*time.Minute)
 
 				log.Infof("Starting server on port %s", connectionString)
-				srv := api.MakeServer(connectionString, cache, db, c.String("default-owner"))
+				srv := api.MakeServer(connectionString, cache, db, c.String("default-owner"), c.Bool("profile"))
 				log.Fatal(srv.ListenAndServe())
 			},
 		},
