@@ -25,7 +25,7 @@ func TestIntegrationTest(t *testing.T) {
 
 	addr := newLocalListener(t)
 
-	kalaApi := api.MakeServer(addr, cache, jobDB, "default@example.com")
+	kalaApi := api.MakeServer(addr, cache, jobDB, "default@example.com", false)
 	go kalaApi.ListenAndServe()
 	runtime.Gosched()
 	kalaClient := client.New("http://" + addr)
