@@ -129,8 +129,7 @@ func TestRecur(t *testing.T) {
 			start := now.Add(time.Second * 5)
 			j := GetMockRecurringJobWithSchedule(start, testStruct.Interval)
 			j.clk.SetClock(clk)
-			j.ResumeAtNextScheduledTime = true // This is important to have on so that there's no drift.
-			j.succeedInstantly = true          // Eliminate any potential variance due to the overhead of shelling out.
+			j.succeedInstantly = true // Eliminate any potential variance due to the overhead of shelling out.
 
 			cache := NewMockCache()
 			j.Init(cache)
