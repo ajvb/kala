@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -46,12 +47,13 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 
 	j.runSetup()
 
+	var out string
 	for {
 		var err error
 		if j.job.JobType == LocalJob {
-			err = j.LocalRun()
+			out, err = j.LocalRun()
 		} else if j.job.JobType == RemoteJob {
-			err = j.RemoteRun()
+			out, err = j.RemoteRun()
 		} else {
 			err = ErrJobTypeInvalid
 		}
@@ -82,6 +84,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 	}
 
 	log.Infof("Job %s:%s finished.", j.job.Name, j.job.Id)
+	log.Debugf("Job %s:%s output: %s", j.job.Name, j.job.Id, out)
 	j.meta.SuccessCount++
 	j.meta.NumberOfFinishedRuns++
 	j.meta.LastSuccess = j.job.clk.Time().Now()
@@ -104,12 +107,12 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 }
 
 // LocalRun executes the Job's local shell command
-func (j *JobRunner) LocalRun() error {
+func (j *JobRunner) LocalRun() (string, error) {
 	return j.runCmd()
 }
 
 // RemoteRun sends a http request, and checks if the response is valid in time,
-func (j *JobRunner) RemoteRun() error {
+func (j *JobRunner) RemoteRun() (string, error) {
 	// Calculate a response timeout
 	timeout := j.responseTimeout()
 
@@ -124,7 +127,7 @@ func (j *JobRunner) RemoteRun() error {
 	bodyBuffer := bytes.NewBufferString(j.job.RemoteProperties.Body)
 	req, err := http.NewRequest(method, j.job.RemoteProperties.Url, bodyBuffer)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Set default or user's passed headers
@@ -133,14 +136,19 @@ func (j *JobRunner) RemoteRun() error {
 	// Do the request
 	res, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return err
+		return "", err
+	}
+	defer res.Body.Close()
+	b, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", err
 	}
 
 	// Check if we got any of the status codes the user asked for
 	if j.checkExpected(res.StatusCode) {
-		return nil
+		return string(b), nil
 	} else {
-		return errors.New(res.Status)
+		return "", errors.New(res.Status + string(b))
 	}
 }
 
@@ -151,25 +159,25 @@ func initShParser() *shellwords.Parser {
 	return shParser
 }
 
-func (j *JobRunner) runCmd() error {
+func (j *JobRunner) runCmd() (string, error) {
 	j.numberOfAttempts++
 
 	// Execute command
 	shParser := initShParser()
 	args, err := shParser.Parse(j.job.Command)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if len(args) == 0 {
-		return ErrCmdIsEmpty
+		return "", ErrCmdIsEmpty
 	}
 
 	cmd := exec.Command(args[0], args[1:]...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("%s: %s", err, strings.TrimSpace(string(out)))
+		return "", fmt.Errorf("%s: %s", err, strings.TrimSpace(string(out)))
 	}
-	return nil
+	return strings.TrimSpace(string(out)), nil
 }
 
 func (j *JobRunner) shouldRetry() bool {

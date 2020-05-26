@@ -507,7 +507,7 @@ func (j *Job) StopTimer() {
 	}
 }
 
-func (j *Job) RunCmd() error {
+func (j *Job) RunCmd() (string, error) {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 

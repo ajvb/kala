@@ -47,11 +47,12 @@ func init() {
 					Command: cmd,
 				}
 
-				err := j.RunCmd()
+				out, err := j.RunCmd()
 				if err != nil {
 					log.Fatalf("Command Failed with err: %s", err)
 				} else {
 					fmt.Println("Command Succeeded!")
+					fmt.Println("Output: ", out)
 				}
 			},
 		},
