@@ -50,7 +50,9 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 	var out string
 	for {
 		var err error
-		if j.job.JobType == LocalJob {
+		if j.job.succeedInstantly {
+			out = "Job succeeded instantly for test purposes."
+		} else if j.job.JobType == LocalJob {
 			out, err = j.LocalRun()
 		} else if j.job.JobType == RemoteJob {
 			out, err = j.RemoteRun()

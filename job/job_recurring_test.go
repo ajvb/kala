@@ -130,6 +130,7 @@ func TestRecur(t *testing.T) {
 			j := GetMockRecurringJobWithSchedule(start, testStruct.Interval)
 			j.clk.SetClock(clk)
 			j.ResumeAtNextScheduledTime = true // This is important to have on so that there's no drift.
+			j.succeedInstantly = true          // Eliminate any potential variance due to the overhead of shelling out.
 
 			cache := NewMockCache()
 			j.Init(cache)
@@ -144,7 +145,7 @@ func TestRecur(t *testing.T) {
 				select {
 				case <-j.ranChan:
 					t.Fatalf("Expected job not run on checkpoint %d of test %s.", i, testStruct.Name)
-				case <-time.After(time.Second * 2):
+				case <-time.After(time.Second * 1):
 				}
 
 				j.lock.RLock()
@@ -155,7 +156,7 @@ func TestRecur(t *testing.T) {
 
 				select {
 				case <-j.ranChan:
-				case <-time.After(time.Second * 2):
+				case <-time.After(time.Second * 5):
 					t.Fatalf("Expected job to have run on checkpoint %d of test %s.", i, testStruct.Name)
 				}
 
@@ -163,7 +164,7 @@ func TestRecur(t *testing.T) {
 				assert.Equal(t, i+1, int(j.Metadata.SuccessCount), fmt.Sprintf("2nd Test of %s index %d", testStruct.Name, i))
 				j.lock.RUnlock()
 
-				briefPause()
+				time.Sleep(time.Millisecond * 500)
 			}
 
 		}()

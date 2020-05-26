@@ -108,6 +108,9 @@ type Job struct {
 	// when it's done rescheduling rather than when the job is done running.
 	// That's most useful for testing the scheduling aspect of jobs.
 	ranChan chan struct{}
+
+	// Used for testing schedules.
+	succeedInstantly bool
 }
 
 type jobType int
