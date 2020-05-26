@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"testing"
 	"time"
 
@@ -26,6 +27,7 @@ func TestIntegrationTest(t *testing.T) {
 
 	kalaApi := api.MakeServer(addr, cache, jobDB, "default@example.com")
 	go kalaApi.ListenAndServe()
+	runtime.Gosched()
 	kalaClient := client.New("http://" + addr)
 
 	hit := make(chan struct{})
