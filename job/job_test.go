@@ -231,17 +231,18 @@ func TestRecurringJobIsRepeating(t *testing.T) {
 	cache := NewMockCache()
 	cache.Clock.SetClock(clk)
 
-	oneSecondFromNow := clk.Now().Add(time.Millisecond * 900)
+	oneSecondFromNow := clk.Now().Add(time.Second * 4)
 	j := GetMockRecurringJobWithSchedule(oneSecondFromNow, "PT5S")
 	j.Init(cache)
+	j.ranChan = make(chan struct{})
 
 	for i := 0; i < 2; i++ {
-		clk.AddTime(time.Millisecond * 6000)
-		time.Sleep(time.Second * 3)
+		clk.AddTime(time.Second * 5)
+		awaitJobRan(t, j, time.Second*10)
 		now := clk.Now()
 		j.lock.RLock()
-		assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
-		assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)
+		assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second, "pass", i)
+		assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second, "pass", i)
 		j.lock.RUnlock()
 	}
 

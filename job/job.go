@@ -102,6 +102,9 @@ type Job struct {
 	// Says if a job has been executed right numbers of time
 	// and should not been executed again in the future
 	IsDone bool `json:"is_done"`
+
+	// The job will send on this channel when it's done running; used for tests.
+	ranChan chan struct{}
 }
 
 type jobType int
@@ -486,6 +489,10 @@ func (j *Job) Run(cache JobCache) {
 		go j.StartWaiting(cache)
 	} else {
 		j.IsDone = true
+	}
+
+	if j.ranChan != nil {
+		j.ranChan <- struct{}{}
 	}
 
 	j.lock.Unlock()
