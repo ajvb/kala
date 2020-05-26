@@ -104,6 +104,9 @@ type Job struct {
 	IsDone bool `json:"is_done"`
 
 	// The job will send on this channel when it's done running; used for tests.
+	// Note that if the job should be rescheduled, it will send on this channel
+	// when it's done rescheduling rather than when the job is done running.
+	// That's most useful for testing the scheduling aspect of jobs.
 	ranChan chan struct{}
 }
 
@@ -228,7 +231,7 @@ func (j *Job) Init(cache JobCache) error {
 	}
 
 	j.lock.Unlock()
-	j.StartWaiting(cache)
+	j.StartWaiting(cache, false)
 
 	j.lock.Lock()
 
@@ -302,7 +305,7 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 }
 
 // StartWaiting begins a timer for when it should execute the Jobs .Run() method.
-func (j *Job) StartWaiting(cache JobCache) {
+func (j *Job) StartWaiting(cache JobCache, justRan bool) {
 	waitDuration := j.GetWaitDuration()
 
 	j.lock.Lock()
@@ -314,6 +317,10 @@ func (j *Job) StartWaiting(cache JobCache) {
 
 	jobRun := func() { j.Run(cache) }
 	j.jobTimer = j.clk.Time().AfterFunc(waitDuration, jobRun)
+
+	if justRan && j.ranChan != nil {
+		j.ranChan <- struct{}{}
+	}
 }
 
 func (j *Job) GetWaitDuration() time.Duration {
@@ -377,7 +384,7 @@ func (j *Job) Enable(cache JobCache) {
 	defer j.lock.Unlock()
 
 	if j.jobTimer != nil && j.Disabled {
-		go j.StartWaiting(cache)
+		go j.StartWaiting(cache, false)
 	}
 	j.Disabled = false
 }
@@ -486,13 +493,13 @@ func (j *Job) Run(cache JobCache) {
 	}
 
 	if j.ShouldStartWaiting() {
-		go j.StartWaiting(cache)
+		go j.StartWaiting(cache, true)
 	} else {
 		j.IsDone = true
-	}
 
-	if j.ranChan != nil {
-		j.ranChan <- struct{}{}
+		if j.ranChan != nil {
+			j.ranChan <- struct{}{}
+		}
 	}
 
 	j.lock.Unlock()
