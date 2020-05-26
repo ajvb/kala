@@ -36,31 +36,33 @@ func NewKalaStats(cache JobCache) *KalaStats {
 	nextRun := time.Time{}
 	lastRun := time.Time{}
 	for _, job := range jobs.Jobs {
-		job.lock.RLock()
-		defer job.lock.RUnlock()
+		func() {
+			job.lock.RLock()
+			defer job.lock.RUnlock()
 
-		if job.Disabled {
-			ks.DisabledJobs += 1
-		} else {
-			ks.ActiveJobs += 1
-		}
+			if job.Disabled {
+				ks.DisabledJobs += 1
+			} else {
+				ks.ActiveJobs += 1
+			}
 
-		if nextRun.IsZero() {
-			nextRun = job.NextRunAt
-		} else if (nextRun.UnixNano() - job.NextRunAt.UnixNano()) > 0 {
-			nextRun = job.NextRunAt
-		}
+			if nextRun.IsZero() {
+				nextRun = job.NextRunAt
+			} else if (nextRun.UnixNano() - job.NextRunAt.UnixNano()) > 0 {
+				nextRun = job.NextRunAt
+			}
 
-		if lastRun.IsZero() {
-			if !job.Metadata.LastAttemptedRun.IsZero() {
+			if lastRun.IsZero() {
+				if !job.Metadata.LastAttemptedRun.IsZero() {
+					lastRun = job.Metadata.LastAttemptedRun
+				}
+			} else if (lastRun.UnixNano() - job.Metadata.LastAttemptedRun.UnixNano()) < 0 {
 				lastRun = job.Metadata.LastAttemptedRun
 			}
-		} else if (lastRun.UnixNano() - job.Metadata.LastAttemptedRun.UnixNano()) < 0 {
-			lastRun = job.Metadata.LastAttemptedRun
-		}
 
-		ks.ErrorCount += job.Metadata.ErrorCount
-		ks.SuccessCount += job.Metadata.SuccessCount
+			ks.ErrorCount += job.Metadata.ErrorCount
+			ks.SuccessCount += job.Metadata.SuccessCount
+		}()
 	}
 	ks.NextRunAt = nextRun
 	ks.LastAttemptedRun = lastRun
