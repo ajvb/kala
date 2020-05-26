@@ -110,7 +110,7 @@ var jobsTable = new Reef('#jobsTable', {
           <td>${job.owner}</td>
           <td>${jobType(job.type)}</td>
           <td>${job.disabled ? 'Disabled' : 'Enabled'}</td>
-          <td>${job.stats ? job.stats.length : 0}</td>
+          <td>${job.metadata ? job.metadata.success_count + '/' + job.metadata.number_of_finished_runs : 0}</td>
           <td>${job.is_done}</td>
         </tr>
       `
@@ -125,7 +125,7 @@ var jobsTable = new Reef('#jobsTable', {
             <th>Owner</th>
             <th>Type</th>
             <th>Status</th>
-            <th>Runs</th>
+            <th>Success</th>
             <th>Done</th>
           </tr>
         </thead>
