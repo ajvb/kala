@@ -12,9 +12,10 @@ import (
 	"github.com/ajvb/kala/api/middleware"
 	"github.com/ajvb/kala/job"
 
-	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
+	"github.com/phyber/negroni-gzip/gzip"
 	log "github.com/sirupsen/logrus"
+	"github.com/urfave/negroni"
 )
 
 const (
@@ -327,8 +328,6 @@ func MakeServer(listenAddr string, cache job.JobCache, db job.JobDB, defaultOwne
 	r.StrictSlash(true)
 	SetupApiRoutes(r, cache, db, defaultOwner)
 	r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(http.Dir("./webui/"))))
-	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log.Logger{}})
-	n.UseHandler(r)
 
 	if profile {
 		runtime.SetMutexProfileFraction(5)
@@ -344,6 +343,9 @@ func MakeServer(listenAddr string, cache job.JobCache, db job.JobDB, defaultOwne
 		r.Handle("/debug/pprof/block", pprof.Handler("block"))
 		r.Handle("/debug/pprof/mutex", pprof.Handler("mutex"))
 	}
+
+	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log.Logger{}}, gzip.Gzip(gzip.DefaultCompression))
+	n.UseHandler(r)
 
 	return &http.Server{
 		Addr:    listenAddr,
