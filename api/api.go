@@ -324,6 +324,7 @@ func MakeServer(listenAddr string, cache job.JobCache, db job.JobDB, defaultOwne
 	// Allows for the use for /job as well as /job/
 	r.StrictSlash(true)
 	SetupApiRoutes(r, cache, db, defaultOwner)
+	r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(http.Dir("./webui/"))))
 	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log.Logger{}})
 	n.UseHandler(r)
 	return &http.Server{

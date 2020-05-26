@@ -233,16 +233,12 @@ func (j *JobRunner) responseTimeout() time.Duration {
 
 // setHeaders sets default and user specific headers to the http request
 func (j *JobRunner) setHeaders(req *http.Request) {
+	if j.job.RemoteProperties.Headers == nil {
+		j.job.RemoteProperties.Headers = http.Header{}
+	}
 	// A valid assumption is that the user is sending something in json cause we're past 2017
 	if j.job.RemoteProperties.Headers["Content-Type"] == nil {
-		jsonContentType := "application/json"
-
-		// Set in the request header we are sending to remote host the newly header
-		req.Header.Set("Content-Type", jsonContentType)
-
-		// Create a new header for our job properties and set the default header
-		j.job.RemoteProperties.Headers = http.Header{"Content-Type": []string{jsonContentType}}
-	} else {
-		req.Header = j.job.RemoteProperties.Headers
+		j.job.RemoteProperties.Headers["Content-Type"] = []string{"application/json"}
 	}
+	req.Header = j.job.RemoteProperties.Headers
 }
