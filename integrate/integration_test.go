@@ -22,7 +22,7 @@ func TestIntegrationTest(t *testing.T) {
 	clk := clock.NewMockClock()
 	cache.Clock.SetClock(clk)
 
-	addr := freeTCPAddr(t)
+	addr := newLocalListener(t)
 
 	kalaApi := api.MakeServer(addr, cache, jobDB, "default@example.com")
 	go kalaApi.ListenAndServe()
@@ -83,16 +83,17 @@ func TestIntegrationTest(t *testing.T) {
 
 }
 
-func freeTCPAddr(t *testing.T) string {
-	addr := &net.TCPAddr{
-		IP: net.IPv4(127, 0, 0, 1),
-	}
-
-	lis, err := net.ListenTCP("tcp", addr)
+func newLocalListener(t *testing.T) string {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		t.Fatal(err)
+		if l, err = net.Listen("tcp6", "[::1]:0"); err != nil {
+			t.Fatalf("failed to listen on a port: %v", err)
+		}
 	}
-	defer lis.Close()
-
-	return lis.Addr().String()
+	defer func() {
+		if err := l.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	return l.Addr().String()
 }
