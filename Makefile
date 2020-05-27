@@ -13,10 +13,10 @@ clean:
 	rm -rf bin
 
 start: bin/$(APP)
-	./bin/$(APP) run -v
+	./bin/$(APP) serve -v
 
 start-consul: bin/$(APP)
-	./bin/$(APP) run --jobDB=consul -v
+	./bin/$(APP) serve --jobdb=consul -v
 
 test:
 	go test -v ./...

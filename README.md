@@ -32,61 +32,61 @@ I recommend checking out [Chronos](https://github.com/airbnb/chronos). This is d
 2. Run Kala
 
 	```
-	kala run
+	kala serve
 	```
 
 # Getting Started
 
 Once you have installed Kala onto the machine you would like to use, you can follow the below steps to start using it.
 
-To Run Kala:
+To run Kala as a server:
 
 ```console
-$ kala run
+$ kala serve
 INFO[0000] Preparing cache
 INFO[0000] Starting server on port :8000
 
-$ kala run -p 2222
+$ kala serve -p 2222
 INFO[0000] Preparing cache
 INFO[0000] Starting server on port :2222
 ```
 
-Kala uses BoltDB by default for the job database by using `jobDB` and `boltpath` params:
+Kala uses BoltDB by default for the job database by using `jobdb` and `boltpath` params:
 
 ```bash
-kala run --jobDB=boltdb --boltpath=/path/to/dir
+kala serve --jobdb=boltdb --boltpath=/path/to/dir
 ```
 
-use Redis by using the `jobDB` and `jobDBAddress` params:
+use Redis by using the `jobdb` and `jobdb-address` params:
 
 ```bash
-kala run --jobDB=redis --jobDBAddress=127.0.0.1:6379
+kala serve --jobdb=redis --jobdb-address=127.0.0.1:6379
 ```
 
-use Consul by using the `jobDB` and `jobDBAddress` params:
+use Consul by using the `jobdb` and `jobdb-address` params:
 
 ```bash
-kala run --jobDB=consul --jobDBAddress=127.0.0.1:8500
+kala serve --jobdb=consul --jobdb-address=127.0.0.1:8500
 ```
 
-use Mongo by using the `jobDB`, `jobDBAddress`, `jobDBUsername`, and `jobDBPassword` params:
+use Mongo by using the `jobdb`, `jobdb-address`, `jobdb-username`, and `jobdb-password` params:
 
 ```bash
-kala run --jobDB=mongo --jobDBAddress=server1.example.com,server2.example.com --jobDBUsername=admin --jobDBPassword=password
+kala serve --jobdb=mongo --jobdb-address=server1.example.com,server2.example.com --jobdb-username=admin --jobdb-password=password
 ```
 
-use Postgres by using the `jobDB`, `jobDBAddress` params:
+use Postgres by using the `jobdb`, `jobdb-address` params:
 
 ```bash
-kala run --jobDB=postgres --jobDBAddress=server1.example.com/kala --jobDBUsername=admin --jobDBPassword=password
+kala serve --jobdb=postgres --jobdb-address=server1.example.com/kala --jobdb-username=admin --jobdb-password=password
 ```
 
-use MariaDB, MySQL by using the `jobDB`, `jobDBAddress`, `jobDBTlsCAPath`, `jobDBTlsCertPath`, `jobDBTlsKeyPath`, `jobDBTlsServerName` params:
+use MariaDB, MySQL by using the `jobdb`, `jobdb-address`, `jobdb-tls-capath`, `jobdbTlsCertPath`, `jobdb-tls-keypath`, `jobdb-tls-servername` params:
 
 ```bash
-kala run --jobDB=mariadb --jobDBAddress=(server1.example.com)/kala --jobDBUsername=admin --jobDBPassword=password
+kala serve --jobdb=mariadb --jobdb-address=(server1.example.com)/kala --jobdb-username=admin --jobdb-password=password
 
-kala run --jobDB=mysql --jobDBAddress="tcp(server1.example.com:3306)/kala?tls=custom" --jobDBUsername=admin --jobDBPassword=password --jobDBTlsCAPath=/path/to/server-ca.pem --jobDBTlsCertPath=/path/to/client-cert.pem --jobDBTlsKeyPath=/path/to/client-key.pem --jobDBTlsServerName=server1.example.com
+kala serve --jobdb=mysql --jobdb-address="tcp(server1.example.com:3306)/kala?tls=custom" --jobdb-username=admin --jobdb-password=password --jobdb-tls-capath=/path/to/server-ca.pem --jobdbTlsCertPath=/path/to/client-cert.pem --jobdb-tls-keypath=/path/to/client-key.pem --jobdb-tls-servername=server1.example.com
 ```
 
 Kala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.
@@ -110,7 +110,7 @@ After installing supervisord, open its config file (`/etc/supervisor/supervisord
 
 ```
 [program:kala]
-command=kala run
+command=kala serve
 autorestart=true
 stdout_logfile=/var/log/kala.stdout.log
 stderr_logfile=/var/log/kala.stderr.log
@@ -352,12 +352,12 @@ $ curl http://127.0.0.1:8000/api/v1/stats/
 
 ## Debugging Jobs
 
-There is now a command within Kala called `run_command` which will immediately run a command as Kala would run it live, and then gives you a response on whether it was successful or not. Allows for easier and quicker debugging of commands.
+There is a command within Kala called `run` which will immediately run a command as Kala would run it live, and then gives you a response on whether it was successful or not. Allows for easier and quicker debugging of commands.
 
 ```bash
-$ kala run_command "ruby /home/user/ruby/my_ruby_script.rb"
+$ kala run "ruby /home/user/ruby/my_ruby_script.rb"
 Command Succeeded!
-$ kala run_command "ruby /home/user/other_dir/broken_script.rb"
+$ kala run "ruby /home/user/other_dir/broken_script.rb"
 FATA[0000] Command Failed with err: exit status 1
 ```
 

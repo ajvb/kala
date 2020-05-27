@@ -2,7 +2,7 @@
 Description=Kala
 
 [Service]
-ExecStart=/home/yourname/bin/kala run -v -p 8000
+ExecStart=/home/yourname/bin/kala serve -v -p 8000
 
 [Install]
 WantedBy=multi-user.target

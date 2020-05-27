@@ -2,7 +2,7 @@
 
 Firstly, run kala on default port:
 ```bash
-  kala run
+  kala serve
 ```
 
 ### Running python script
