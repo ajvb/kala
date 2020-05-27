@@ -1,12 +1,22 @@
 package job
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/ajvb/kala/utils/iso8601"
 )
+
+type MockDBGetAll struct {
+	MockDB
+	response []*Job
+}
+
+func (d *MockDBGetAll) GetAll() ([]*Job, error) {
+	return d.response, nil
+}
 
 type MockDB struct{}
 
@@ -134,4 +144,40 @@ func awaitJobRan(t *testing.T, j *Job, timeout time.Duration) {
 	case <-time.After(timeout):
 		t.Fatal("Job failed to run")
 	}
+}
+
+var _ JobDB = (MemoryDB)(nil)
+
+type MemoryDB map[string]*Job
+
+func (m MemoryDB) GetAll() (ret []*Job, _ error) {
+	for _, v := range m {
+		ret = append(ret, v)
+	}
+	return
+}
+
+func (m MemoryDB) Get(id string) (*Job, error) {
+	j, exist := m[id]
+	if !exist {
+		return nil, ErrJobNotFound(id)
+	}
+	return j, nil
+}
+
+func (m MemoryDB) Delete(id string) error {
+	if _, exists := m[id]; !exists {
+		return errors.New("Doesn't exist") // Used for testing
+	}
+	delete(m, id)
+	return nil
+}
+
+func (m MemoryDB) Save(j *Job) error {
+	m[j.Id] = j
+	return nil
+}
+
+func (m MemoryDB) Close() error {
+	return nil
 }

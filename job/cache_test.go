@@ -7,21 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// This file contains tests for specific JobCaches.
+
 func TestCacheStart(t *testing.T) {
 	cache := NewMockCache()
 	cache.Start(time.Duration(time.Hour), time.Duration(time.Hour))
-}
-
-func TestCacheDeleteJobNotFound(t *testing.T) {
-	cache := NewMockCache()
-	err := cache.Delete("not-a-real-id")
-	assert.Equal(t, ErrJobDoesntExist, err)
-}
-
-func TestCachePersist(t *testing.T) {
-	cache := NewMockCache()
-	err := cache.Persist()
-	assert.NoError(t, err)
 }
 
 func TestCacheRetainShouldRemoveOldJobStats(t *testing.T) {
@@ -49,15 +39,6 @@ func TestCacheRetainShouldRemoveOldJobStats(t *testing.T) {
 	j.lock.RLock()
 	assert.Equal(t, 1, len(j.Stats)) // New job stats should not be cleaned up
 	j.lock.RUnlock()
-}
-
-type MockDBGetAll struct {
-	MockDB
-	response []*Job
-}
-
-func (d *MockDBGetAll) GetAll() ([]*Job, error) {
-	return d.response, nil
 }
 
 func TestCacheStartStartsARecurringJobWithStartDateInThePast(t *testing.T) {

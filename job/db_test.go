@@ -8,12 +8,11 @@ import (
 )
 
 func TestDelete(t *testing.T) {
-	db := &MockDB{}
 	cache := NewMockCache()
 	job := GetMockJobWithGenericSchedule(time.Now())
 	job.Init(cache)
 
-	err := job.Delete(cache, db)
+	err := job.Delete(cache)
 	assert.NoError(t, err)
 
 	val, err := cache.Get(job.Id)
@@ -22,13 +21,12 @@ func TestDelete(t *testing.T) {
 }
 
 func TestDeleteDoesNotExists(t *testing.T) {
-	db := &MockDB{}
 	cache := NewMockCache()
 	jobOne := GetMockJobWithGenericSchedule(time.Now())
 	jobOne.Init(cache)
 	jobTwo := GetMockJobWithGenericSchedule(time.Now())
 
-	err := jobTwo.Delete(cache, db)
+	err := jobTwo.Delete(cache)
 	assert.Error(t, err)
 
 	val, err := cache.Get(jobOne.Id)
@@ -37,14 +35,13 @@ func TestDeleteDoesNotExists(t *testing.T) {
 }
 
 func TestDeleteAll(t *testing.T) {
-	db := &MockDB{}
 	cache := NewMockCache()
 	for i := 0; i < 10; i++ {
 		job := GetMockJobWithGenericSchedule(time.Now())
 		job.Init(cache)
 	}
 
-	err := DeleteAll(cache, db)
+	err := DeleteAll(cache)
 	assert.NoError(t, err)
 
 	allJobs := cache.GetAll()

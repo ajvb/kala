@@ -120,7 +120,7 @@ var serveCmd = &cobra.Command{
 		cache.Start(time.Duration(viper.GetInt("persist-every"))*time.Second, time.Duration(viper.GetInt("jobstat-ttl"))*time.Minute)
 
 		log.Infof("Starting server on port %s", connectionString)
-		srv := api.MakeServer(connectionString, cache, db, viper.GetString("default-owner"), viper.GetBool("profile"))
+		srv := api.MakeServer(connectionString, cache, viper.GetString("default-owner"), viper.GetBool("profile"))
 		log.Fatal(srv.ListenAndServe())
 	},
 }

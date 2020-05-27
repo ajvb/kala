@@ -2,6 +2,7 @@ package job
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -130,7 +131,6 @@ func (c *MemoryJobCache) Set(j *Job) error {
 }
 
 func (c *MemoryJobCache) Delete(id string) error {
-	log.Infoln("Lock on delete")
 	c.jobs.Lock.Lock()
 	defer c.jobs.Lock.Unlock()
 
@@ -139,8 +139,10 @@ func (c *MemoryJobCache) Delete(id string) error {
 		return ErrJobDoesntExist
 	}
 
-	if c.PersistOnWrite {
-		if err := c.jobDB.Delete(id); err != nil {
+	err := c.jobDB.Delete(id)
+	if err != nil {
+		err = fmt.Errorf("Error occured while trying to delete job from db: %s", err)
+		if c.PersistOnWrite {
 			return err
 		}
 	}
@@ -155,7 +157,7 @@ func (c *MemoryJobCache) Delete(id string) error {
 
 	delete(c.jobs.Jobs, id)
 
-	return nil
+	return err
 }
 
 func (c *MemoryJobCache) Enable(j *Job) error {
@@ -297,11 +299,13 @@ func (c *LockFreeJobCache) Set(j *Job) error {
 func (c *LockFreeJobCache) Delete(id string) error {
 	j, err := c.Get(id)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error occured while trying to delete job from cache: %s", err)
 	}
 
-	if c.PersistOnWrite {
-		if err := c.jobDB.Delete(id); err != nil {
+	err = c.jobDB.Delete(id)
+	if err != nil {
+		err = fmt.Errorf("Error occured while trying to delete job from db: %s", err)
+		if c.PersistOnWrite {
 			return err
 		}
 	}
@@ -314,7 +318,7 @@ func (c *LockFreeJobCache) Delete(id string) error {
 	go j.DeleteFromDependentJobs(c) // todo: review
 	log.Infof("Deleting %s", id)
 	c.jobs.Del(id)
-	return nil
+	return err
 }
 
 func (c *LockFreeJobCache) Enable(j *Job) error {

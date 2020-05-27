@@ -21,22 +21,17 @@ type JobDB interface {
 	Close() error
 }
 
-func (j *Job) Delete(cache JobCache, db JobDB) error {
+func (j *Job) Delete(cache JobCache) error {
 	var err error
 	errOne := cache.Delete(j.Id)
 	if errOne != nil {
 		log.Errorf("Error occured while trying to delete job from cache: %s", errOne)
 		err = errOne
 	}
-	errTwo := db.Delete(j.Id)
-	if errTwo != nil {
-		log.Errorf("Error occured while trying to delete job from db: %s", errTwo)
-		err = errTwo
-	}
 	return err
 }
 
-func DeleteAll(cache JobCache, db JobDB) error {
+func DeleteAll(cache JobCache) error {
 	allJobs := cache.GetAll()
 	allJobs.Lock.RLock()
 	// make a copy of all jobs to prevent deadlock on delete
@@ -47,7 +42,7 @@ func DeleteAll(cache JobCache, db JobDB) error {
 	allJobs.Lock.RUnlock()
 
 	for _, j := range jobsCopy {
-		if err := j.Delete(cache, db); err != nil {
+		if err := j.Delete(cache); err != nil {
 			return err
 		}
 	}
