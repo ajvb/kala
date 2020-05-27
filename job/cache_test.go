@@ -113,7 +113,7 @@ func TestCacheStartCanResumeJobAtNextScheduledPoint(t *testing.T) {
 	j.lock.RUnlock()
 
 	// Disable to prevent from running
-	j.Disable()
+	assert.NoError(t, j.Disable(cache))
 
 	// It shouldn't run while it's disabled.
 	time.Sleep(time.Second * 3)
@@ -122,7 +122,7 @@ func TestCacheStartCanResumeJobAtNextScheduledPoint(t *testing.T) {
 	j.lock.RUnlock()
 
 	// Re-enable
-	j.Enable(cache)
+	assert.NoError(t, j.Enable(cache))
 
 	// It shouldn't re-run right away; should wait for its next run point.
 	time.Sleep(time.Second * 1)

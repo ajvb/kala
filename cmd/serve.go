@@ -141,7 +141,7 @@ func init() {
 	serveCmd.Flags().String("jobdb-tls-keypath", "", "Path to tls client key file for the job database.")
 	serveCmd.Flags().String("jobdb-tls-servername", "", "Server name to verify cert for the job database.")
 	serveCmd.Flags().BoolP("verbose", "v", false, "Set for verbose logging.")
-	serveCmd.Flags().IntP("persist-every", "e", 5, "Sets the persisWaitTime in seconds")
+	serveCmd.Flags().IntP("persist-every", "e", 0, "Sets the persisWaitTime in seconds")
 	serveCmd.Flags().Int("jobstat-ttl", -1, "Sets the jobstat-ttl in minutes. The default -1 value indicates JobStat entries will be kept forever")
 	serveCmd.Flags().Bool("profile", false, "Activate pprof handlers")
 }

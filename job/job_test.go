@@ -158,7 +158,7 @@ func TestJobDisable(t *testing.T) {
 
 	assert.False(t, genericMockJob.Disabled, "Job should start with disabled == false")
 
-	genericMockJob.Disable()
+	assert.NoError(t, genericMockJob.Disable(cache))
 	assert.True(t, genericMockJob.Disabled, "Job.Disable() should set Job.Disabled to true")
 	assert.False(t, genericMockJob.jobTimer.Stop())
 }
@@ -914,7 +914,7 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 	assert.True(t, len(mockJob.DependentJobs) == 1)
 
 	// Disables it from running.
-	mockChildJob.Disable()
+	assert.NoError(t, mockChildJob.Disable(cache))
 
 	j, err := cache.Get(mockJob.Id)
 	assert.NoError(t, err)

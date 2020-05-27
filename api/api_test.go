@@ -334,7 +334,7 @@ func (a *ApiTestSuite) TestHandleEnableJobRequest() {
 	r.HandleFunc(ApiJobPath+"enable/{id}", HandleEnableJobRequest(cache)).Methods("POST")
 	ts := httptest.NewServer(r)
 
-	job.Disable()
+	a.NoError(job.Disable(cache))
 
 	_, req := setupTestReq(t, "POST", ts.URL+ApiJobPath+"enable/"+job.Id, nil)
 

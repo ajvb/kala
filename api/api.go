@@ -258,7 +258,10 @@ func HandleDisableJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *
 			return
 		}
 
-		j.Disable()
+		if err := j.Disable(cache); err != nil {
+			errorEncodeJSON(err, http.StatusInternalServerError, w)
+			return
+		}
 
 		w.WriteHeader(http.StatusNoContent)
 	}
@@ -280,7 +283,10 @@ func HandleEnableJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *h
 			return
 		}
 
-		j.Enable(cache)
+		if err := j.Enable(cache); err != nil {
+			errorEncodeJSON(err, http.StatusInternalServerError, w)
+			return
+		}
 
 		w.WriteHeader(http.StatusNoContent)
 	}

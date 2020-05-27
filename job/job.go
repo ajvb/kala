@@ -372,24 +372,12 @@ func (j *Job) GetWaitDuration() time.Duration {
 
 // Disable stops the job from running by stopping its jobTimer. It also sets Job.Disabled to true,
 // which is reflected in the UI.
-func (j *Job) Disable() {
-	j.lock.Lock()
-	defer j.lock.Unlock()
-
-	if j.jobTimer != nil {
-		j.jobTimer.Stop()
-	}
-	j.Disabled = true
+func (j *Job) Disable(cache JobCache) error {
+	return cache.Disable(j)
 }
 
-func (j *Job) Enable(cache JobCache) {
-	j.lock.Lock()
-	defer j.lock.Unlock()
-
-	if j.jobTimer != nil && j.Disabled {
-		go j.StartWaiting(cache, false)
-	}
-	j.Disabled = false
+func (j *Job) Enable(cache JobCache) error {
+	return cache.Enable(j)
 }
 
 // DeleteFromParentJobs goes through and deletes the current job from any parent jobs.
