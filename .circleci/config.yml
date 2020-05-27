@@ -59,7 +59,7 @@ jobs:
 
       - run:
           name: Start service
-          command: ./bin/kala run --jobDB=consul
+          command: ./bin/kala serve --jobdb=consul
           background: true
 
       - run:
