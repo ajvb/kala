@@ -75,7 +75,7 @@ func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 	}
 
 	// Occasionally, save items in cache to db.
-	if !c.PersistOnWrite {
+	if persistWaitTime > 0 {
 		go c.PersistEvery(persistWaitTime)
 	}
 
@@ -235,7 +235,9 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.
 		}
 	}
 	// Occasionally, save items in cache to db.
-	go c.PersistEvery(persistWaitTime)
+	if persistWaitTime > 0 {
+		go c.PersistEvery(persistWaitTime)
+	}
 
 	// Run retention every minute to clean up old job stats entries
 	if jobstatTtl > 0 {
@@ -299,7 +301,7 @@ func (c *LockFreeJobCache) Set(j *Job) error {
 func (c *LockFreeJobCache) Delete(id string) error {
 	j, err := c.Get(id)
 	if err != nil {
-		return fmt.Errorf("Error occured while trying to delete job from cache: %s", err)
+		return ErrJobDoesntExist
 	}
 
 	err = c.jobDB.Delete(id)
