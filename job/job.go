@@ -75,6 +75,17 @@ type Job struct {
 	jobTimer  clock.Timer
 	NextRunAt time.Time `json:"next_run_at"`
 
+	// Templating delimiters, the left & right separated by space,
+	// for example `{{ }}` or `${ }`.
+	//
+	// If this field is non-empty, then each time this
+	// job is executed, Kala will template its main
+	// content as a Go Template with the job itself as data.
+	//
+	// The Command is templated for local jobs,
+	// and Url and Body in RemoteProperties.
+	TemplateDelimiters string
+
 	// The clock for this job; used to mock time during tests.
 	clk Clock
 
