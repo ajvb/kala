@@ -120,11 +120,15 @@ var serveCmd = &cobra.Command{
 
 		// Persistence mode
 		persistEvery := viper.GetInt("persist-every")
-		if persistEvery == 0 || viper.GetBool("tx-persist") {
-			log.Info("Will use transactional persistence!")
-			cache.PersistOnWrite = true
-		} else {
+		if viper.GetBool("no-tx-persist") {
 			log.Warnf("Transactional persistence is not enabled; job cache will persist to db every %d seconds", persistEvery)
+		} else {
+			log.Infof("Enabling transactional persistence, plus persist all jobs to db every %d seconds", persistEvery)
+			cache.PersistOnWrite = true
+		}
+
+		if persistEvery < 1 {
+			log.Fatal("With transactional persistence off, you will need to set persist-every to greater than zero.")
 		}
 
 		// Startup cache
@@ -153,8 +157,8 @@ func init() {
 	serveCmd.Flags().String("jobdb-tls-keypath", "", "Path to tls client key file for the job database.")
 	serveCmd.Flags().String("jobdb-tls-servername", "", "Server name to verify cert for the job database.")
 	serveCmd.Flags().BoolP("verbose", "v", false, "Set for verbose logging.")
-	serveCmd.Flags().IntP("persist-every", "e", 0, "Interval in seconds between persisting jobs to db; the default of zero enables --tx-persist")
+	serveCmd.Flags().IntP("persist-every", "e", 60*60, "Interval in seconds between persisting all jobs to db")
 	serveCmd.Flags().Int("jobstat-ttl", -1, "Sets the jobstat-ttl in minutes. The default -1 value indicates JobStat entries will be kept forever")
 	serveCmd.Flags().Bool("profile", false, "Activate pprof handlers")
-	serveCmd.Flags().Bool("tx-persist", false, "Whenever a job is created or updated, persist it to the db as part of that transaction")
+	serveCmd.Flags().Bool("no-tx-persist", false, "Only persist to db periodically, not transactionally.")
 }

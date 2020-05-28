@@ -138,6 +138,8 @@ func (c *MemoryJobCache) Delete(id string) error {
 	if j == nil {
 		return ErrJobDoesntExist
 	}
+	j.lock.Lock()
+	defer j.lock.Unlock()
 
 	err := c.jobDB.Delete(id)
 	if err != nil {
@@ -147,7 +149,9 @@ func (c *MemoryJobCache) Delete(id string) error {
 		}
 	}
 
+	j.lock.Unlock()
 	j.StopTimer()
+	j.lock.Lock()
 
 	go j.DeleteFromParentJobs(c) // todo: review
 
@@ -290,6 +294,7 @@ func (c *LockFreeJobCache) Set(j *Job) error {
 
 	if c.PersistOnWrite {
 		if err := c.jobDB.Save(j); err != nil {
+			j.lock.Unlock()
 			return err
 		}
 	}
@@ -303,6 +308,8 @@ func (c *LockFreeJobCache) Delete(id string) error {
 	if err != nil {
 		return ErrJobDoesntExist
 	}
+	j.lock.Lock()
+	defer j.lock.Unlock()
 
 	err = c.jobDB.Delete(id)
 	if err != nil {
@@ -312,7 +319,9 @@ func (c *LockFreeJobCache) Delete(id string) error {
 		}
 	}
 
+	j.lock.Unlock()
 	j.StopTimer()
+	j.lock.Lock()
 
 	go j.DeleteFromParentJobs(c) // todo: review
 	// Remove itself from dependent jobs as a parent job
@@ -337,11 +346,12 @@ func (c *LockFreeJobCache) Persist() error {
 	jm := c.GetAll()
 	for _, j := range jm.Jobs {
 		j.lock.RLock()
-		defer j.lock.RUnlock()
 		err := c.jobDB.Save(j)
 		if err != nil {
+			j.lock.RUnlock()
 			return err
 		}
+		j.lock.RUnlock()
 	}
 	return nil
 }

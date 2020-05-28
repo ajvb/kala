@@ -3,6 +3,7 @@ package job
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -146,38 +147,56 @@ func awaitJobRan(t *testing.T, j *Job, timeout time.Duration) {
 	}
 }
 
-var _ JobDB = (MemoryDB)(nil)
+var _ JobDB = (*MemoryDB)(nil)
 
-type MemoryDB map[string]*Job
+type MemoryDB struct {
+	m    map[string]*Job
+	lock sync.RWMutex
+}
 
-func (m MemoryDB) GetAll() (ret []*Job, _ error) {
-	for _, v := range m {
+func NewMemoryDB() *MemoryDB {
+	return &MemoryDB{
+		m: map[string]*Job{},
+	}
+}
+
+func (m *MemoryDB) GetAll() (ret []*Job, _ error) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	for _, v := range m.m {
 		ret = append(ret, v)
 	}
 	return
 }
 
-func (m MemoryDB) Get(id string) (*Job, error) {
-	j, exist := m[id]
+func (m *MemoryDB) Get(id string) (*Job, error) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	j, exist := m.m[id]
 	if !exist {
 		return nil, ErrJobNotFound(id)
 	}
 	return j, nil
 }
 
-func (m MemoryDB) Delete(id string) error {
-	if _, exists := m[id]; !exists {
+func (m *MemoryDB) Delete(id string) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	if _, exists := m.m[id]; !exists {
 		return errors.New("Doesn't exist") // Used for testing
 	}
-	delete(m, id)
+	delete(m.m, id)
+	// log.Printf("After delete: %+v", m)
 	return nil
 }
 
-func (m MemoryDB) Save(j *Job) error {
-	m[j.Id] = j
+func (m *MemoryDB) Save(j *Job) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	m.m[j.Id] = j
 	return nil
 }
 
-func (m MemoryDB) Close() error {
+func (m *MemoryDB) Close() error {
 	return nil
 }

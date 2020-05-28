@@ -45,17 +45,17 @@ func testCache(t *testing.T, cache JobCache) {
 
 func TestCachePersistence(t *testing.T) {
 
-	mdb1a := MemoryDB{}
+	mdb1a := NewMemoryDB()
 	cache1a := NewMemoryJobCache(mdb1a)
 
-	mdb1b := MemoryDB{}
+	mdb1b := NewMemoryDB()
 	cache1b := NewMemoryJobCache(mdb1b)
 	cache1b.PersistOnWrite = true
 
-	mdb2a := MemoryDB{}
+	mdb2a := NewMemoryDB()
 	cache2a := NewLockFreeJobCache(mdb2a)
 
-	mdb2b := MemoryDB{}
+	mdb2b := NewMemoryDB()
 	cache2b := NewLockFreeJobCache(mdb2b)
 	cache2b.PersistOnWrite = true
 
@@ -149,8 +149,8 @@ func testCachePersistence(t *testing.T, cache JobCache, db JobDB, shouldPersist 
 
 			assert.NoError(t, cache.Delete(j.Id))
 			ret, err := db.Get(j.Id)
-			assert.Equal(t, (*Job)(nil), ret)
 			assert.IsType(t, ErrJobNotFound(""), err)
+			assert.Equal(t, (*Job)(nil), ret)
 
 			t.Run("errored", func(t *testing.T) {
 
@@ -167,8 +167,8 @@ func testCachePersistence(t *testing.T, cache JobCache, db JobDB, shouldPersist 
 					assert.NoError(t, err)
 					assert.Equal(t, j.Id, ret.Id)
 				} else {
-					assert.Equal(t, (*Job)(nil), ret)
 					assert.Error(t, err)
+					assert.Equal(t, (*Job)(nil), ret)
 				}
 
 			})

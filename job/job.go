@@ -466,10 +466,11 @@ func (j *Job) RunOnFailureJob(cache JobCache) {
 }
 
 func (j *Job) Run(cache JobCache) {
-	// Schedule next run
+
 	j.lock.RLock()
 	jobRunner := &JobRunner{job: j, meta: j.Metadata}
 	j.lock.RUnlock()
+
 	newStat, newMeta, err := jobRunner.Run(cache)
 	if err != nil {
 		j.lock.RLock()
@@ -481,6 +482,14 @@ func (j *Job) Run(cache JobCache) {
 	j.Metadata = newMeta
 	if newStat != nil {
 		j.Stats = append(j.Stats, newStat)
+	}
+
+	// Kinda annoying and inefficient that it needs to be done this way.
+	// Some refactoring is probably in order.
+	if got, err := cache.Get(j.Id); got == nil || err != nil {
+		log.Warnf("Job %s with id %s ran, but seems to have been deleted from cache; results won't be persisted.", j.Name, j.Id)
+	} else if err := cache.Set(j); err != nil {
+		log.Errorf("Job %s with id %s ran, but the results couldn't be persisted: %v", j.Name, j.Id, err)
 	}
 
 	if j.ShouldStartWaiting() {
