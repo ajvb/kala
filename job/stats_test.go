@@ -36,7 +36,7 @@ func TestKalaStats(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		j := GetMockJobWithGenericSchedule(time.Now())
 		j.Init(cache)
-		j.Disable()
+		assert.NoError(t, j.Disable(cache))
 	}
 
 	kalaStat := NewKalaStats(cache)
@@ -62,12 +62,12 @@ func TestNextRunAt(t *testing.T) {
 	sched := time.Now().Add(time.Second)
 	j := GetMockJobWithSchedule(2, sched, "P1DT10M10S")
 	j.Init(cache)
-	j.Disable()
+	assert.NoError(t, j.Disable(cache))
 
 	sched2 := time.Now().Add(2 * time.Second)
 	j2 := GetMockJobWithSchedule(2, sched2, "P1DT10M10S")
 	j2.Init(cache)
-	j2.Disable()
+	assert.NoError(t, j2.Disable(cache))
 
 	kalaStat := NewKalaStats(cache)
 	j.lock.RLock()

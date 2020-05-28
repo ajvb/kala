@@ -140,11 +140,10 @@ func (a *ApiTestSuite) TestHandleAddJobFailureBadSchedule() {
 
 func (a *ApiTestSuite) TestDeleteJobSuccess() {
 	t := a.T()
-	db := &job.MockDB{}
 	cache, job := generateJobAndCache()
 
 	r := mux.NewRouter()
-	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
+	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache)).Methods("DELETE", "GET")
 	ts := httptest.NewServer(r)
 
 	_, req := setupTestReq(t, "DELETE", ts.URL+ApiJobPath+job.Id, nil)
@@ -159,13 +158,12 @@ func (a *ApiTestSuite) TestDeleteJobSuccess() {
 
 func (a *ApiTestSuite) TestDeleteAllJobsSuccess() {
 	t := a.T()
-	db := &job.MockDB{}
 	cache, jobOne := generateJobAndCache()
 	jobTwo := job.GetMockJobWithGenericSchedule(time.Now())
 	jobTwo.Init(cache)
 
 	r := mux.NewRouter()
-	r.HandleFunc(ApiJobPath+"all/", HandleDeleteAllJobs(cache, db)).Methods("DELETE")
+	r.HandleFunc(ApiJobPath+"all/", HandleDeleteAllJobs(cache)).Methods("DELETE")
 	ts := httptest.NewServer(r)
 
 	_, req := setupTestReq(t, "DELETE", ts.URL+ApiJobPath+"all/", nil)
@@ -182,11 +180,10 @@ func (a *ApiTestSuite) TestDeleteAllJobsSuccess() {
 
 func (a *ApiTestSuite) TestHandleJobRequestJobDoesNotExist() {
 	t := a.T()
-	db := &job.MockDB{}
 	cache := job.NewMockCache()
 
 	r := mux.NewRouter()
-	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
+	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache)).Methods("DELETE", "GET")
 	ts := httptest.NewServer(r)
 
 	_, req := setupTestReq(t, "DELETE", ts.URL+ApiJobPath+"not-a-real-id", nil)
@@ -200,11 +197,10 @@ func (a *ApiTestSuite) TestHandleJobRequestJobDoesNotExist() {
 
 func (a *ApiTestSuite) TestGetJobSuccess() {
 	t := a.T()
-	db := &job.MockDB{}
 	cache, job := generateJobAndCache()
 
 	r := mux.NewRouter()
-	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, db)).Methods("DELETE", "GET")
+	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache)).Methods("DELETE", "GET")
 	ts := httptest.NewServer(r)
 
 	_, req := setupTestReq(t, "GET", ts.URL+ApiJobPath+job.Id, nil)
@@ -334,7 +330,7 @@ func (a *ApiTestSuite) TestHandleEnableJobRequest() {
 	r.HandleFunc(ApiJobPath+"enable/{id}", HandleEnableJobRequest(cache)).Methods("POST")
 	ts := httptest.NewServer(r)
 
-	job.Disable()
+	a.NoError(job.Disable(cache))
 
 	_, req := setupTestReq(t, "POST", ts.URL+ApiJobPath+"enable/"+job.Id, nil)
 
@@ -414,11 +410,10 @@ func (a *ApiTestSuite) TestHandleKalaStatsRequest() {
 }
 
 func (a *ApiTestSuite) TestSetupApiRoutes() {
-	db := &job.MockDB{}
 	cache := job.NewMockCache()
 	r := mux.NewRouter()
 
-	SetupApiRoutes(r, cache, db, "")
+	SetupApiRoutes(r, cache, "")
 
 	a.NotNil(r)
 	a.IsType(r, mux.NewRouter())

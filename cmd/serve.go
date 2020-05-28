@@ -115,12 +115,28 @@ var serveCmd = &cobra.Command{
 		}
 
 		// Create cache
-		cache := job.NewLockFreeJobCache(db)
 		log.Infof("Preparing cache")
-		cache.Start(time.Duration(viper.GetInt("persist-every"))*time.Second, time.Duration(viper.GetInt("jobstat-ttl"))*time.Minute)
+		cache := job.NewLockFreeJobCache(db)
 
+		// Persistence mode
+		persistEvery := viper.GetInt("persist-every")
+		if viper.GetBool("no-tx-persist") {
+			log.Warnf("Transactional persistence is not enabled; job cache will persist to db every %d seconds", persistEvery)
+		} else {
+			log.Infof("Enabling transactional persistence, plus persist all jobs to db every %d seconds", persistEvery)
+			cache.PersistOnWrite = true
+		}
+
+		if persistEvery < 1 {
+			log.Fatal("With transactional persistence off, you will need to set persist-every to greater than zero.")
+		}
+
+		// Startup cache
+		cache.Start(time.Duration(persistEvery)*time.Second, time.Duration(viper.GetInt("jobstat-ttl"))*time.Minute)
+
+		// Launch API server
 		log.Infof("Starting server on port %s", connectionString)
-		srv := api.MakeServer(connectionString, cache, db, viper.GetString("default-owner"), viper.GetBool("profile"))
+		srv := api.MakeServer(connectionString, cache, viper.GetString("default-owner"), viper.GetBool("profile"))
 		log.Fatal(srv.ListenAndServe())
 	},
 }
@@ -141,7 +157,8 @@ func init() {
 	serveCmd.Flags().String("jobdb-tls-keypath", "", "Path to tls client key file for the job database.")
 	serveCmd.Flags().String("jobdb-tls-servername", "", "Server name to verify cert for the job database.")
 	serveCmd.Flags().BoolP("verbose", "v", false, "Set for verbose logging.")
-	serveCmd.Flags().IntP("persist-every", "e", 5, "Sets the persisWaitTime in seconds")
+	serveCmd.Flags().IntP("persist-every", "e", 60*60, "Interval in seconds between persisting all jobs to db")
 	serveCmd.Flags().Int("jobstat-ttl", -1, "Sets the jobstat-ttl in minutes. The default -1 value indicates JobStat entries will be kept forever")
 	serveCmd.Flags().Bool("profile", false, "Activate pprof handlers")
+	serveCmd.Flags().Bool("no-tx-persist", false, "Only persist to db periodically, not transactionally.")
 }

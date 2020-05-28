@@ -65,7 +65,7 @@ func TestDeleteJob(t *testing.T) {
 		assert.NotNil(t, retrievedJob)
 
 		// Delete it
-		err = genericMockJob.Delete(cache, db)
+		err = genericMockJob.Delete(cache)
 		assert.Nil(t, err)
 
 		k, err := db.Get(genericMockJob.Id)
@@ -75,7 +75,7 @@ func TestDeleteJob(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, retrievedJobTwo)
 
-		genericMockJob.Delete(cache, db)
+		genericMockJob.Delete(cache)
 	}
 }
 

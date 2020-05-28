@@ -139,8 +139,8 @@ func TestRealDb(t *testing.T) {
 	db := New(dsn, nil)
 	cache := job.NewLockFreeJobCache(db)
 
-	genericMockJobOne := job.GetMockJobWithGenericSchedule(time.Now())
-	genericMockJobTwo := job.GetMockJobWithGenericSchedule(time.Now())
+	genericMockJobOne := job.GetMockJobWithGenericSchedule(time.Now().Add(time.Hour))
+	genericMockJobTwo := job.GetMockJobWithGenericSchedule(time.Now().Add(time.Hour))
 
 	genericMockJobOne.Init(cache)
 	genericMockJobTwo.Init(cache)

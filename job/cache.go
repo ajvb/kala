@@ -2,6 +2,7 @@ package job
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -22,6 +23,8 @@ type JobCache interface {
 	Set(j *Job) error
 	Delete(id string) error
 	Persist() error
+	Enable(j *Job) error
+	Disable(j *Job) error
 }
 
 type JobsMap struct {
@@ -39,8 +42,9 @@ func NewJobsMap() *JobsMap {
 type MemoryJobCache struct {
 	// Jobs is a map from Job id's to pointers to the jobs.
 	// Used as the main "data store" within this cache implementation.
-	jobs  *JobsMap
-	jobDB JobDB
+	jobs           *JobsMap
+	jobDB          JobDB
+	PersistOnWrite bool
 }
 
 func NewMemoryJobCache(jobDB JobDB) *MemoryJobCache {
@@ -52,7 +56,7 @@ func NewMemoryJobCache(jobDB JobDB) *MemoryJobCache {
 
 func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 	if persistWaitTime == 0 {
-		persistWaitTime = 5 * time.Second
+		c.PersistOnWrite = true
 	}
 
 	// Prep cache
@@ -71,7 +75,9 @@ func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 	}
 
 	// Occasionally, save items in cache to db.
-	go c.PersistEvery(persistWaitTime)
+	if persistWaitTime > 0 {
+		go c.PersistEvery(persistWaitTime)
+	}
 
 	// Process-level defer for shutting down the db.
 	ch := make(chan os.Signal)
@@ -113,12 +119,18 @@ func (c *MemoryJobCache) Set(j *Job) error {
 	if j == nil {
 		return nil
 	}
+
+	if c.PersistOnWrite {
+		if err := c.jobDB.Save(j); err != nil {
+			return err
+		}
+	}
+
 	c.jobs.Jobs[j.Id] = j
 	return nil
 }
 
 func (c *MemoryJobCache) Delete(id string) error {
-	log.Infoln("Lock on delete")
 	c.jobs.Lock.Lock()
 	defer c.jobs.Lock.Unlock()
 
@@ -126,18 +138,40 @@ func (c *MemoryJobCache) Delete(id string) error {
 	if j == nil {
 		return ErrJobDoesntExist
 	}
+	j.lock.Lock()
+	defer j.lock.Unlock()
 
-	j.Disable()
+	err := c.jobDB.Delete(id)
+	if err != nil {
+		err = fmt.Errorf("Error occured while trying to delete job from db: %s", err)
+		if c.PersistOnWrite {
+			return err
+		}
+	}
 
-	go j.DeleteFromParentJobs(c)
+	j.lock.Unlock()
+	j.StopTimer()
+	j.lock.Lock()
+
+	go j.DeleteFromParentJobs(c) // todo: review
 
 	// Remove itself from dependent jobs as a parent job
 	// and possibly delete child jobs if they don't have any other parents.
-	go j.DeleteFromDependentJobs(c)
+	go j.DeleteFromDependentJobs(c) // todo: review
 
 	delete(c.jobs.Jobs, id)
 
-	return nil
+	return err
+}
+
+func (c *MemoryJobCache) Enable(j *Job) error {
+	return enable(j, c, c.PersistOnWrite)
+}
+
+// Disable stops a job from running by stopping its jobTimer. It also sets Job.Disabled to true,
+// which is reflected in the UI.
+func (c *MemoryJobCache) Disable(j *Job) error {
+	return disable(j, c, c.PersistOnWrite)
 }
 
 func (c *MemoryJobCache) Persist() error {
@@ -168,6 +202,7 @@ type LockFreeJobCache struct {
 	jobs            *hashmap.HashMap
 	jobDB           JobDB
 	retentionPeriod time.Duration
+	PersistOnWrite  bool
 	Clock
 }
 
@@ -181,7 +216,7 @@ func NewLockFreeJobCache(jobDB JobDB) *LockFreeJobCache {
 
 func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.Duration) {
 	if persistWaitTime == 0 {
-		persistWaitTime = 5 * time.Second
+		c.PersistOnWrite = true
 	}
 
 	// Prep cache
@@ -204,7 +239,9 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.
 		}
 	}
 	// Occasionally, save items in cache to db.
-	go c.PersistEvery(persistWaitTime)
+	if persistWaitTime > 0 {
+		go c.PersistEvery(persistWaitTime)
+	}
 
 	// Run retention every minute to clean up old job stats entries
 	if jobstatTtl > 0 {
@@ -254,6 +291,13 @@ func (c *LockFreeJobCache) Set(j *Job) error {
 	if j == nil {
 		return nil
 	}
+
+	if c.PersistOnWrite {
+		if err := c.jobDB.Save(j); err != nil {
+			return err
+		}
+	}
+
 	c.jobs.Set(j.Id, j)
 	return nil
 }
@@ -261,28 +305,52 @@ func (c *LockFreeJobCache) Set(j *Job) error {
 func (c *LockFreeJobCache) Delete(id string) error {
 	j, err := c.Get(id)
 	if err != nil {
-		return err
+		return ErrJobDoesntExist
+	}
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	err = c.jobDB.Delete(id)
+	if err != nil {
+		err = fmt.Errorf("Error occured while trying to delete job from db: %s", err)
+		if c.PersistOnWrite {
+			return err
+		}
 	}
 
-	j.Disable()
-	go j.DeleteFromParentJobs(c)
+	j.lock.Unlock()
+	j.StopTimer()
+	j.lock.Lock()
+
+	go j.DeleteFromParentJobs(c) // todo: review
 	// Remove itself from dependent jobs as a parent job
 	// and possibly delete child jobs if they don't have any other parents.
-	go j.DeleteFromDependentJobs(c)
+	go j.DeleteFromDependentJobs(c) // todo: review
 	log.Infof("Deleting %s", id)
 	c.jobs.Del(id)
-	return nil
+	return err
+}
+
+func (c *LockFreeJobCache) Enable(j *Job) error {
+	return enable(j, c, c.PersistOnWrite)
+}
+
+// Disable stops a job from running by stopping its jobTimer. It also sets Job.Disabled to true,
+// which is reflected in the UI.
+func (c *LockFreeJobCache) Disable(j *Job) error {
+	return disable(j, c, c.PersistOnWrite)
 }
 
 func (c *LockFreeJobCache) Persist() error {
 	jm := c.GetAll()
 	for _, j := range jm.Jobs {
 		j.lock.RLock()
-		defer j.lock.RUnlock()
 		err := c.jobDB.Save(j)
 		if err != nil {
+			j.lock.RUnlock()
 			return err
 		}
+		j.lock.RUnlock()
 	}
 	return nil
 }
