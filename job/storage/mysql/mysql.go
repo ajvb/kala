@@ -1,10 +1,10 @@
 package mysql
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"crypto/tls"
 
 	"github.com/go-sql-driver/mysql"
 

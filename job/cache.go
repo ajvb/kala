@@ -294,7 +294,6 @@ func (c *LockFreeJobCache) Set(j *Job) error {
 
 	if c.PersistOnWrite {
 		if err := c.jobDB.Save(j); err != nil {
-			j.lock.Unlock()
 			return err
 		}
 	}
