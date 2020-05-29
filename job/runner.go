@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/mattn/go-shellwords"
@@ -25,9 +26,10 @@ type JobRunner struct {
 }
 
 var (
-	ErrJobDisabled    = errors.New("Job cannot run, as it is disabled")
-	ErrCmdIsEmpty     = errors.New("Job Command is empty.")
-	ErrJobTypeInvalid = errors.New("Job Type is not valid.")
+	ErrJobDisabled       = errors.New("Job cannot run, as it is disabled")
+	ErrCmdIsEmpty        = errors.New("Job Command is empty.")
+	ErrJobTypeInvalid    = errors.New("Job Type is not valid.")
+	ErrInvalidDelimiters = errors.New("Job has invalid templating delimiters.")
 )
 
 // Run calls the appropriate run function, collects metadata around the success
@@ -124,10 +126,21 @@ func (j *JobRunner) RemoteRun() (string, error) {
 		defer cncl()
 	}
 
+	// Get the actual url and body we're going to be using,
+	// including any necessary templating.
+	url, err := j.tryTemplatize(j.job.RemoteProperties.Url)
+	if err != nil {
+		return "", fmt.Errorf("Error templatizing url: %v", err)
+	}
+	body, err := j.tryTemplatize(j.job.RemoteProperties.Body)
+	if err != nil {
+		return "", fmt.Errorf("Error templatizing body: %v", err)
+	}
+
 	// Normalize the method passed by the user
 	method := strings.ToUpper(j.job.RemoteProperties.Method)
-	bodyBuffer := bytes.NewBufferString(j.job.RemoteProperties.Body)
-	req, err := http.NewRequest(method, j.job.RemoteProperties.Url, bodyBuffer)
+	bodyBuffer := bytes.NewBufferString(body)
+	req, err := http.NewRequest(method, url, bodyBuffer)
 	if err != nil {
 		return "", err
 	}
@@ -164,9 +177,16 @@ func initShParser() *shellwords.Parser {
 func (j *JobRunner) runCmd() (string, error) {
 	j.numberOfAttempts++
 
+	// Get the actual command we're going to be running,
+	// including any necessary templating.
+	cmdText, err := j.tryTemplatize(j.job.Command)
+	if err != nil {
+		return "", fmt.Errorf("Error templatizing command: %v", err)
+	}
+
 	// Execute command
 	shParser := initShParser()
-	args, err := shParser.Parse(j.job.Command)
+	args, err := shParser.Parse(cmdText)
 	if err != nil {
 		return "", err
 	}
@@ -180,6 +200,36 @@ func (j *JobRunner) runCmd() (string, error) {
 		return "", fmt.Errorf("%s: %s", err, strings.TrimSpace(string(out)))
 	}
 	return strings.TrimSpace(string(out)), nil
+}
+
+func (j *JobRunner) tryTemplatize(content string) (string, error) {
+	delims := j.job.TemplateDelimiters
+
+	if delims == "" {
+		return content, nil
+	}
+
+	split := strings.Split(delims, " ")
+	if len(split) != 2 {
+		return "", ErrInvalidDelimiters
+	}
+
+	left, right := split[0], split[1]
+	if left == "" || right == "" {
+		return "", ErrInvalidDelimiters
+	}
+
+	t, err := template.New("tmpl").Delims(left, right).Parse(content)
+	if err != nil {
+		return "", fmt.Errorf("Error parsing template: %v", err)
+	}
+
+	b := bytes.NewBuffer(nil)
+	if err := t.Execute(b, j.job); err != nil {
+		return "", fmt.Errorf("Error executing template: %v", err)
+	}
+
+	return b.String(), nil
 }
 
 func (j *JobRunner) shouldRetry() bool {
