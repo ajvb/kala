@@ -20,6 +20,7 @@ import (
 )
 
 var (
+	somethingUnused        = false
 	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
 
 	ErrInvalidJob       = errors.New("Invalid Local Job. Job's must contain a Name and a Command field")
