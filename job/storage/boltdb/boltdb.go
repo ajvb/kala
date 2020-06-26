@@ -3,6 +3,7 @@ package boltdb
 import (
 	"bytes"
 	"encoding/gob"
+	"os"
 	"strings"
 	"time"
 
@@ -21,7 +22,8 @@ func GetBoltDB(path string) *BoltJobDB {
 		path += "/"
 	}
 	path += "jobdb.db"
-	database, err := bolt.Open(path, 0600, &bolt.Options{Timeout: time.Second * 10})
+	var perms os.FileMode = 0600
+	database, err := bolt.Open(path, perms, &bolt.Options{Timeout: time.Second * 10}) //nolint:gomnd
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,7 +55,7 @@ func (db *BoltJobDB) GetAll() ([]*job.Job, error) {
 			buffer := bytes.NewBuffer(v)
 			dec := gob.NewDecoder(buffer)
 			j := new(job.Job)
-			err := dec.Decode(j)
+			err = dec.Decode(j)
 
 			if err != nil {
 				return err

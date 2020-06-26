@@ -106,13 +106,13 @@ func (d DB) Save(j *job.Job) error {
 	}
 	statement, err := transaction.Prepare(query)
 	if err != nil {
-		transaction.Rollback()
+		transaction.Rollback() //nolint:errcheck // adding insult to injury
 		return err
 	}
 	defer statement.Close()
 	_, err = statement.Exec(j.Id, string(r))
 	if err != nil {
-		transaction.Rollback()
+		transaction.Rollback() //nolint:errcheck // adding insult to injury
 		return err
 	}
 	return transaction.Commit()

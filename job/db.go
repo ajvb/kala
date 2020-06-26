@@ -25,7 +25,7 @@ func (j *Job) Delete(cache JobCache) error {
 	var err error
 	errOne := cache.Delete(j.Id)
 	if errOne != nil {
-		log.Errorf("Error occured while trying to delete job from cache: %s", errOne)
+		log.Errorf("Error occurred while trying to delete job from cache: %s", errOne)
 		err = errOne
 	}
 	return err

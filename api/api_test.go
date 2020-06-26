@@ -140,20 +140,20 @@ func (a *ApiTestSuite) TestHandleAddJobFailureBadSchedule() {
 
 func (a *ApiTestSuite) TestDeleteJobSuccess() {
 	t := a.T()
-	cache, job := generateJobAndCache()
+	cache, j := generateJobAndCache()
 
 	r := mux.NewRouter()
 	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache)).Methods("DELETE", "GET")
 	ts := httptest.NewServer(r)
 
-	_, req := setupTestReq(t, "DELETE", ts.URL+ApiJobPath+job.Id, nil)
+	_, req := setupTestReq(t, "DELETE", ts.URL+ApiJobPath+j.Id, nil)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	a.NoError(err)
 	a.Equal(resp.StatusCode, http.StatusNoContent)
 
-	a.Nil(cache.Get(job.Id))
+	a.Nil(cache.Get(j.Id))
 }
 
 func (a *ApiTestSuite) TestDeleteAllJobsSuccess() {
@@ -197,13 +197,13 @@ func (a *ApiTestSuite) TestHandleJobRequestJobDoesNotExist() {
 
 func (a *ApiTestSuite) TestGetJobSuccess() {
 	t := a.T()
-	cache, job := generateJobAndCache()
+	cache, j := generateJobAndCache()
 
 	r := mux.NewRouter()
 	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache)).Methods("DELETE", "GET")
 	ts := httptest.NewServer(r)
 
-	_, req := setupTestReq(t, "GET", ts.URL+ApiJobPath+job.Id, nil)
+	_, req := setupTestReq(t, "GET", ts.URL+ApiJobPath+j.Id, nil)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -215,21 +215,21 @@ func (a *ApiTestSuite) TestGetJobSuccess() {
 	resp.Body.Close()
 	err = json.Unmarshal(body, &jobResp)
 	a.NoError(err)
-	a.Equal(job.Id, jobResp.Job.Id)
-	a.Equal(job.Owner, jobResp.Job.Owner)
-	a.Equal(job.Name, jobResp.Job.Name)
+	a.Equal(j.Id, jobResp.Job.Id)
+	a.Equal(j.Owner, jobResp.Job.Owner)
+	a.Equal(j.Name, jobResp.Job.Name)
 	a.Equal(resp.StatusCode, http.StatusOK)
 }
 
 func (a *ApiTestSuite) TestHandleListJobStatsRequest() {
-	cache, job := generateJobAndCache()
-	job.Run(cache)
+	cache, j := generateJobAndCache()
+	j.Run(cache)
 
 	r := mux.NewRouter()
 	r.HandleFunc(ApiJobPath+"stats/{id}", HandleListJobStatsRequest(cache)).Methods("GET")
 	ts := httptest.NewServer(r)
 
-	_, req := setupTestReq(a.T(), "GET", ts.URL+ApiJobPath+"stats/"+job.Id, nil)
+	_, req := setupTestReq(a.T(), "GET", ts.URL+ApiJobPath+"stats/"+j.Id, nil)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -243,7 +243,7 @@ func (a *ApiTestSuite) TestHandleListJobStatsRequest() {
 	a.NoError(err)
 
 	a.Equal(len(jobStatsResp.JobStats), 1)
-	a.Equal(jobStatsResp.JobStats[0].JobId, job.Id)
+	a.Equal(jobStatsResp.JobStats[0].JobId, j.Id)
 	a.Equal(jobStatsResp.JobStats[0].NumberOfRetries, uint(0))
 	a.True(jobStatsResp.JobStats[0].Success)
 }
@@ -295,12 +295,12 @@ func (a *ApiTestSuite) TestHandleListJobsRequest() {
 
 func (a *ApiTestSuite) TestHandleStartJobRequest() {
 	t := a.T()
-	cache, job := generateJobAndCache()
+	cache, j := generateJobAndCache()
 	r := mux.NewRouter()
 	r.HandleFunc(ApiJobPath+"start/{id}", HandleStartJobRequest(cache)).Methods("POST")
 	ts := httptest.NewServer(r)
 
-	_, req := setupTestReq(t, "POST", ts.URL+ApiJobPath+"start/"+job.Id, nil)
+	_, req := setupTestReq(t, "POST", ts.URL+ApiJobPath+"start/"+j.Id, nil)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -310,9 +310,9 @@ func (a *ApiTestSuite) TestHandleStartJobRequest() {
 
 	a.Equal(resp.StatusCode, http.StatusNoContent)
 
-	a.Equal(job.Metadata.SuccessCount, uint(1))
-	a.WithinDuration(job.Metadata.LastSuccess, now, 2*time.Second)
-	a.WithinDuration(job.Metadata.LastAttemptedRun, now, 2*time.Second)
+	a.Equal(j.Metadata.SuccessCount, uint(1))
+	a.WithinDuration(j.Metadata.LastSuccess, now, 2*time.Second)
+	a.WithinDuration(j.Metadata.LastAttemptedRun, now, 2*time.Second)
 }
 func (a *ApiTestSuite) TestHandleStartJobRequestNotFound() {
 	t := a.T()
@@ -325,14 +325,14 @@ func (a *ApiTestSuite) TestHandleStartJobRequestNotFound() {
 
 func (a *ApiTestSuite) TestHandleEnableJobRequest() {
 	t := a.T()
-	cache, job := generateJobAndCache()
+	cache, j := generateJobAndCache()
 	r := mux.NewRouter()
 	r.HandleFunc(ApiJobPath+"enable/{id}", HandleEnableJobRequest(cache)).Methods("POST")
 	ts := httptest.NewServer(r)
 
-	a.NoError(job.Disable(cache))
+	a.NoError(j.Disable(cache))
 
-	_, req := setupTestReq(t, "POST", ts.URL+ApiJobPath+"enable/"+job.Id, nil)
+	_, req := setupTestReq(t, "POST", ts.URL+ApiJobPath+"enable/"+j.Id, nil)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -340,7 +340,7 @@ func (a *ApiTestSuite) TestHandleEnableJobRequest() {
 
 	a.Equal(http.StatusNoContent, resp.StatusCode)
 
-	a.Equal(false, job.Disabled)
+	a.Equal(false, j.Disabled)
 }
 func (a *ApiTestSuite) TestHandleEnableJobRequestNotFound() {
 	t := a.T()
@@ -353,12 +353,12 @@ func (a *ApiTestSuite) TestHandleEnableJobRequestNotFound() {
 
 func (a *ApiTestSuite) TestHandleDisableJobRequest() {
 	t := a.T()
-	cache, job := generateJobAndCache()
+	cache, j := generateJobAndCache()
 	r := mux.NewRouter()
 	r.HandleFunc(ApiJobPath+"disable/{id}", HandleDisableJobRequest(cache)).Methods("POST")
 	ts := httptest.NewServer(r)
 
-	_, req := setupTestReq(t, "POST", ts.URL+ApiJobPath+"disable/"+job.Id, nil)
+	_, req := setupTestReq(t, "POST", ts.URL+ApiJobPath+"disable/"+j.Id, nil)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -366,7 +366,7 @@ func (a *ApiTestSuite) TestHandleDisableJobRequest() {
 
 	a.Equal(http.StatusNoContent, resp.StatusCode)
 
-	a.Equal(true, job.Disabled)
+	a.Equal(true, j.Disabled)
 }
 func (a *ApiTestSuite) TestHandleDisableJobRequestNotFound() {
 	t := a.T()

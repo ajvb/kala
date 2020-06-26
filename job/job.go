@@ -15,13 +15,11 @@ import (
 	"github.com/ajvb/kala/utils/iso8601"
 	"github.com/mixer/clock"
 
-	"github.com/nu7hatch/gouuid"
+	uuid "github.com/nu7hatch/gouuid"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
-	// nano seconds allowed between current time and when job is supposed to start
-	validOffset            = time.Minute
 	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
 
 	ErrInvalidJob       = errors.New("Invalid Local Job. Job's must contain a Name and a Command field")
@@ -159,10 +157,10 @@ type Metadata struct {
 }
 
 // Bytes returns the byte representation of the Job.
-func (j Job) Bytes() ([]byte, error) {
+func (j Job) Bytes() ([]byte, error) { //nolint:govet // Copying the lock is okay here
 	buff := new(bytes.Buffer)
 	enc := gob.NewEncoder(buff)
-	err := enc.Encode(j)
+	err := enc.Encode(j) //nolint:govet // Copying the lock is okay here
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +193,7 @@ func (j *Job) Init(cache JobCache) error {
 		}
 	}
 
-	//validate job type and params
+	// validate job type and params
 	err := j.validation()
 	if err != nil {
 		return err
@@ -203,7 +201,7 @@ func (j *Job) Init(cache JobCache) error {
 
 	u4, err := uuid.NewV4()
 	if err != nil {
-		log.Errorf("Error occured when generating uuid: %s", err)
+		log.Errorf("Error occurred when generating uuid: %s", err)
 		return err
 	}
 	j.Id = u4.String()
@@ -241,7 +239,7 @@ func (j *Job) Init(cache JobCache) error {
 	j.lock.Lock()
 	if err != nil {
 		j.lock.Unlock()
-		cache.Delete(j.Id)
+		_ = cache.Delete(j.Id)
 		j.lock.Lock()
 		return err
 	}
@@ -254,7 +252,7 @@ func (j *Job) Init(cache JobCache) error {
 	return nil
 }
 
-// InitDelayDuration is used to parsed the iso8601 Schedule notation into its relevent fields in the Job struct.
+// InitDelayDuration is used to parsed the iso8601 Schedule notation into its relevant fields in the Job struct.
 // If checkTime is true, then it will return an error if the Scheduled time has passed.
 func (j *Job) InitDelayDuration(checkTime bool) error {
 	j.lock.Lock()
@@ -266,7 +264,7 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 
 	var err error
 	splitTime := strings.Split(j.Schedule, "/")
-	if len(splitTime) != 3 {
+	if len(splitTime) != 3 { //nolint:gomnd
 		return fmt.Errorf(
 			"Schedule not formatted correctly. Should look like: R/2014-03-08T20:00:00Z/PT2H",
 		)
@@ -345,39 +343,41 @@ func (j *Job) GetWaitDuration() time.Duration {
 
 	waitDuration := time.Duration(j.scheduleTime.UnixNano() - j.clk.Time().Now().UnixNano())
 
-	if waitDuration < 0 {
-		if j.timesToRepeat == 0 {
+	if waitDuration >= 0 {
+		return waitDuration
+	}
+
+	if j.timesToRepeat == 0 {
+		return 0
+	}
+
+	if j.ResumeAtNextScheduledTime {
+
+		// In cases where the scheduled point is very long ago,
+		// and the delayDuration interval is very small,
+		// it can take an extremely long time to compute the next scheduled run time.
+		// One potential case (programmer error) is having the scheduleTime be zero.
+		// (This would be due to not calling InitDelayDuration on a job.)
+		// For now, we spot this and handle it as a special case.
+		if j.scheduleTime.IsZero() {
 			return 0
 		}
 
-		if j.ResumeAtNextScheduledTime {
-
-			// In cases where the scheduled point is very long ago,
-			// and the delayDuration interval is very small,
-			// it can take an extremely long time to compute the next scheduled run time.
-			// One potential case (programmer error) is having the scheduleTime be zero.
-			// (This would be due to not calling InitDelayDuration on a job.)
-			// For now, we spot this and handle it as a special case.
-			if j.scheduleTime.IsZero() {
-				return 0
-			}
-
-			newRunPoint := j.scheduleTime
-			for newRunPoint.Before(j.clk.Time().Now()) {
-				newRunPoint = j.delayDuration.Add(newRunPoint)
-			}
-
-			return newRunPoint.Sub(j.clk.Time().Now())
+		newRunPoint := j.scheduleTime
+		for newRunPoint.Before(j.clk.Time().Now()) {
+			newRunPoint = j.delayDuration.Add(newRunPoint)
 		}
 
-		if j.Metadata.LastAttemptedRun.IsZero() {
-			waitDuration = j.delayDuration.RelativeTo(j.clk.Time().Now())
-		} else {
-			lastRun := j.Metadata.LastAttemptedRun
-			// Needs to be recalculated each time because of Months.
-			lastRun = j.delayDuration.Add(lastRun)
-			waitDuration = lastRun.Sub(j.clk.Time().Now())
-		}
+		return newRunPoint.Sub(j.clk.Time().Now())
+	}
+
+	if j.Metadata.LastAttemptedRun.IsZero() {
+		waitDuration = j.delayDuration.RelativeTo(j.clk.Time().Now())
+	} else {
+		lastRun := j.Metadata.LastAttemptedRun
+		// Needs to be recalculated each time because of Months.
+		lastRun = j.delayDuration.Add(lastRun)
+		waitDuration = lastRun.Sub(j.clk.Time().Now())
 	}
 
 	return waitDuration
@@ -441,7 +441,7 @@ func (j *Job) DeleteFromDependentJobs(cache JobCache) error {
 		// If there are no other parent jobs, delete this job.
 		if len(childJob.ParentJobs) == 1 {
 			log.Infof("Deleting child %s", id)
-			cache.Delete(childJob.Id)
+			_ = cache.Delete(childJob.Id)
 			continue
 		}
 
@@ -542,10 +542,7 @@ func (j *Job) RunCmd() (string, error) {
 }
 
 func (j *Job) hasFixedRepetitions() bool {
-	if j.timesToRepeat != -1 {
-		return true
-	}
-	return false
+	return j.timesToRepeat != -1
 }
 
 func (j *Job) ShouldStartWaiting() bool {
@@ -561,25 +558,26 @@ func (j *Job) ShouldStartWaiting() bool {
 
 func (j *Job) validation() error {
 	var err error
-	if j.JobType == LocalJob && (j.Name == "" || j.Command == "") {
+	switch {
+	case j.JobType == LocalJob && (j.Name == "" || j.Command == ""):
 		err = ErrInvalidJob
-	} else if j.JobType == RemoteJob && (j.Name == "" || j.RemoteProperties.Url == "") {
+	case j.JobType == RemoteJob && (j.Name == "" || j.RemoteProperties.Url == ""):
 		err = ErrInvalidRemoteJob
-	} else if j.JobType != LocalJob && j.JobType != RemoteJob {
+	case j.JobType != LocalJob && j.JobType != RemoteJob:
 		err = ErrInvalidJobType
-	} else {
+	default:
 		return nil
 	}
 	log.Errorf(err.Error())
 	return err
 }
 
-//Type alias for the recursive call
+// Type alias for the recursive call
 type RJob Job
 
 // need this to fix race condition
 func (j *Job) MarshalJSON() ([]byte, error) {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
-	return json.Marshal(RJob(*j))
+	return json.Marshal(RJob(*j)) //nolint:govet // Copying the lock is okay here
 }
