@@ -6,6 +6,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.3.0
 	github.com/armon/go-metrics v0.3.3 // indirect
 	github.com/boltdb/bolt v1.3.1-0.20170131192018-e9cf4fae01b5
+	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f
 	github.com/cornelk/hashmap v1.0.1
 	github.com/garyburd/redigo v1.0.1-0.20170208211623-48545177e92a
 	github.com/go-sql-driver/mysql v1.4.1
@@ -21,6 +22,7 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-shellwords v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/mixer/clock v0.0.0-20190507173039-c311c17adb1f
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 	github.com/phyber/negroni-gzip v0.0.0-20180113114010-ef6356a5d029

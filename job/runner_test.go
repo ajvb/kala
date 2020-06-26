@@ -134,6 +134,27 @@ func TestTemplatize(t *testing.T) {
 			assert.Equal(t, `{"hello": "world", "foo": "young-jedi@master.com"}`, out)
 		})
 
+		t.Run("templated_multiplart", func(t *testing.T) {
+			j := &Job{
+				Name:  "mock_job",
+				Owner: "jedi@master.com",
+				RemoteProperties: RemoteProperties{
+					Url:  "http://" + srv.Listener.Addr().String() + "/path",
+					Body: `{"hello": "world", "foo": "young-${$.Owner}"}`,
+					Headers: map[string][]string{
+						"Content-Type": {mimeFormURLEncoded},
+					},
+				},
+				TemplateDelimiters: "${ }",
+			}
+			r := JobRunner{
+				job: j,
+			}
+			out, err := r.RemoteRun()
+			assert.NoError(t, err)
+			assert.Equal(t, ``, out)
+		})
+
 	})
 
 }
