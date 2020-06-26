@@ -11,7 +11,7 @@ import (
 
 func TestCacheStart(t *testing.T) {
 	cache := NewMockCache()
-	cache.Start(time.Duration(time.Hour), time.Duration(time.Hour))
+	cache.Start(time.Hour, time.Hour)
 }
 
 func TestCacheRetainShouldRemoveOldJobStats(t *testing.T) {
@@ -19,12 +19,12 @@ func TestCacheRetainShouldRemoveOldJobStats(t *testing.T) {
 	mockDb := &MockDBGetAll{}
 	cache.jobDB = mockDb
 
-	pastDate := time.Date(2016, time.April, 12, 20, 00, 00, 0, time.UTC)
+	pastDate := time.Date(2016, time.April, 12, 20, 0, 0, 0, time.UTC)
 	j := GetMockRecurringJobWithSchedule(pastDate, "PT1S")
 	j.Stats = GetMockJobStats(pastDate, 5)
 	j.Id = "0"
 
-	jobs := make([]*Job, 0, 0)
+	jobs := make([]*Job, 0)
 	jobs = append(jobs, j)
 	mockDb.response = jobs
 
@@ -47,11 +47,11 @@ func TestCacheStartStartsARecurringJobWithStartDateInThePast(t *testing.T) {
 	mockDb := &MockDBGetAll{}
 	cache.jobDB = mockDb
 
-	pastDate := time.Date(2016, time.April, 12, 20, 00, 00, 0, time.UTC)
+	pastDate := time.Date(2016, time.April, 12, 20, 0, 0, 0, time.UTC)
 	j := GetMockRecurringJobWithSchedule(pastDate, "PT1S")
 	j.Id = "0"
 
-	jobs := make([]*Job, 0, 0)
+	jobs := make([]*Job, 0)
 	jobs = append(jobs, j)
 	mockDb.response = jobs
 
@@ -75,7 +75,7 @@ func TestCacheStartCanResumeJobAtNextScheduledPoint(t *testing.T) {
 	j.ResumeAtNextScheduledTime = true
 	j.InitDelayDuration(false)
 
-	jobs := make([]*Job, 0, 0)
+	jobs := make([]*Job, 0)
 	jobs = append(jobs, j)
 	mockDb.response = jobs
 

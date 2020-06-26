@@ -41,9 +41,7 @@ func TestKalaStats(t *testing.T) {
 
 	kalaStat := NewKalaStats(cache)
 	createdAt := time.Now()
-	nextRunAt := time.Now().Add(
-		time.Duration(time.Minute * 5),
-	)
+	nextRunAt := time.Now().Add(time.Minute * 5)
 
 	assert.Equal(t, kalaStat.Jobs, 10)
 	assert.Equal(t, kalaStat.ActiveJobs, 5)

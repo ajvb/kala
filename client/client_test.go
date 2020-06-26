@@ -25,15 +25,15 @@ func NewTestServer() *httptest.Server {
 
 func cleanUp() {
 	ts := NewTestServer()
-	defer ts.Close()
 	kc := New(ts.URL)
 	jobs, err := kc.GetAllJobs()
-	if len(jobs) == 0 {
-		return
-	}
 	if err != nil {
 		fmt.Printf("Problem running clean up (can't get all jobs from the server)")
 		os.Exit(1)
+	}
+	defer ts.Close()
+	if len(jobs) == 0 {
+		return
 	}
 	for _, job := range jobs {
 		kc.DeleteJob(job.Id)
@@ -166,6 +166,7 @@ func TestDeleteJob(t *testing.T) {
 
 	respJob, err := kc.GetJob(id)
 	assert.Nil(t, respJob)
+	assert.Error(t, err)
 
 	cleanUp()
 }
@@ -187,6 +188,7 @@ func TestDeleteAllJobs(t *testing.T) {
 
 	allJobs, err := kc.GetAllJobs()
 	assert.Empty(t, allJobs)
+	assert.NoError(t, err)
 
 	cleanUp()
 }

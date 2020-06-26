@@ -23,7 +23,7 @@ func NewHybridClock(start ...time.Time) *HybridClock {
 func (hc *HybridClock) Play() {
 	hc.m.Lock()
 	defer hc.m.Unlock()
-	hc.offset = hc.MockClock.Now().Sub(time.Now())
+	hc.offset = time.Until(hc.MockClock.Now())
 }
 
 func (hc *HybridClock) Pause() {

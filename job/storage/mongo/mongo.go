@@ -35,7 +35,9 @@ func New(addrs string, cred *mgo.Credential) *DB {
 	db := session.DB(database)
 	c := db.C(collection)
 	session.SetMode(mgo.Monotonic, true)
-	c.EnsureIndexKey("id")
+	if err := c.EnsureIndexKey("id"); err != nil {
+		log.Fatal(err)
+	}
 	return &DB{
 		collection: c,
 		database:   db,

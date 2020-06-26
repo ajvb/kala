@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testDbPath = ""
-
 func setupTest(t *testing.T) {
 	db := New("")
 	defer db.Close()

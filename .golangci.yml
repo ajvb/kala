@@ -1,0 +1,140 @@
+run:
+  modules-download-mode: readonly
+
+linters-settings:
+
+  gocritic:
+    enabled-tags:
+      - performance
+      - style
+      - diagnostic
+      - experimental
+      - opinionated
+    disabled-checks:
+      - regexpMust
+      - hugeParam
+      - commentedOutCode
+      - paramTypeCombine
+      - whyNoLint
+
+  gofmt:
+    simplify: false
+
+  golint:
+    min-confidence: 0.8
+
+  gomnd:
+    settings:
+      mnd:
+        checks: argument,case,condition,operation,return,assign
+        ignored-numbers: ["0.0", "1.0"] # "0" and "1" are ignored by default
+
+  govet:
+    check-shadowing: true
+
+    enable: [atomicalign]
+    enable-all: false
+    disable: [shadow]
+    disable-all: false
+
+  misspell:
+    locale: US
+
+  nolintlint:
+    allow-unused: false
+    allow-leading-space: true
+    require-explanation: true
+    allow-no-explanation: [gomnd, lll]
+    require-specific: true
+
+linters:
+  enable:
+    - asciicheck
+    - bodyclose
+    - deadcode
+    - dogsled
+    - errcheck
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - interfacer
+    - lll
+    - megacheck
+    - misspell
+    - nakedret
+    - nestif
+    - nolintlint
+    - prealloc
+    - rowserrcheck
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - dupl
+
+  disable:
+    - funlen
+    - maligned
+    - scopelint # Deprecated
+    - depguard
+    - gochecknoglobals
+    - gochecknoinits
+    - godox
+
+    - goerr113
+    - golint
+    - testpackage
+
+    - whitespace
+    - wsl
+    - godot
+
+issues:
+  exclude:
+
+  exclude-rules:
+
+    # Exclude some linters from running on tests files.
+    - path: (_test\.go|test_utils\.go)
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - goconst
+        - funlen
+        - gochecknoglobals
+        - gocognit
+        - nestif
+        - lll
+        - bodyclose
+        - gomnd
+
+    - linters:
+        - stylecheck
+      text: "ST(1003|1005|1000|1021|1020|1022):"
+
+    - linters:
+        - lll
+      source: "(//|Errorf|Printf|logf|Fatalf|Flags|Wrapf|Newf|Warnf)"
+
+    - linters:
+        - govet
+      text: "shadow: declaration of \"err\" shadows declaration at line"
+      source: "(if err := .+; err != nil {|, err :=)"
+
+severity:
+  default-severity: error

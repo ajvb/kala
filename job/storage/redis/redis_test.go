@@ -31,7 +31,7 @@ func mockRedisDB() DB {
 
 // testJobs initializes n testJobs
 func initTestJobs(n int) []testJob {
-	testJobs := []testJob{}
+	tjs := []testJob{}
 
 	for i := 0; i < n; i++ {
 		j := job.GetMockJobWithGenericSchedule(time.Now())
@@ -46,10 +46,10 @@ func initTestJobs(n int) []testJob {
 			Bytes: bytes,
 		}
 
-		testJobs = append(testJobs, t)
+		tjs = append(tjs, t)
 	}
 
-	return testJobs
+	return tjs
 }
 
 func TestSaveJob(t *testing.T) {
@@ -93,7 +93,7 @@ func TestGetJob(t *testing.T) {
 	conn.Command("HGET", HashKey, testJob.Job.Id).
 		ExpectError(errors.New("Redis error"))
 
-	storedJob, err = db.Get(testJob.Job.Id)
+	_, err = db.Get(testJob.Job.Id)
 	assert.NotNil(t, err)
 }
 
@@ -143,7 +143,7 @@ func TestGetAllJobs(t *testing.T) {
 	conn.Command("HVALS", HashKey).
 		ExpectError(errors.New("Redis error"))
 
-	jobs, err = db.GetAll()
+	_, err = db.GetAll()
 	assert.NotNil(t, err)
 }
 

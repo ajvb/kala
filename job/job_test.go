@@ -12,8 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testDbPath = ""
-
 func TestScheduleParsing(t *testing.T) {
 	cache := NewMockCache()
 
@@ -930,7 +928,7 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 	assert.False(t, mockChildJob.Metadata.LastAttemptedRun.IsZero())
 
 	// Within a second this job should have attempted to be run
-	assert.WithinDuration(t, mockChildJob.Metadata.LastAttemptedRun, n, time.Duration(time.Second))
+	assert.WithinDuration(t, mockChildJob.Metadata.LastAttemptedRun, n, time.Second)
 }
 
 // Parent gets deleted -- If a parent job is deleted, unless its child jobs have another parent, they will be deleted as well.
@@ -1042,7 +1040,7 @@ func waitForJob(j *Job) {
 			break
 		}
 		j.lock.RUnlock()
-		time.Sleep(1)
+		time.Sleep(time.Second)
 	}
 }
 
@@ -1065,7 +1063,7 @@ func TestOnFailureJobTriggersOnFailure(t *testing.T) {
 			break
 		}
 		onFailureJob.lock.RUnlock()
-		time.Sleep(1)
+		time.Sleep(time.Second)
 	}
 
 	j.lock.RLock()
