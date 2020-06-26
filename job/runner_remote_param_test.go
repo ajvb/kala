@@ -48,7 +48,7 @@ func TestParamsEncode(t *testing.T) {
 			CCC: true,
 		},
 		Renamed:       123,
-		AlwaysVisible: 0,
+		AlwaysVisible: 1,
 		Zero:          "", // should be a zero value.
 	}
 	params = MakeParams(data)
@@ -60,8 +60,7 @@ func TestParamsEncode(t *testing.T) {
 			"CCC": true,
 		},
 		"changed":       123, // field name should be changed due to struct field tag.
-		"AlwaysVisible": 0.0,
-		"approved":      false,
+		"AlwaysVisible": 1.0,
 	}
 
 	if params == nil {
