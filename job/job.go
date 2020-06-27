@@ -3,7 +3,6 @@ package job
 import (
 	"bytes"
 	"encoding/gob"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"

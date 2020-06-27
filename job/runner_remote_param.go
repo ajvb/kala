@@ -1,12 +1,13 @@
 package job
 
 import (
-	"encoding/json"
 	"io"
 	"net/url"
 	"reflect"
 	"runtime"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 const (
@@ -17,6 +18,7 @@ const (
 var (
 	typeOfPointerToBinaryData = reflect.TypeOf(&BinaryData{})
 	typeOfPointerToBinaryFile = reflect.TypeOf(&BinaryFile{})
+	json                      = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 // BinaryData represents binary data from a given source.

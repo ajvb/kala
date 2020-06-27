@@ -71,7 +71,6 @@ func TestParamsEncode(t *testing.T) {
 		t.Fatalf("invalid encoded params. [expected:%#v] [actual:%#v]", expectedParams, params)
 	}
 
-	// Test against issue #148 in which a field with nil value causes panic.
 	params["nil"] = nil
 
 	mime, err := params.Encode(buf)

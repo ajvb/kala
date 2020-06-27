@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/mattn/go-shellwords"
-	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -144,7 +143,7 @@ func (j *JobRunner) RemoteRun() (string, error) {
 	mime := j.job.RemoteProperties.Headers.Get("Content-Type")
 	if mimeFormData == mime || mimeFormURLEncoded == mime {
 		params := make(Params)
-		_ = mapstructure.Decode(body, &params)
+		_ = json.Unmarshal([]byte(body), &params)
 		params.Encode(bodyBuffer)
 	} else {
 		bodyBuffer = bytes.NewBufferString(body)
