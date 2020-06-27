@@ -88,7 +88,7 @@ func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 		log.Infof("Shutting down....")
 
 		// Persist all jobs to database
-		c.Persist()
+		log.Errorln(c.Persist())
 
 		// Close the database
 		c.jobDB.Close()
@@ -143,7 +143,7 @@ func (c *MemoryJobCache) Delete(id string) error {
 
 	err := c.jobDB.Delete(id)
 	if err != nil {
-		err = fmt.Errorf("Error occured while trying to delete job from db: %s", err)
+		err = fmt.Errorf("Error occurred while trying to delete job from db: %s", err)
 		if c.PersistOnWrite {
 			return err
 		}
@@ -153,11 +153,15 @@ func (c *MemoryJobCache) Delete(id string) error {
 	j.StopTimer()
 	j.lock.Lock()
 
-	go j.DeleteFromParentJobs(c) // todo: review
+	go func() {
+		log.Errorln(j.DeleteFromParentJobs(c)) // todo: review
+	}()
 
 	// Remove itself from dependent jobs as a parent job
 	// and possibly delete child jobs if they don't have any other parents.
-	go j.DeleteFromDependentJobs(c) // todo: review
+	go func() {
+		log.Errorln(j.DeleteFromDependentJobs(c)) // todo: review
+	}()
 
 	delete(c.jobs.Jobs, id)
 
@@ -187,13 +191,13 @@ func (c *MemoryJobCache) Persist() error {
 }
 
 func (c *MemoryJobCache) PersistEvery(persistWaitTime time.Duration) {
-	wait := time.Tick(persistWaitTime)
+	wait := time.NewTicker(persistWaitTime).C
 	var err error
 	for {
 		<-wait
 		err = c.Persist()
 		if err != nil {
-			log.Errorf("Error occured persisting the database. Err: %s", err)
+			log.Errorf("Error occurred persisting the database. Err: %s", err)
 		}
 	}
 }
@@ -208,7 +212,7 @@ type LockFreeJobCache struct {
 
 func NewLockFreeJobCache(jobDB JobDB) *LockFreeJobCache {
 	return &LockFreeJobCache{
-		jobs:            hashmap.New(8),
+		jobs:            hashmap.New(8), //nolint:gomnd
 		jobDB:           jobDB,
 		retentionPeriod: -1,
 	}
@@ -258,7 +262,7 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.
 		log.Infof("Shutting down....")
 
 		// Persist all jobs to database
-		c.Persist()
+		log.Errorln(c.Persist())
 
 		// Close the database
 		c.jobDB.Close()
@@ -312,7 +316,7 @@ func (c *LockFreeJobCache) Delete(id string) error {
 
 	err = c.jobDB.Delete(id)
 	if err != nil {
-		err = fmt.Errorf("Error occured while trying to delete job from db: %s", err)
+		err = fmt.Errorf("Error occurred while trying to delete job from db: %s", err)
 		if c.PersistOnWrite {
 			return err
 		}
@@ -322,10 +326,14 @@ func (c *LockFreeJobCache) Delete(id string) error {
 	j.StopTimer()
 	j.lock.Lock()
 
-	go j.DeleteFromParentJobs(c) // todo: review
+	go func() {
+		log.Errorln(j.DeleteFromParentJobs(c)) // todo: review
+	}()
 	// Remove itself from dependent jobs as a parent job
 	// and possibly delete child jobs if they don't have any other parents.
-	go j.DeleteFromDependentJobs(c) // todo: review
+	go func() {
+		log.Errorln(j.DeleteFromDependentJobs(c)) // todo: review
+	}()
 	log.Infof("Deleting %s", id)
 	c.jobs.Del(id)
 	return err
@@ -356,13 +364,13 @@ func (c *LockFreeJobCache) Persist() error {
 }
 
 func (c *LockFreeJobCache) PersistEvery(persistWaitTime time.Duration) {
-	wait := time.Tick(persistWaitTime)
+	wait := time.NewTicker(persistWaitTime).C
 	var err error
 	for {
 		<-wait
 		err = c.Persist()
 		if err != nil {
-			log.Errorf("Error occured persisting the database. Err: %s", err)
+			log.Errorf("Error occurred persisting the database. Err: %s", err)
 		}
 	}
 }
@@ -388,7 +396,7 @@ func (c *LockFreeJobCache) Retain() error {
 	return nil
 }
 
-func (c *LockFreeJobCache) compactJobStats(job *Job) error {
+func (c *LockFreeJobCache) compactJobStats(job *Job) {
 	job.lock.Lock()
 	defer job.lock.Unlock()
 	pos := c.locateJobStatsIndexForRetention(job.Stats)
@@ -398,17 +406,16 @@ func (c *LockFreeJobCache) compactJobStats(job *Job) error {
 		copy(tmp, job.Stats[pos+1:])
 		job.Stats = tmp
 	}
-	return nil
 }
 
 func (c *LockFreeJobCache) RetainEvery(retentionWaitTime time.Duration) {
-	wait := time.Tick(retentionWaitTime)
+	wait := time.NewTicker(retentionWaitTime).C
 	var err error
 	for {
 		<-wait
 		err = c.Retain()
 		if err != nil {
-			log.Errorf("Error occured during invoking retention. Err: %s", err)
+			log.Errorf("Error occurred during invoking retention. Err: %s", err)
 		}
 	}
 }

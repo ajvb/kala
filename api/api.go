@@ -33,7 +33,7 @@ type KalaStatsResponse struct {
 	Stats *job.KalaStats
 }
 
-// HandleKalaStatsRequest is the hanlder for getting system-level metrics
+// HandleKalaStatsRequest is the handler for getting system-level metrics
 // /api/v1/stats
 func HandleKalaStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +44,7 @@ func HandleKalaStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r *h
 		w.Header().Set(contentType, jsonContentType)
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Errorf("Error occured when marshalling response: %s", err)
+			log.Errorf("Error occurred when marshaling response: %s", err)
 			return
 		}
 	}
@@ -72,7 +72,7 @@ func HandleListJobStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r
 		w.Header().Set(contentType, jsonContentType)
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Errorf("Error occured when marshalling response: %s", err)
+			log.Errorf("Error occurred when marshaling response: %s", err)
 			return
 		}
 	}
@@ -97,7 +97,7 @@ func HandleListJobsRequest(cache job.JobCache) func(w http.ResponseWriter, r *ht
 		w.Header().Set(contentType, jsonContentType)
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Errorf("Error occured when marshalling response: %s", err)
+			log.Errorf("Error occurred when marshaling response: %s", err)
 			return
 		}
 	}
@@ -112,13 +112,13 @@ func unmarshalNewJob(r *http.Request) (*job.Job, error) {
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
-		log.Errorf("Error occured when reading r.Body: %s", err)
+		log.Errorf("Error occurred when reading r.Body: %s", err)
 		return nil, err
 	}
 	defer r.Body.Close()
 
 	if err := json.Unmarshal(body, newJob); err != nil {
-		log.Errorf("Error occured when unmarshalling data: %s", err)
+		log.Errorf("Error occurred when unmarshaling data: %s", err)
 		return nil, err
 	}
 
@@ -141,7 +141,7 @@ func HandleAddJob(cache job.JobCache, defaultOwner string) func(http.ResponseWri
 
 		err = newJob.Init(cache)
 		if err != nil {
-			errStr := "Error occured when initializing the job"
+			errStr := "Error occurred when initializing the job"
 			log.Errorf(errStr+": %s", err)
 			errorEncodeJSON(errors.New(errStr), http.StatusBadRequest, w)
 			return
@@ -154,7 +154,7 @@ func HandleAddJob(cache job.JobCache, defaultOwner string) func(http.ResponseWri
 		w.Header().Set(contentType, jsonContentType)
 		w.WriteHeader(http.StatusCreated)
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Errorf("Error occured when marshalling response: %s", err)
+			log.Errorf("Error occurred when marshaling response: %s", err)
 			return
 		}
 	}
@@ -168,7 +168,7 @@ func HandleJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Re
 
 		j, err := cache.Get(id)
 		if err != nil {
-			log.Errorf("Error occured when trying to get the job you requested.")
+			log.Errorf("Error occurred when trying to get the job you requested.")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -206,7 +206,7 @@ type JobResponse struct {
 	Job *job.Job `json:"job"`
 }
 
-func handleGetJob(w http.ResponseWriter, r *http.Request, j *job.Job) {
+func handleGetJob(w http.ResponseWriter, _ *http.Request, j *job.Job) {
 	resp := &JobResponse{
 		Job: j,
 	}
@@ -214,7 +214,7 @@ func handleGetJob(w http.ResponseWriter, r *http.Request, j *job.Job) {
 	w.Header().Set(contentType, jsonContentType)
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		log.Errorf("Error occured when marshalling response: %s", err)
+		log.Errorf("Error occurred when marshaling response: %s", err)
 		return
 	}
 }
@@ -226,7 +226,7 @@ func HandleStartJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *ht
 		id := mux.Vars(r)["id"]
 		j, err := cache.Get(id)
 		if err != nil {
-			log.Errorf("Error occured when trying to get the job you requested.")
+			log.Errorf("Error occurred when trying to get the job you requested.")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -249,7 +249,7 @@ func HandleDisableJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *
 		id := mux.Vars(r)["id"]
 		j, err := cache.Get(id)
 		if err != nil {
-			log.Errorf("Error occured when trying to get the job you requested.")
+			log.Errorf("Error occurred when trying to get the job you requested.")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -274,7 +274,7 @@ func HandleEnableJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *h
 		id := mux.Vars(r)["id"]
 		j, err := cache.Get(id)
 		if err != nil {
-			log.Errorf("Error occured when trying to get the job you requested.")
+			log.Errorf("Error occurred when trying to get the job you requested.")
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -336,7 +336,7 @@ func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, prof
 	r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(http.Dir("./webui/"))))
 
 	if profile {
-		runtime.SetMutexProfileFraction(5)
+		runtime.SetMutexProfileFraction(5) //nolint:gomnd
 		// Register pprof handlers
 		r.HandleFunc("/debug/pprof/", pprof.Index)
 		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
@@ -350,7 +350,7 @@ func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, prof
 		r.Handle("/debug/pprof/mutex", pprof.Handler("mutex"))
 	}
 
-	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{log.Logger{}}, gzip.Gzip(gzip.DefaultCompression))
+	n := negroni.New(negroni.NewRecovery(), &middleware.Logger{Logger: log.Logger{}}, gzip.Gzip(gzip.DefaultCompression))
 	n.UseHandler(r)
 
 	return &http.Server{

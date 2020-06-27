@@ -14,8 +14,7 @@ var (
 
 // DB is concrete implementation of the JobDB interface, that uses Redis for persistence.
 type DB struct {
-	conn      redis.Conn
-	keyprefix string
+	conn redis.Conn
 }
 
 // New instantiates a new DB.

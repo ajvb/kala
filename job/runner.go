@@ -52,13 +52,14 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 	var out string
 	for {
 		var err error
-		if j.job.succeedInstantly {
+		switch {
+		case j.job.succeedInstantly:
 			out = "Job succeeded instantly for test purposes."
-		} else if j.job.JobType == LocalJob {
+		case j.job.JobType == LocalJob:
 			out, err = j.LocalRun()
-		} else if j.job.JobType == RemoteJob {
+		case j.job.JobType == RemoteJob:
 			out, err = j.RemoteRun()
-		} else {
+		default:
 			err = ErrJobTypeInvalid
 		}
 
@@ -120,8 +121,9 @@ func (j *JobRunner) RemoteRun() (string, error) {
 	// Calculate a response timeout
 	timeout := j.responseTimeout()
 
-	ctx, cncl := context.Background(), func() {}
+	ctx := context.Background()
 	if timeout > 0 {
+		var cncl func()
 		ctx, cncl = context.WithTimeout(ctx, timeout)
 		defer cncl()
 	}
@@ -202,7 +204,7 @@ func (j *JobRunner) runCmd() (string, error) {
 		return "", ErrCmdIsEmpty
 	}
 
-	cmd := exec.Command(args[0], args[1:]...)
+	cmd := exec.Command(args[0], args[1:]...) //nolint:gosec // That's the job description
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("%s: %s", err, strings.TrimSpace(string(out)))
@@ -218,7 +220,7 @@ func (j *JobRunner) tryTemplatize(content string) (string, error) {
 	}
 
 	split := strings.Split(delims, " ")
-	if len(split) != 2 {
+	if len(split) != 2 { //nolint:gomnd
 		return "", ErrInvalidDelimiters
 	}
 

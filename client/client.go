@@ -20,10 +20,10 @@ const (
 )
 
 var (
-	JobNotFound      = errors.New("Job not found")
-	JobCreationError = errors.New("Error creating job")
+	ErrJobNotFound      = errors.New("Job not found")
+	ErrJobCreationError = errors.New("Error creating job")
 
-	GenericError = errors.New("An error occured performing your request")
+	ErrGenericError = errors.New("An error occurred performing your request")
 
 	jobPath = api.JobPath[:len(api.JobPath)-1]
 )
@@ -69,7 +69,10 @@ func (kc *KalaClient) url(parts ...string) string {
 	return strings.Join(append([]string{kc.apiEndpoint}, parts...), "/") + "/"
 }
 
-func (kc *KalaClient) do(method, url string, expectedStatus int, payload, target interface{}) (statusCode int, err error) {
+func (kc *KalaClient) do(method, url string, expectedStatus int, payload, target interface{}) (
+	statusCode int,
+	err error,
+) {
 	body, err := kc.encode(payload)
 	if err != nil {
 		return
@@ -84,7 +87,7 @@ func (kc *KalaClient) do(method, url string, expectedStatus int, payload, target
 	}
 	defer resp.Body.Close()
 	if status := resp.StatusCode; status != expectedStatus {
-		return status, GenericError
+		return status, ErrGenericError
 	}
 	return resp.StatusCode, kc.decode(resp.Body, target)
 }
@@ -103,8 +106,8 @@ func (kc *KalaClient) CreateJob(body *job.Job) (string, error) {
 	id := &api.AddJobResponse{}
 	_, err := kc.do(methodPost, kc.url(jobPath), http.StatusCreated, body, id)
 	if err != nil {
-		if err == GenericError {
-			return "", JobCreationError
+		if err == ErrGenericError {
+			return "", ErrJobCreationError
 		}
 		return "", err
 	}
@@ -120,8 +123,8 @@ func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 	j := &api.JobResponse{}
 	_, err := kc.do(methodGet, kc.url(jobPath, id), http.StatusOK, nil, j)
 	if err != nil {
-		if err == GenericError {
-			return nil, JobNotFound
+		if err == ErrGenericError {
+			return nil, ErrJobNotFound
 		}
 		return nil, err
 	}
@@ -147,7 +150,7 @@ func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 	status, err := kc.do(methodDelete, kc.url(jobPath, id), http.StatusNoContent, nil, nil)
 	if err != nil {
-		if err == GenericError {
+		if err == ErrGenericError {
 			return false, fmt.Errorf("Delete failed with a status code of %d", status)
 		}
 		return false, err
@@ -182,7 +185,7 @@ func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 func (kc *KalaClient) StartJob(id string) (bool, error) {
 	_, err := kc.do(methodPost, kc.url(jobPath, "start", id), http.StatusNoContent, nil, nil)
 	if err != nil {
-		if err == GenericError {
+		if err == ErrGenericError {
 			return false, nil
 		}
 		return false, err
@@ -208,7 +211,7 @@ func (kc *KalaClient) GetKalaStats() (*job.KalaStats, error) {
 func (kc *KalaClient) DisableJob(id string) (bool, error) {
 	status, err := kc.do(methodPost, kc.url(jobPath, "disable", id), http.StatusNoContent, nil, nil)
 	if err != nil {
-		if err == GenericError {
+		if err == ErrGenericError {
 			return false, fmt.Errorf("Disable failed with a status code of %d", status)
 		}
 		return false, err
@@ -224,7 +227,7 @@ func (kc *KalaClient) DisableJob(id string) (bool, error) {
 func (kc *KalaClient) EnableJob(id string) (bool, error) {
 	status, err := kc.do(methodPost, kc.url(jobPath, "enable", id), http.StatusNoContent, nil, nil)
 	if err != nil {
-		if err == GenericError {
+		if err == ErrGenericError {
 			return false, fmt.Errorf("Enable failed with a status code of %d", status)
 		}
 		return false, err

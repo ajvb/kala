@@ -50,11 +50,14 @@ func (db *ConsulJobDB) GetAll() ([]*job.Job, error) {
 		buffer := bytes.NewBuffer(pair.Value)
 		dec := json.NewDecoder(buffer)
 		j := new(job.Job)
-		err := dec.Decode(j)
+		err = dec.Decode(j)
 		if err != nil {
 			continue
 		}
-		j.InitDelayDuration(false)
+		err = j.InitDelayDuration(false)
+		if err != nil {
+			continue
+		}
 		allJobs = append(allJobs, j)
 	}
 

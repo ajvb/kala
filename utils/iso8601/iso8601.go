@@ -14,8 +14,10 @@ var (
 	// ErrBadFormat is returned when parsing fails
 	ErrBadFormat = errors.New("bad format string")
 
+	//nolint:lll
 	tmpl = template.Must(template.New("duration").Parse(`P{{if .Years}}{{.Years}}Y{{end}}{{if .Months}}{{.Months}}M{{end}}{{if .Weeks}}{{.Weeks}}W{{end}}{{if .Days}}{{.Days}}D{{end}}{{if .HasTimePart}}T{{end }}{{if .Hours}}{{.Hours}}H{{end}}{{if .Minutes}}{{.Minutes}}M{{end}}{{if .Seconds}}{{.Seconds}}S{{end}}`))
 
+	//nolint:lll
 	full = regexp.MustCompile(`P(?:(?P<year>\d+)Y)?(?:(?P<month>\d+)M)?(?:(?P<day>\d+)D)?(?:(?P<time>T)(?:(?P<hour>\d+)H)?(?:(?P<minute>\d+)M)?(?:(?P<second>\d+)S)?)?`)
 	week = regexp.MustCompile(`P(?:(?P<week>\d+)W)`)
 )
@@ -36,13 +38,14 @@ func FromString(dur string) (*Duration, error) {
 		re    *regexp.Regexp
 	)
 
-	if week.MatchString(dur) {
+	switch {
+	case week.MatchString(dur):
 		match = week.FindStringSubmatch(dur)
 		re = week
-	} else if full.MatchString(dur) {
+	case full.MatchString(dur):
 		match = full.FindStringSubmatch(dur)
 		re = full
-	} else {
+	default:
 		return nil, ErrBadFormat
 	}
 
@@ -89,12 +92,12 @@ func FromString(dur string) (*Duration, error) {
 			d.Seconds = val
 			timeUnspecified = false
 		default:
-			return nil, errors.New(fmt.Sprintf("unknown field %s", name))
+			return nil, fmt.Errorf("unknown field %s", name)
 		}
 	}
 
 	if (dateUnspecified && weekUnspecified && timeUnspecified) || (timeOccurred && timeUnspecified) {
-		return nil, errors.New(fmt.Sprintf("invalid ISO 8601 duration spec %s", dur))
+		return nil, fmt.Errorf("invalid ISO 8601 duration spec %s", dur)
 	}
 
 	return d, nil
