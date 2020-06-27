@@ -67,8 +67,8 @@ func makeParams(value reflect.Value) (params Params) {
 	}
 
 	// only map with string keys can be converted to Params
+	params = Params{}
 	if value.Kind() == reflect.Map && value.Type().Key().Kind() == reflect.String {
-		params = Params{}
 		for _, key := range value.MapKeys() {
 			params[key.String()] = value.MapIndex(key).Interface()
 		}
@@ -79,8 +79,6 @@ func makeParams(value reflect.Value) (params Params) {
 	if value.Kind() != reflect.Struct {
 		return
 	}
-
-	params = Params{}
 	t := value.Type()
 	num := value.NumField()
 
@@ -89,18 +87,14 @@ func makeParams(value reflect.Value) (params Params) {
 		tag := sf.Tag
 		name := ""
 		omitEmpty := false
-
 		jsonTag := tag.Get("json")
 
 		if jsonTag != "" {
 			optTag := jsonTag
-
 			opts := strings.Split(optTag, ",")
-
 			if opts[0] != "" {
 				name = opts[0]
 			}
-
 			for _, opt := range opts[1:] {
 				if opt == "omitempty" {
 					omitEmpty = true
@@ -124,8 +118,8 @@ func makeParams(value reflect.Value) (params Params) {
 		}
 
 		switch field.Kind() {
+		// these types won't be marshaled in json.
 		case reflect.Chan, reflect.Func, reflect.UnsafePointer, reflect.Invalid:
-			// these types won't be marshaled in json.
 			params = nil
 			return
 
@@ -162,7 +156,7 @@ func isEmptyValue(v reflect.Value) bool {
 // Encode encodes params to query string.
 // If map value is not a string, Encode uses json.Marshal() to convert value to string.
 //
-// Encode may panic if Params contains values that cannot be marshalled to json string.
+// Encode may panic if Params contains values that cannot be marshaled to json string.
 func (params Params) Encode(writer io.Writer) (mime string, err error) {
 	if params == nil || len(params) == 0 {
 		mime = mimeFormURLEncoded
