@@ -151,7 +151,7 @@ func TestTemplatize(t *testing.T) {
 				job: j,
 			}
 			out, err := r.RemoteRun()
-			assert.Equal(t, `hello=world&foo=young-jedi%40master.com`, out, `message body must be written into req.body`)
+			assert.Equal(t, `foo=young-jedi%40master.com&hello=world`, out, `message body must be written into req.body`)
 			assert.NoError(t, err)
 		})
 	})

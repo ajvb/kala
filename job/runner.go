@@ -141,7 +141,7 @@ func (j *JobRunner) RemoteRun() (string, error) {
 	method := strings.ToUpper(j.job.RemoteProperties.Method)
 	bodyBuffer := &bytes.Buffer{}
 	mime := j.job.RemoteProperties.Headers.Get("Content-Type")
-	if mimeFormData == mime || mimeFormURLEncoded == mime {
+	if mimeFormURLEncoded == mime {
 		params := make(Params)
 		_ = json.Unmarshal([]byte(body), &params)
 		params.Encode(bodyBuffer)

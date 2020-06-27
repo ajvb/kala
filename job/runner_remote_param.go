@@ -12,7 +12,6 @@ import (
 
 const (
 	mimeFormURLEncoded = "application/x-www-form-urlencoded"
-	mimeFormData       = "multipart/form-data"
 )
 
 var (
@@ -126,7 +125,7 @@ func makeParams(value reflect.Value) (params Params) {
 
 		switch field.Kind() {
 		case reflect.Chan, reflect.Func, reflect.UnsafePointer, reflect.Invalid:
-			// these types won't be marshalled in json.
+			// these types won't be marshaled in json.
 			params = nil
 			return
 
@@ -138,7 +137,7 @@ func makeParams(value reflect.Value) (params Params) {
 		}
 	}
 
-	return
+	return params
 }
 
 func isEmptyValue(v reflect.Value) bool {
@@ -174,7 +173,7 @@ func (params Params) Encode(writer io.Writer) (mime string, err error) {
 		typ := reflect.TypeOf(v)
 
 		if typ == typeOfPointerToBinaryData || typ == typeOfPointerToBinaryFile {
-			//hasBinary
+			// hasBinary file. that would be implemented in future
 			break
 		}
 	}
@@ -184,33 +183,23 @@ func (params Params) Encode(writer io.Writer) (mime string, err error) {
 
 func (params Params) encodeFormURLEncoded(writer io.Writer) (mime string, err error) {
 	var jsonStr []byte
-	written := false
-
+	data := url.Values{}
 	for k, v := range params {
 		if v == nil {
 			continue
 		}
-
-		if written {
-			io.WriteString(writer, "&")
-		}
-
-		io.WriteString(writer, url.QueryEscape(k))
-		io.WriteString(writer, "=")
-
 		if reflect.TypeOf(v).Kind() == reflect.String {
-			io.WriteString(writer, url.QueryEscape(reflect.ValueOf(v).String()))
+			data.Set(k, reflect.ValueOf(v).String())
 		} else {
 			jsonStr, err = json.Marshal(v)
 			if err != nil {
 				return
 			}
-			io.WriteString(writer, url.QueryEscape(string(jsonStr)))
+			data.Set(k, string(jsonStr))
 		}
-
-		written = true
 	}
 
+	_, _ = io.WriteString(writer, data.Encode())
 	mime = mimeFormURLEncoded
 	return
 }
