@@ -76,7 +76,7 @@ var serveCmd = &cobra.Command{
 		case "consul":
 			db = consul.New(viper.GetString("jobdb-address"))
 		case "postgres":
-			dsn := fmt.Sprintf("postgres://%s:%s@%s", viper.GetString("jobdb-username"), viper.GetString("jobdb-password"), viper.GetString("jobdb-address"))
+			dsn := fmt.Sprintf("postgres://%s:%s@%s?sslmode=%s", viper.GetString("jobdb-username"), viper.GetString("jobdb-password"), viper.GetString("jobdb-address"), viper.GetString("sslmode"))
 			db = postgres.New(dsn)
 		case "mysql", "mariadb":
 			dsn := fmt.Sprintf("%s:%s@%s", viper.GetString("jobdb-username"), viper.GetString("jobdb-password"), viper.GetString("jobdb-address"))
