@@ -146,7 +146,7 @@ func (j *JobRunner) RemoteRun() (string, error) {
 	if mimeFormURLEncoded == mime {
 		params := make(Params)
 		_ = json.Unmarshal([]byte(body), &params)
-		params.Encode(bodyBuffer)
+		_, _ = params.Encode(bodyBuffer)
 	} else {
 		bodyBuffer = bytes.NewBufferString(body)
 	}

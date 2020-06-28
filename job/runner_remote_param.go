@@ -76,9 +76,6 @@ func makeParams(value reflect.Value) (params Params) {
 		return
 	}
 
-	if value.Kind() != reflect.Struct {
-		return
-	}
 	t := value.Type()
 	num := value.NumField()
 
@@ -108,10 +105,6 @@ func makeParams(value reflect.Value) (params Params) {
 			continue
 		}
 
-		for field.Kind() == reflect.Ptr {
-			continue
-		}
-
 		// If name is not set in field tag, use field name directly.
 		if name == "" {
 			name = sf.Name
@@ -119,7 +112,7 @@ func makeParams(value reflect.Value) (params Params) {
 
 		switch field.Kind() {
 		// these types won't be marshaled in json.
-		case reflect.Chan, reflect.Func, reflect.UnsafePointer, reflect.Invalid, reflect.Struct:
+		case reflect.Chan, reflect.Func, reflect.UnsafePointer, reflect.Invalid, reflect.Struct, reflect.Ptr:
 			params = nil
 			return
 		default:
@@ -183,7 +176,7 @@ func (params Params) encodeFormURLEncoded(writer io.Writer) (mime string, err er
 		} else {
 			jsonStr, err = json.Marshal(v)
 			if err != nil {
-				return
+				continue
 			}
 			data.Set(k, string(jsonStr))
 		}
