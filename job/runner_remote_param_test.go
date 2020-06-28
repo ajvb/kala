@@ -9,17 +9,13 @@ import (
 
 type TestParamsStruct struct {
 	Foo           string
-	Bar           *TestParamsNestedStruct
 	Renamed       int     `json:"changed"`
 	AlwaysVisible float64 `json:"AlwaysVisible,omitempty"`
 	Zero          string  `json:",omitempty"`
 	Approved      bool    `json:"approved,omitempty"`
-}
-
-type TestParamsNestedStruct struct {
-	AAA int
-	BBB string
-	CCC bool
+	AAA           int
+	BBB           string
+	CCC           bool
 }
 
 func TestParamsEncode(t *testing.T) {
@@ -41,26 +37,22 @@ func TestParamsEncode(t *testing.T) {
 
 	buf.Reset()
 	data := &TestParamsStruct{
-		Foo: "hello, world!",
-		Bar: &TestParamsNestedStruct{
-			AAA: 1234,
-			BBB: "bbb",
-			CCC: true,
-		},
+		Foo:           "hello, world!",
 		Renamed:       123,
 		AlwaysVisible: 1,
 		Zero:          "", // should be a zero value.
+		AAA:           1234,
+		BBB:           "bbb",
+		CCC:           true,
 	}
 	params = MakeParams(data)
 	expectedParams := Params{
-		"Foo": "hello, world!",
-		"Bar": Params{
-			"AAA": 1234,
-			"BBB": "bbb",
-			"CCC": true,
-		},
+		"Foo":           "hello, world!",
 		"changed":       123, // field name should be changed due to struct field tag.
 		"AlwaysVisible": 1.0,
+		"AAA":           1234,
+		"BBB":           "bbb",
+		"CCC":           true,
 	}
 
 	if params == nil {

@@ -119,13 +119,9 @@ func makeParams(value reflect.Value) (params Params) {
 
 		switch field.Kind() {
 		// these types won't be marshaled in json.
-		case reflect.Chan, reflect.Func, reflect.UnsafePointer, reflect.Invalid:
+		case reflect.Chan, reflect.Func, reflect.UnsafePointer, reflect.Invalid, reflect.Struct:
 			params = nil
 			return
-
-		case reflect.Struct:
-			params[name] = makeParams(field)
-
 		default:
 			params[name] = field.Interface()
 		}

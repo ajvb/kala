@@ -135,12 +135,17 @@ func TestTemplatize(t *testing.T) {
 		})
 
 		t.Run("templated_multiplart", func(t *testing.T) {
+			data := Params{
+				"hello": "world",
+				"foo":   "young-jedi@kala.io",
+			}
+			remoteBodyJSON, _ := json.Marshal(data)
 			j := &Job{
 				Name:  "mock_job",
 				Owner: "jedi@master.com",
 				RemoteProperties: RemoteProperties{
 					Url:  "http://" + srv.Listener.Addr().String() + "/path",
-					Body: `{"hello": "world", "foo": "young-${$.Owner}"}`,
+					Body: string(remoteBodyJSON),
 					Headers: map[string][]string{
 						"Content-Type": {mimeFormURLEncoded},
 					},
@@ -151,7 +156,7 @@ func TestTemplatize(t *testing.T) {
 				job: j,
 			}
 			out, err := r.RemoteRun()
-			assert.Equal(t, `foo=young-jedi%40master.com&hello=world`, out, `message body must be written into req.body`)
+			assert.Equal(t, `foo=young-jedi%40kala.io&hello=world`, out, `message body must be written into req.body`)
 			assert.NoError(t, err)
 		})
 	})
