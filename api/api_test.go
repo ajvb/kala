@@ -39,9 +39,7 @@ func generateNewRemoteJobMap() map[string]interface{} {
 		"name":  "mock_remote_job",
 		"owner": "example@example.com",
 		"type":  1,
-		"remote_properties": map[string]string{
-			"url": "http://example.com",
-		},
+		"url":   "http://example.com",
 	}
 }
 
