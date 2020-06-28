@@ -109,7 +109,7 @@ func makeParams(value reflect.Value) (params Params) {
 		}
 
 		for field.Kind() == reflect.Ptr {
-			field = field.Elem()
+			continue
 		}
 
 		// If name is not set in field tag, use field name directly.
