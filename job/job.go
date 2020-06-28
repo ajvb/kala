@@ -100,7 +100,7 @@ type Job struct {
 	JobType jobType `json:"type"`
 
 	// Custom properties for the remote job type
-	RemoteProperties RemoteProperties `json:"remote_properties"`
+	RemoteProperties
 
 	// Collection of Job Stats
 	Stats []*JobStat `json:"stats"`

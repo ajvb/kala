@@ -151,6 +151,7 @@ func init() {
 	serveCmd.Flags().String("bolt-path", "", "Path to the bolt database file, default is current directory.")
 	serveCmd.Flags().String("jobdb-address", "", "Network address for the job database, in 'host:port' format.")
 	serveCmd.Flags().String("jobdb-username", "", "Username for the job database.")
+	serveCmd.Flags().String("sslmode", "disable", "SSL Mode for postgres connection.")
 	serveCmd.Flags().String("jobdb-password", "", "Password for the job database.")
 	serveCmd.Flags().String("jobdb-tls-capath", "", "Path to tls server CA file for the job database.")
 	serveCmd.Flags().String("jobdb-tls-certpath", "", "Path to tls client cert file for the job database.")
