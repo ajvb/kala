@@ -84,7 +84,7 @@ kala serve --jobdb=mongo --jobdb-address=server1.example.com,server2.example.com
 use Postgres by using the `jobdb`, `jobdb-address` params:
 
 ```bash
-kala serve --jobdb=postgres --jobdb-address=server1.example.com/kala --jobdb-username=admin --jobdb-password=password 
+kala serve --jobdb=postgres --jobdb-address=server1.example.com/kala --jobdb-username=admin --jobdb-password=password
 ```
 
 use MariaDB, MySQL by using the `jobdb`, `jobdb-address`, `jobdb-tls-capath`, `jobdbTlsCertPath`, `jobdb-tls-keypath`, `jobdb-tls-servername` params:
