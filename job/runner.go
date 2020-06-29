@@ -141,8 +141,7 @@ func (j *JobRunner) RemoteRun() (string, error) {
 
 	// Normalize the method passed by the user
 	method := strings.ToUpper(j.job.RemoteProperties.Method)
-	bodyBuffer := bytes.NewBufferString(body)
-	req, err := http.NewRequest(method, url, bodyBuffer)
+	req, err := http.NewRequest(method, url, bytes.NewBufferString(body))
 	if err != nil {
 		return "", err
 	}
