@@ -142,14 +142,8 @@ func (j *JobRunner) RemoteRun() (string, error) {
 	// Normalize the method passed by the user
 	method := strings.ToUpper(j.job.RemoteProperties.Method)
 	bodyBuffer := &bytes.Buffer{}
-	mime := j.job.RemoteProperties.Headers.Get("Content-Type")
-	if mimeFormURLEncoded == mime {
-		params := make(Params)
-		_ = json.Unmarshal([]byte(body), &params)
-		_, _ = params.Encode(bodyBuffer)
-	} else {
-		bodyBuffer = bytes.NewBufferString(body)
-	}
+	bodyBuffer = bytes.NewBufferString(body)
+	fmt.Println(bodyBuffer.String())
 	req, err := http.NewRequest(method, url, bodyBuffer)
 	if err != nil {
 		return "", err

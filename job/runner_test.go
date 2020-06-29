@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -135,19 +136,22 @@ func TestTemplatize(t *testing.T) {
 		})
 
 		t.Run("templated_multiplart", func(t *testing.T) {
-			data := Params{
+			data := map[string]string{
 				"hello": "world",
 				"foo":   "young-jedi@kala.io",
 			}
-			remoteBodyJSON, _ := json.Marshal(data)
+			body := url.Values{}
+			for k, v := range data {
+				body.Set(k, v)
+			}
 			j := &Job{
 				Name:  "mock_job",
 				Owner: "jedi@master.com",
 				RemoteProperties: RemoteProperties{
 					Url:  "http://" + srv.Listener.Addr().String() + "/path",
-					Body: string(remoteBodyJSON),
+					Body: body.Encode(),
 					Headers: map[string][]string{
-						"Content-Type": {mimeFormURLEncoded},
+						"Content-Type": {"application/x-www-form-urlencoded"},
 					},
 				},
 				TemplateDelimiters: "${ }",
