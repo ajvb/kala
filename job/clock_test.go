@@ -34,7 +34,7 @@ func (hc *HybridClock) Pause() {
 
 func (hc *HybridClock) IsPlaying() bool {
 	hc.m.RLock()
-	defer hc.m.RUnlock()
+	defer hc.m.RUnlock() //nolint:gocritic // valid
 	return hc.offset != 0
 }
 

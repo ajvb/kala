@@ -37,7 +37,7 @@ func (clk *Clock) Time() clock.Clock {
 
 func (clk *Clock) TimeSet() bool {
 	clk.lock.RLock()
-	defer clk.lock.RUnlock()
+	defer clk.lock.RUnlock() //nolint:gocritic // valid
 	return clk.Clock != nil
 }
 
