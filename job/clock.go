@@ -35,10 +35,11 @@ func (clk *Clock) Time() clock.Clock {
 	return clk.Clock
 }
 
-func (clk *Clock) TimeSet() bool {
+func (clk *Clock) TimeSet() (result bool) {
 	clk.lock.RLock()
-	defer clk.lock.RUnlock()
-	return clk.Clock != nil
+	result = clk.Clock != nil
+	clk.lock.RUnlock()
+	return
 }
 
 type Clocker interface {

@@ -572,6 +572,10 @@ func (j *Job) validation() error {
 	return err
 }
 
+func (j *Job) SetClock(clk clock.Clock) {
+	j.clk.SetClock(clk)
+}
+
 // Type alias for the recursive call
 type RJob Job
 

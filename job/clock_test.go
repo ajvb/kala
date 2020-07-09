@@ -32,10 +32,11 @@ func (hc *HybridClock) Pause() {
 	hc.offset = 0
 }
 
-func (hc *HybridClock) IsPlaying() bool {
+func (hc *HybridClock) IsPlaying() (result bool) {
 	hc.m.RLock()
-	defer hc.m.RUnlock()
-	return hc.offset != 0
+	result = hc.offset != 0
+	hc.m.RUnlock()
+	return
 }
 
 func (hc *HybridClock) Now() time.Time {
