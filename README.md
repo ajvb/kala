@@ -63,10 +63,10 @@ Kala uses BoltDB by default for the job database by using `jobdb` and `boltpath`
 kala serve --jobdb=boltdb --boltpath=/path/to/dir
 ```
 
-use Redis by using the `jobdb` and `jobdb-address` params:
+use Redis by using the `jobdb`, `jobdb-address` and `jobdb-password` params
 
 ```bash
-kala serve --jobdb=redis --jobdb-address=127.0.0.1:6379
+kala serve --jobdb=redis --jobdb-address=127.0.0.1:6379 --jobdb-password=password
 ```
 
 use Consul by using the `jobdb` and `jobdb-address` params:
