@@ -3,7 +3,7 @@ VERSION := $(shell git describe --tags --always --dirty)
 GOPATH := $(CURDIR)/Godeps/_workspace:$(GOPATH)
 PATH := $(GOPATH)/bin:$(PATH)
 
-bin/$(APP): bin
+bin/$(APP): bin gen
 	go build -v -o $@ -ldflags "-X main.Version='${VERSION}'"
 
 bin: clean
@@ -21,4 +21,12 @@ start-consul: bin/$(APP)
 test:
 	go test -v ./...
 
-.PHONY: bin/$(APP) bin clean start test
+gen: tools
+	go-bindata-assetfs -pkg api -o api/webui_bindata.go webui/...
+
+tools:
+	go install github.com/go-bindata/go-bindata/...
+	go install github.com/elazarl/go-bindata-assetfs/...
+
+
+.PHONY: bin/$(APP) bin clean start test gen tools
