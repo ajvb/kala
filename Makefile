@@ -3,7 +3,7 @@ VERSION := $(shell git describe --tags --always --dirty)
 GOPATH := $(CURDIR)/Godeps/_workspace:$(GOPATH)
 PATH := $(GOPATH)/bin:$(PATH)
 
-bin/$(APP): bin gen
+bin/$(APP): bin
 	go build -v -o $@ -ldflags "-X main.Version='${VERSION}'"
 
 bin: clean
