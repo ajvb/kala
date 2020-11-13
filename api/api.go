@@ -161,7 +161,8 @@ func HandleAddJob(cache job.JobCache, defaultOwner string) func(http.ResponseWri
 }
 
 // HandleJobRequest routes requests to /api/v1/job/{id} to either
-// handleDeleteJob if its a DELETE or handleGetJob if its a GET request.
+// handleDeleteJob if its a DELETE or handleGetJob if its a GET request
+// or updates the job if its a PUT request.
 func HandleJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
@@ -186,6 +187,14 @@ func HandleJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Re
 			}
 		} else if r.Method == "GET" {
 			handleGetJob(w, r, j)
+		} else if r.Method == "PUT" {
+			err = cache.Set(j)
+
+			if err != nil {
+				errorEncodeJSON(err, http.StatusInternalServerError, w)
+			} else {
+				handleGetJob(w, r, j)
+			}
 		}
 	}
 }
@@ -313,7 +322,7 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, defaultOwner string) {
 	// Route for deleting all jobs
 	r.HandleFunc(ApiJobPath+"all/", HandleDeleteAllJobs(cache)).Methods("DELETE")
 	// Route for deleting and getting a job
-	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest(cache)).Methods("DELETE", "GET")
+	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest(cache)).Methods("DELETE", "GET", "PUT")
 	// Route for getting job stats
 	r.HandleFunc(ApiJobPath+"stats/{id}/", HandleListJobStatsRequest(cache)).Methods("GET")
 	// Route for listing all jops
