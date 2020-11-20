@@ -259,6 +259,7 @@ Examples:
 |Creating a Job | POST | /api/v1/job/ |
 |Getting a list of all Jobs | GET | /api/v1/job/ |
 |Getting a Job | GET | /api/v1/job/{id}/ |
+|Editing a Job | PUT | /api/v1/job/{id}/ |
 |Deleting a Job | DELETE | /api/v1/job/{id}/ |
 |Deleting all Jobs | DELETE | /api/v1/job/all/ |
 |Getting metrics about a certain Job | GET | /api/v1/job/stats/{id}/ |
