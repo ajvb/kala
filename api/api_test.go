@@ -156,6 +156,50 @@ func (a *ApiTestSuite) TestDeleteJobSuccess() {
 	a.Nil(cache.Get(j.Id))
 }
 
+func (a *ApiTestSuite) TestEditJobSuccess() {
+	t := a.T()
+	cache, j := generateJobAndCache()
+
+	r := mux.NewRouter()
+	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache)).Methods("PUT", "GET")
+	ts := httptest.NewServer(r)
+
+	oldID := j.Id
+	oldName := j.Name
+	oldOwner := j.Owner
+
+	j.Name = "Not " + j.Name
+	j.Owner = "Not " + j.Owner
+
+	jsonJobMap, err := json.Marshal(j)
+	a.NoError(err)
+
+	_, req := setupTestReq(t, "PUT", ts.URL+ApiJobPath+j.Id, jsonJobMap)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	a.NoError(err)
+
+	var jobResp JobResponse
+	body, err := ioutil.ReadAll(resp.Body)
+	a.NoError(err)
+	resp.Body.Close()
+	err = json.Unmarshal(body, &jobResp)
+
+	a.NoError(err)
+	a.Equal(j.Id, jobResp.Job.Id)
+	a.Equal(j.Owner, jobResp.Job.Owner)
+	a.Equal(j.Name, jobResp.Job.Name)
+	a.NotEqual(oldOwner, jobResp.Job.Owner)
+	a.NotEqual(oldName, jobResp.Job.Name)
+	a.Equal(resp.StatusCode, http.StatusOK)
+
+	retrievedJob, err := cache.Get(j.Id)
+	a.Equal(retrievedJob.Id, oldID)
+	a.NotEqual(retrievedJob.Name, oldName)
+	a.NotEqual(retrievedJob.Owner, oldOwner)
+}
+
 func (a *ApiTestSuite) TestDeleteAllJobsSuccess() {
 	t := a.T()
 	cache, jobOne := generateJobAndCache()
