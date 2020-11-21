@@ -281,6 +281,26 @@ $ curl http://127.0.0.1:8000/api/v1/job/
 {"jobs":{}}
 $ curl http://127.0.0.1:8000/api/v1/job/ -d '{"epsilon": "PT5S", "command": "bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh", "name": "test_job", "schedule": "R2/2017-06-04T19:25:16.828696-07:00/PT10S"}'
 {"id":"93b65499-b211-49ce-57e0-19e735cc5abd"}
+
+$ cat create_remote.json
+{
+  "name":"Run Advice",
+  "type":1,
+  "owner":"dlynn@nextiva.com",
+  "schedule":"R2/2020-11-20T15:35:16.828696-07:00/PT60S",
+  "retries":0,
+  "remote_properties": {
+    "url":"https://slipf-18.com/runcoach/v1/raceStrategy",
+    "method":"GET",
+    "headers": {"charset": ["UTF-8"], "Authorization": ["my voice is my password.  authorize me."]},
+    "timeout":0,
+    "expected_response_codes":[200]
+  }
+}
+
+$ curl http://127.0.0.1:8000/api/v1/job/ -d @create_remote.json
+{"id":"31bd5533-f0a3-41d7-408d-9650f390b82d"}
+
 $ curl http://127.0.0.1:8000/api/v1/job/
 {
     "jobs":{

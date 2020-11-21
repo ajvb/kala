@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -141,7 +142,7 @@ func HandleAddJob(cache job.JobCache, defaultOwner string) func(http.ResponseWri
 
 		err = newJob.Init(cache)
 		if err != nil {
-			errStr := "Error occurred when initializing the job"
+			errStr := fmt.Sprintf("Error occurred when initializing the job: %+v", newJob)
 			log.Errorf(errStr+": %s", err)
 			errorEncodeJSON(errors.New(errStr), http.StatusBadRequest, w)
 			return

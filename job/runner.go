@@ -63,6 +63,8 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 			err = ErrJobTypeInvalid
 		}
 
+		j.currentStat.Output = out
+
 		if err != nil {
 			// Log Error in Metadata
 			// TODO - Error Reporting, email error
