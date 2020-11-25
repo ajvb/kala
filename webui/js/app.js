@@ -259,14 +259,14 @@ var createPanel = new Reef('#createPage', {
             <div class="field">
               <label class="label">URL</label>
               <div class="control">
-                <input class="input" type="url" name="url">
+                <input class="input" type="url" name="remote_properties.url">
               </div>
             </div>
             <div class="field">
               <label class="label">Method</label>
               <div class="control">
                 <div class="select">
-                  <select name="method">
+                  <select name="remote_properties.method">
                     ${methods}
                   </select>
                 </div>
@@ -275,26 +275,26 @@ var createPanel = new Reef('#createPage', {
             <div class="field">
               <label class="label">Headers</label>
               <div class="control">
-                <textarea rows="3" class="textarea ${props.createErr['headers'] && 'is-danger'}" type="text" name="headers" placeholder="{&quot;key&quot;: [&quot;val1&quot;, &quot;val2&quot;]}"></textarea>
+                <textarea rows="3" class="textarea ${props.createErr['headers'] && 'is-danger'}" type="text" name="remote_properties.headers" placeholder="{&quot;key&quot;: [&quot;val1&quot;, &quot;val2&quot;]}"></textarea>
               </div>
               <p class="help is-danger">${props.createErr['headers'] || ''}</p>
             </div>
             <div class="field">
               <label class="label">Body</label>
               <div class="control">
-                <textarea rows="6" class="textarea" type="text" name="body"></textarea>
+                <textarea rows="6" class="textarea" type="text" name="remote_properties.body"></textarea>
               </div>
             </div>
             <div class="field">
               <label class="label">Timeout</label>
               <div class="control">
-                <input class="input" type="number" placeholder="seconds" name="timeout">
+                <input class="input" type="number" placeholder="seconds" name="remote_properties.timeout">
               </div>
             </div>
             <div class="field">
               <label class="label">Expected Response Codes</label>
               <div class="control">
-                <input class="input" type="text" placeholder="200,201,204" name="expected_response_codes">
+                <input class="input" type="text" placeholder="200,201,204" name="remote_properties.expected_response_codes">
               </div>
             </div>
           </fieldset>

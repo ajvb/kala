@@ -122,6 +122,8 @@ var actions = (function() {
       store.do('setCreateErr', null);
       var job = {};
       var resetForm;
+      var remote = {};
+      job['remote_properties'] = remote;
       try {
         var form = new FormData(document.querySelector(selector));
         var entries = form.entries();
@@ -144,11 +146,15 @@ var actions = (function() {
               store.do('setCreateErr', 'headers', err);
             }
           } else if (key === 'expected_response_codes') {
-            job[key] = val.split(',').filter(function(chunk) {
+            job[key] = val.split(',').filter(function (chunk) {
               return !!chunk
-            }).map(function(code) {
+            }).map(function (code) {
               return parseInt(code);
             });
+          } else if (key.startsWith('remote_properties.')) {
+            if (val) {
+              remote[key.split('.')[1]] = val;
+            }
           } else if (val) {
             job[key] = val;
           }
