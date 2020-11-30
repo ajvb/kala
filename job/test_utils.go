@@ -102,6 +102,7 @@ func GetMockJobStats(oldDate time.Time, count int) []*JobStat {
 			ExecutionDuration: 10000,
 			Success:           true,
 			RanAt:             oldDate,
+			Output:            "Fri Nov 20 10:23:02 AM MST 2020",
 		}
 		stats = append(stats, el)
 	}

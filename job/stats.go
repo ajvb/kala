@@ -77,6 +77,7 @@ type JobStat struct {
 	NumberOfRetries   uint          `json:"number_of_retries"`
 	Success           bool          `json:"success"`
 	ExecutionDuration time.Duration `json:"execution_duration"`
+	Output            string        `json:"output"`
 }
 
 func NewJobStat(id string) *JobStat {
