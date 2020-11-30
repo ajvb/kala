@@ -61,12 +61,13 @@ func TestApiTestSuite(t *testing.T) {
 }
 
 func (a *ApiTestSuite) TestHandleAddJob() {
+	disableLocalJobs := false
 	t := a.T()
 	cache := job.NewMockCache()
 	jobMap := generateNewJobMap()
 	jobMap["owner"] = ""
 	defaultOwner := "aj+tester@ajvb.me"
-	handler := HandleAddJob(cache, defaultOwner)
+	handler := HandleAddJob(cache, defaultOwner, disableLocalJobs)
 
 	jsonJobMap, err := json.Marshal(jobMap)
 	a.NoError(err)
@@ -84,13 +85,34 @@ func (a *ApiTestSuite) TestHandleAddJob() {
 	a.Equal(w.Code, http.StatusCreated)
 }
 
+func (a *ApiTestSuite) TestHandleAddDisabledLocalJob() {
+	disableLocalJobs := true
+	t := a.T()
+	cache := job.NewMockCache()
+	jobMap := generateNewJobMap()
+	jobMap["owner"] = ""
+	defaultOwner := "aj+tester@ajvb.me"
+	handler := HandleAddJob(cache, defaultOwner, disableLocalJobs)
+
+	jsonJobMap, err := json.Marshal(jobMap)
+	a.NoError(err)
+	w, req := setupTestReq(t, "POST", ApiJobPath, jsonJobMap)
+	handler(w, req)
+
+	a.Equal(w.Code, http.StatusForbidden)
+	var respErr apiError
+	err = json.Unmarshal(w.Body.Bytes(), &respErr)
+	a.NoError(err)
+	a.True(strings.Contains(respErr.Error, "local jobs are disabled"))
+}
+
 func (a *ApiTestSuite) TestHandleAddRemoteJob() {
 	t := a.T()
 	cache := job.NewMockCache()
 	jobMap := generateNewRemoteJobMap()
 	jobMap["owner"] = ""
 	defaultOwner := "aj+tester@ajvb.me"
-	handler := HandleAddJob(cache, defaultOwner)
+	handler := HandleAddJob(cache, defaultOwner, false)
 
 	jsonJobMap, err := json.Marshal(jobMap)
 	a.NoError(err)
@@ -111,7 +133,7 @@ func (a *ApiTestSuite) TestHandleAddRemoteJob() {
 func (a *ApiTestSuite) TestHandleAddJobFailureBadJson() {
 	t := a.T()
 	cache := job.NewMockCache()
-	handler := HandleAddJob(cache, "")
+	handler := HandleAddJob(cache, "", false)
 
 	w, req := setupTestReq(t, "POST", ApiJobPath, []byte("asd"))
 	handler(w, req)
@@ -122,7 +144,7 @@ func (a *ApiTestSuite) TestHandleAddJobFailureBadSchedule() {
 	t := a.T()
 	cache := job.NewMockCache()
 	jobMap := generateNewJobMap()
-	handler := HandleAddJob(cache, "")
+	handler := HandleAddJob(cache, "", false)
 
 	// Mess up schedule
 	jobMap["schedule"] = "asdf"
@@ -143,7 +165,7 @@ func (a *ApiTestSuite) TestDeleteJobSuccess() {
 	cache, j := generateJobAndCache()
 
 	r := mux.NewRouter()
-	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache)).Methods("DELETE", "GET")
+	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, false)).Methods("DELETE", "GET")
 	ts := httptest.NewServer(r)
 
 	_, req := setupTestReq(t, "DELETE", ts.URL+ApiJobPath+j.Id, nil)
@@ -161,17 +183,16 @@ func (a *ApiTestSuite) TestEditJobSuccess() {
 	cache, j := generateJobAndCache()
 
 	r := mux.NewRouter()
-	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache)).Methods("PUT", "GET")
+	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, false)).Methods("PUT", "GET")
 	ts := httptest.NewServer(r)
 
-	oldID := j.Id
-	oldName := j.Name
-	oldOwner := j.Owner
+	newJob := generateNewRemoteJobMap()
+	newJob["owner"] = "anewowner@example.com"
 
-	j.Name = "Not " + j.Name
-	j.Owner = "Not " + j.Owner
+	// ensure not accidentally using the same obj...
+	a.NotEqual(&j, &newJob)
 
-	jsonJobMap, err := json.Marshal(j)
+	jsonJobMap, err := json.Marshal(newJob)
 	a.NoError(err)
 
 	_, req := setupTestReq(t, "PUT", ts.URL+ApiJobPath+j.Id, jsonJobMap)
@@ -188,16 +209,35 @@ func (a *ApiTestSuite) TestEditJobSuccess() {
 
 	a.NoError(err)
 	a.Equal(j.Id, jobResp.Job.Id)
-	a.Equal(j.Owner, jobResp.Job.Owner)
-	a.Equal(j.Name, jobResp.Job.Name)
-	a.NotEqual(oldOwner, jobResp.Job.Owner)
-	a.NotEqual(oldName, jobResp.Job.Name)
+	a.Equal("anewowner@example.com", jobResp.Job.Owner)
+	a.NotEqual(j.Owner, jobResp.Job.Owner)
+	a.NotEqual(j.Name, jobResp.Job.Name)
 	a.Equal(resp.StatusCode, http.StatusOK)
 
 	retrievedJob, err := cache.Get(j.Id)
-	a.Equal(retrievedJob.Id, oldID)
-	a.NotEqual(retrievedJob.Name, oldName)
-	a.NotEqual(retrievedJob.Owner, oldOwner)
+	a.Equal(retrievedJob.Id, j.Id)
+	a.Equal(retrievedJob.Id, jobResp.Job.Id)
+	a.NotEqual(retrievedJob.Name, j.Name)
+	a.NotEqual(retrievedJob.Owner, j.Owner)
+}
+
+func (a *ApiTestSuite) TestEditJobLocalDisabledFailure() {
+	t := a.T()
+	cache, j := generateJobAndCache()
+
+	r := mux.NewRouter()
+	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, true)).Methods("PUT", "GET")
+	ts := httptest.NewServer(r)
+
+	jsonJobMap, err := json.Marshal(j)
+	a.NoError(err)
+
+	_, req := setupTestReq(t, "PUT", ts.URL+ApiJobPath+j.Id, jsonJobMap)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	a.NoError(err)
+	a.Equal(resp.StatusCode, http.StatusForbidden)
 }
 
 func (a *ApiTestSuite) TestDeleteAllJobsSuccess() {
@@ -246,7 +286,7 @@ func (a *ApiTestSuite) TestHandleJobRequestJobDoesNotExist() {
 	cache := job.NewMockCache()
 
 	r := mux.NewRouter()
-	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache)).Methods("DELETE", "GET")
+	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, false)).Methods("DELETE", "GET")
 	ts := httptest.NewServer(r)
 
 	_, req := setupTestReq(t, "DELETE", ts.URL+ApiJobPath+"not-a-real-id", nil)
@@ -263,7 +303,7 @@ func (a *ApiTestSuite) TestGetJobSuccess() {
 	cache, j := generateJobAndCache()
 
 	r := mux.NewRouter()
-	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache)).Methods("DELETE", "GET")
+	r.HandleFunc(ApiJobPath+"{id}", HandleJobRequest(cache, false)).Methods("DELETE", "GET")
 	ts := httptest.NewServer(r)
 
 	_, req := setupTestReq(t, "GET", ts.URL+ApiJobPath+j.Id, nil)
@@ -476,7 +516,7 @@ func (a *ApiTestSuite) TestSetupApiRoutes() {
 	cache := job.NewMockCache()
 	r := mux.NewRouter()
 
-	SetupApiRoutes(r, cache, "", false)
+	SetupApiRoutes(r, cache, "", false, false)
 
 	a.NotNil(r)
 	a.IsType(r, mux.NewRouter())

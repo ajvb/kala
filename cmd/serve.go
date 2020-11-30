@@ -136,7 +136,14 @@ var serveCmd = &cobra.Command{
 
 		// Launch API server
 		log.Infof("Starting server on port %s", connectionString)
-		srv := api.MakeServer(connectionString, cache, viper.GetString("default-owner"), viper.GetBool("profile"), viper.GetBool("disable-delete-all"))
+		srv := api.MakeServer(
+			connectionString,
+			cache,
+			viper.GetString("default-owner"),
+			viper.GetBool("profile"),
+			viper.GetBool("no-delete-all"),
+			viper.GetBool("no-local-jobs"),
+		)
 		log.Fatal(srv.ListenAndServe())
 	},
 }
@@ -161,5 +168,6 @@ func init() {
 	serveCmd.Flags().Int("jobstat-ttl", -1, "Sets the jobstat-ttl in minutes. The default -1 value indicates JobStat entries will be kept forever")
 	serveCmd.Flags().Bool("profile", false, "Activate pprof handlers")
 	serveCmd.Flags().Bool("no-tx-persist", false, "Only persist to db periodically, not transactionally.")
-	serveCmd.Flags().Bool("disable-delete-all", false, "Disable the delete all jobs endpoint.")
+	serveCmd.Flags().Bool("no-delete-all", false, "Disable the delete all jobs endpoint.")
+	serveCmd.Flags().Bool("no-local-jobs", false, "Disable creating local jobs via API.")
 }
