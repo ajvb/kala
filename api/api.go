@@ -202,8 +202,13 @@ func HandleJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Re
 
 // HandleDeleteAllJobs is the handler for deleting all jobs
 // DELETE /api/v1/job/all
-func HandleDeleteAllJobs(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
+func HandleDeleteAllJobs(cache job.JobCache, disableDeleteAll bool) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if disableDeleteAll {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
 		if err := job.DeleteAll(cache); err != nil {
 			errorEncodeJSON(err, http.StatusInternalServerError, w)
 		} else {
@@ -317,11 +322,11 @@ func errorEncodeJSON(errToEncode error, status int, w http.ResponseWriter) {
 }
 
 // SetupApiRoutes is used within main to initialize all of the routes
-func SetupApiRoutes(r *mux.Router, cache job.JobCache, defaultOwner string) {
+func SetupApiRoutes(r *mux.Router, cache job.JobCache, defaultOwner string, disableDeleteAll bool) {
 	// Route for creating a job
 	r.HandleFunc(ApiJobPath, HandleAddJob(cache, defaultOwner)).Methods("POST")
 	// Route for deleting all jobs
-	r.HandleFunc(ApiJobPath+"all/", HandleDeleteAllJobs(cache)).Methods("DELETE")
+	r.HandleFunc(ApiJobPath+"all/", HandleDeleteAllJobs(cache, disableDeleteAll)).Methods("DELETE")
 	// Route for deleting and getting a job
 	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest(cache)).Methods("DELETE", "GET", "PUT")
 	// Route for getting job stats
@@ -338,11 +343,11 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, defaultOwner string) {
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
 }
 
-func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, profile bool) *http.Server {
+func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, profile bool, disableDeleteAll bool) *http.Server {
 	r := mux.NewRouter()
 	// Allows for the use for /job as well as /job/
 	r.StrictSlash(true)
-	SetupApiRoutes(r, cache, defaultOwner)
+	SetupApiRoutes(r, cache, defaultOwner, disableDeleteAll)
 	r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(http.Dir("./webui/"))))
 
 	if profile {

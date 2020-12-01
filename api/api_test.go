@@ -207,7 +207,7 @@ func (a *ApiTestSuite) TestDeleteAllJobsSuccess() {
 	jobTwo.Init(cache)
 
 	r := mux.NewRouter()
-	r.HandleFunc(ApiJobPath+"all/", HandleDeleteAllJobs(cache)).Methods("DELETE")
+	r.HandleFunc(ApiJobPath+"all/", HandleDeleteAllJobs(cache, false)).Methods("DELETE")
 	ts := httptest.NewServer(r)
 
 	_, req := setupTestReq(t, "DELETE", ts.URL+ApiJobPath+"all/", nil)
@@ -220,6 +220,25 @@ func (a *ApiTestSuite) TestDeleteAllJobsSuccess() {
 	a.Equal(0, len(cache.GetAll().Jobs))
 	a.Nil(cache.Get(jobOne.Id))
 	a.Nil(cache.Get(jobTwo.Id))
+}
+
+func (a *ApiTestSuite) TestDeleteAllJobsDisabled() {
+	t := a.T()
+	cache, _ := generateJobAndCache()
+	jobTwo := job.GetMockJobWithGenericSchedule(time.Now())
+	jobTwo.Init(cache)
+
+	r := mux.NewRouter()
+	r.HandleFunc(ApiJobPath+"all/", HandleDeleteAllJobs(cache, true)).Methods("DELETE")
+	ts := httptest.NewServer(r)
+
+	_, req := setupTestReq(t, "DELETE", ts.URL+ApiJobPath+"all/", nil)
+
+	client := &http.Client{}
+	resp, _ := client.Do(req)
+	a.Equal(resp.StatusCode, http.StatusForbidden)
+
+	a.Equal(2, len(cache.GetAll().Jobs))
 }
 
 func (a *ApiTestSuite) TestHandleJobRequestJobDoesNotExist() {
@@ -457,7 +476,7 @@ func (a *ApiTestSuite) TestSetupApiRoutes() {
 	cache := job.NewMockCache()
 	r := mux.NewRouter()
 
-	SetupApiRoutes(r, cache, "")
+	SetupApiRoutes(r, cache, "", false)
 
 	a.NotNil(r)
 	a.IsType(r, mux.NewRouter())
