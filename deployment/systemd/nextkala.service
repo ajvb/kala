@@ -1,0 +1,8 @@
+[Unit]
+Description=NextKala
+
+[Service]
+ExecStart=/home/yourname/bin/nextkala serve -v -p 8000
+
+[Install]
+WantedBy=multi-user.target

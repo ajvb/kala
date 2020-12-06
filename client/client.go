@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ajvb/kala/api"
-	"github.com/ajvb/kala/job"
+	"github.com/nextiva/nextkala/api"
+	"github.com/nextiva/nextkala/job"
 )
 
 const (

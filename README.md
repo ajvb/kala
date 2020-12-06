@@ -2,10 +2,10 @@
 
 NextKala is a fork of [kala](https://github.com/ajvb/kala). 
 
-[![GoDoc](https://godoc.org/github.com/ajvb/kala?status.svg)](https://godoc.org/github.com/nextiva/nextkala)
+[![GoDoc](https://godoc.org/github.com/nextiva/nextkala?status.svg)](https://godoc.org/github.com/nextiva/nextkala)
 ![golangci-lint](https://github.com/nextiva/nextkala/workflows/golangci-lint/badge.svg)
 [![Circle CI](https://circleci.com/gh/nextiva/nextkala.svg?style=svg)](https://circleci.com/gh/nextiva/nextkala)
-[![Coverage Status](https://coveralls.io/repos/ajvb/kala/badge.svg?branch=master&service=github)](https://coveralls.io/github/ajvb/kala?branch=master)
+[![Coverage Status](https://coveralls.io/repos/ajvb/kala/badge.svg?branch=master&service=github)](https://coveralls.io/github/nextiva/nextkala?branch=master)
 
 ![Dashboard](assets/job-list.png)
 
@@ -143,7 +143,7 @@ All routes have a prefix of `/api/v1`
 {
         "name":"test_job",
         "id":"93b65499-b211-49ce-57e0-19e735cc5abd",
-        "command":"bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh",
+        "command":"bash /home/ajvb/gocode/src/github.com/nextiva/nextkala/examples/example-kala-commands/example-command.sh",
         "owner":"",
         "disabled":false,
         "dependent_jobs":null,
@@ -256,7 +256,7 @@ Example:
 ```bash
 $ curl http://127.0.0.1:8000/api/v1/job/
 {"jobs":{}}
-$ curl http://127.0.0.1:8000/api/v1/job/ -d '{"epsilon": "PT5S", "command": "bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh", "name": "test_job", "schedule": "R2/2017-06-04T19:25:16.828696-07:00/PT10S"}'
+$ curl http://127.0.0.1:8000/api/v1/job/ -d '{"epsilon": "PT5S", "command": "bash /home/ajvb/gocode/src/github.com/nextiva/nextkala/examples/example-kala-commands/example-command.sh", "name": "test_job", "schedule": "R2/2017-06-04T19:25:16.828696-07:00/PT10S"}'
 {"id":"93b65499-b211-49ce-57e0-19e735cc5abd"}
 
 $ cat create_remote.json
@@ -284,7 +284,7 @@ $ curl http://127.0.0.1:8000/api/v1/job/
         "93b65499-b211-49ce-57e0-19e735cc5abd":{
             "name":"test_job",
             "id":"93b65499-b211-49ce-57e0-19e735cc5abd",
-            "command":"bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh",
+            "command":"bash /home/ajvb/gocode/src/github.com/nextiva/nextkala/examples/example-kala-commands/example-command.sh",
             "owner":"",
             "disabled":false,
             "dependent_jobs":null,
@@ -311,7 +311,7 @@ Performing a DELETE will delete the Job.
 Example:
 ```bash
 $ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd/
-{"job":{"name":"test_job","id":"93b65499-b211-49ce-57e0-19e735cc5abd","command":"bash /home/ajvb/gocode/src/github.com/ajvb/kala/examples/example-kala-commands/example-command.sh","owner":"","disabled":false,"dependent_jobs":null,"parent_jobs":null,"schedule":"R2/2017-06-04T19:25:16.828696-07:00/PT10S","retries":0,"epsilon":"PT5S","success_count":0,"last_success":"0001-01-01T00:00:00Z","error_count":0,"last_error":"0001-01-01T00:00:00Z","last_attempted_run":"0001-01-01T00:00:00Z","next_run_at":"2017-06-04T19:25:16.828737931-07:00"}}
+{"job":{"name":"test_job","id":"93b65499-b211-49ce-57e0-19e735cc5abd","command":"bash /home/ajvb/gocode/src/github.com/nextiva/nextkala/examples/example-kala-commands/example-command.sh","owner":"","disabled":false,"dependent_jobs":null,"parent_jobs":null,"schedule":"R2/2017-06-04T19:25:16.828696-07:00/PT10S","retries":0,"epsilon":"PT5S","success_count":0,"last_success":"0001-01-01T00:00:00Z","error_count":0,"last_error":"0001-01-01T00:00:00Z","last_attempted_run":"0001-01-01T00:00:00Z","next_run_at":"2017-06-04T19:25:16.828737931-07:00"}}
 $ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd/ -X DELETE
 $ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd/
 ```
@@ -368,7 +368,7 @@ FATA[0000] Command Failed with err: exit status 1
 
 ### How to add a dependent job
 
-Check out this [example for how to add dependent jobs](https://github.com/ajvb/kala/blob/master/examples/python/example_dependent_jobs.py) within a python script.
+Check out this [example for how to add dependent jobs](https://github.com/nextiva/nextkala/blob/master/examples/python/example_dependent_jobs.py) within a python script.
 
 ### Notes on Dependent Jobs
 
@@ -392,4 +392,4 @@ Original Reviewers:
 
 #### Donate
 
-[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=ajvb&url=https://github.com/ajvb/kala&title=Kala&language=&tags=github&category=software)
+[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=ajvb&url=https://github.com/nextiva/nextkala&title=Kala&language=&tags=github&category=software)

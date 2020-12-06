@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ajvb/kala/api"
-	"github.com/ajvb/kala/job"
-	"github.com/ajvb/kala/job/storage/boltdb"
-	"github.com/ajvb/kala/job/storage/postgres"
+	"github.com/nextiva/nextkala/api"
+	"github.com/nextiva/nextkala/job"
+	"github.com/nextiva/nextkala/job/storage/boltdb"
+	"github.com/nextiva/nextkala/job/storage/postgres"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

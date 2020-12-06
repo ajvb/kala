@@ -7,7 +7,7 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"github.com/ajvb/kala/job"
+	"github.com/nextiva/nextkala/job"
 
 	log "github.com/sirupsen/logrus"
 )
