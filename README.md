@@ -1,13 +1,15 @@
-# Kala
+# NextKala
 
-[![GoDoc](https://godoc.org/github.com/ajvb/kala?status.svg)](https://godoc.org/github.com/ajvb/kala)
-![golangci-lint](https://github.com/ajvb/kala/workflows/golangci-lint/badge.svg)
-[![Circle CI](https://circleci.com/gh/ajvb/kala.svg?style=svg)](https://circleci.com/gh/ajvb/kala)
+NextKala is a fork of [kala](https://github.com/ajvb/kala]. 
+
+[![GoDoc](https://godoc.org/github.com/ajvb/kala?status.svg)](https://godoc.org/github.com/nextiva/nextkala)
+![golangci-lint](https://github.com/nextiva/nextkala/workflows/golangci-lint/badge.svg)
+[![Circle CI](https://circleci.com/gh/nextiva/nextkala.svg?style=svg)](https://circleci.com/gh/nextiva/nextkala)
 [![Coverage Status](https://coveralls.io/repos/ajvb/kala/badge.svg?branch=master&service=github)](https://coveralls.io/github/ajvb/kala?branch=master)
 
 ![Dashboard](assets/job-list.png)
 
-Kala is a simplistic, modern, and performant job scheduler written in Go.  Features:
+NextKala is a simplistic, modern, and performant job scheduler written in Go.  Features:
 
 - Single binary
 - No dependencies
@@ -29,47 +31,47 @@ If you need fault tolerance, distributed features, massive scale, then I recomme
 
 *Kala uses Go Modules*
 
-1. Get Kala
+1. Get NextKala
 
 	```
-	go get github.com/ajvb/kala
+	go get github.com/nextiva/nextkala
 	```
 
-2. Run Kala
+2. Run NextKala
 
 	```
-	kala serve
+	nextkala serve
 	```
 
 # Getting Started
 
-Once you have installed Kala onto the machine you would like to use, you can follow the below steps to start using it.
+Once you have installed NextKala onto the machine you would like to use, you can follow the below steps to start using it.
 
-To run Kala as a server:
+To run NextKala as a server:
 
 ```console
-$ kala serve
+$ nextkala serve
 INFO[0000] Preparing cache
 INFO[0000] Starting server on port :8000
 
-$ kala serve -p 2222
+$ nextkala serve -p 2222
 INFO[0000] Preparing cache
 INFO[0000] Starting server on port :2222
 ```
 
-Kala uses BoltDB by default for the job database by using `jobdb` and `boltpath` params:
+NextKala uses BoltDB by default for the job database by using `jobdb` and `boltpath` params:
 
 ```bash
-kala serve --jobdb=boltdb --boltpath=/path/to/dir
+nextkala serve --jobdb=boltdb --boltpath=/path/to/dir
 ```
 
 use Postgres by using the `jobdb`, `jobdb-address` params:
 
 ```bash
-kala serve --jobdb=postgres --jobdb-address=server1.example.com/kala --jobdb-username=admin --jobdb-password=password
+nextkala serve --jobdb=postgres --jobdb-address=server1.example.com/kala --jobdb-username=admin --jobdb-password=password
 ```
 
-Kala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.
+NextKala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.
 
 ```bash
 $ curl http://127.0.0.1:8000/api/v1/stats/
@@ -80,7 +82,7 @@ Once it's up in running, you can utilize curl or the official go client to inter
 
 ### Examples of Usage
 
-There are more examples in the [examples directory](https://github.com/ajvb/kala/tree/master/examples) within this repo. Currently its pretty messy. Feel free to submit a new example if you have one.
+There are more examples in the [examples directory](https://github.com/nextiva/nextkala/tree/master/examples) within this repo. Currently its pretty messy. Feel free to submit a new example if you have one.
 
 # Deployment
 
@@ -89,19 +91,19 @@ There are more examples in the [examples directory](https://github.com/ajvb/kala
 After installing supervisord, open its config file (`/etc/supervisor/supervisord.conf` is the default usually) and add something like:
 
 ```
-[program:kala]
-command=kala serve
+[program:nextkala]
+command=nextkala serve
 autorestart=true
-stdout_logfile=/var/log/kala.stdout.log
-stderr_logfile=/var/log/kala.stderr.log
+stdout_logfile=/var/log/nextkala.stdout.log
+stderr_logfile=/var/log/nextkala.stderr.log
 ```
 
 ### Docker
 
 If you have docker installed, you can build the dockerfile in this directory with
-```docker build -t kala .```
+```docker build -t nextkala .```
 and run it as a daemon with:
-```docker run -it -d -p 8000:8000 kala```
+```docker run -it -d -p 8000:8000 nextkala```
 
 # API v1 Docs
 
@@ -110,9 +112,9 @@ All routes have a prefix of `/api/v1`
 ## Client Libraries
 
 #### Official:
-* [Go](https://github.com/ajvb/kala/tree/master/client) - Docs: http://godoc.org/github.com/ajvb/kala/client
+* [Go](https://github.com/nextiva/nextkala/tree/master/client) - Docs: http://godoc.org/github.com/nextiva/nextkala/client
     ```bash
-    go get github.com/ajvb/kala/client
+    go get github.com/nextiva/nextkala/client
     ```
 
 #### Contrib:
@@ -128,7 +130,7 @@ All routes have a prefix of `/api/v1`
 
 ## Job Data Struct
 
-[Docs can be found here](http://godoc.org/github.com/ajvb/kala/job#Job)
+[Docs can be found here](http://godoc.org/github.com/nextiva/nextkala/job#Job)
 
 ## Things to Note
 
