@@ -27,7 +27,7 @@ Kala was inspired by the desire for a simpler [Chronos](https://github.com/airbn
 
 If you need fault tolerance, distributed features, massive scale, then I recommend checking out [Chronos](https://github.com/airbnb/chronos). This is designed to be the Chronos for start-ups.
 
-## Installing Kala
+## Installing NextKala
 
 *NextKala uses Go Modules*
 
