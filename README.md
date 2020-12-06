@@ -29,7 +29,7 @@ If you need fault tolerance, distributed features, massive scale, then I recomme
 
 ## Installing Kala
 
-*Kala uses Go Modules*
+*NextKala uses Go Modules*
 
 1. Get NextKala
 
