@@ -1,6 +1,6 @@
 # NextKala
 
-NextKala is a fork of [kala](https://github.com/ajvb/kala]. 
+NextKala is a fork of [kala](https://github.com/ajvb/kala). 
 
 [![GoDoc](https://godoc.org/github.com/ajvb/kala?status.svg)](https://godoc.org/github.com/nextiva/nextkala)
 ![golangci-lint](https://github.com/nextiva/nextkala/workflows/golangci-lint/badge.svg)
