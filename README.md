@@ -63,36 +63,10 @@ Kala uses BoltDB by default for the job database by using `jobdb` and `boltpath`
 kala serve --jobdb=boltdb --boltpath=/path/to/dir
 ```
 
-use Redis by using the `jobdb` and `jobdb-address` params:
-
-```bash
-kala serve --jobdb=redis --jobdb-address=127.0.0.1:6379
-```
-
-use Consul by using the `jobdb` and `jobdb-address` params:
-
-```bash
-kala serve --jobdb=consul --jobdb-address=127.0.0.1:8500
-```
-
-use Mongo by using the `jobdb`, `jobdb-address`, `jobdb-username`, and `jobdb-password` params:
-
-```bash
-kala serve --jobdb=mongo --jobdb-address=server1.example.com,server2.example.com --jobdb-username=admin --jobdb-password=password
-```
-
 use Postgres by using the `jobdb`, `jobdb-address` params:
 
 ```bash
 kala serve --jobdb=postgres --jobdb-address=server1.example.com/kala --jobdb-username=admin --jobdb-password=password
-```
-
-use MariaDB, MySQL by using the `jobdb`, `jobdb-address`, `jobdb-tls-capath`, `jobdbTlsCertPath`, `jobdb-tls-keypath`, `jobdb-tls-servername` params:
-
-```bash
-kala serve --jobdb=mariadb --jobdb-address=(server1.example.com)/kala --jobdb-username=admin --jobdb-password=password
-
-kala serve --jobdb=mysql --jobdb-address="tcp(server1.example.com:3306)/kala?tls=custom" --jobdb-username=admin --jobdb-password=password --jobdb-tls-capath=/path/to/server-ca.pem --jobdbTlsCertPath=/path/to/client-cert.pem --jobdb-tls-keypath=/path/to/client-key.pem --jobdb-tls-servername=server1.example.com
 ```
 
 Kala runs on `127.0.0.1:8000` by default. You can easily test it out by curling the metrics path.

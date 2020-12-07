@@ -15,9 +15,6 @@ clean:
 start: bin/$(APP)
 	./bin/$(APP) serve -v
 
-start-consul: bin/$(APP)
-	./bin/$(APP) serve --jobdb=consul -v
-
 test:
 	go test -v ./...
 
