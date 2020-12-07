@@ -1099,3 +1099,21 @@ func TestOnFailureJobDoesntTriggerOnSuccess(t *testing.T) {
 	onFailureJob.lock.RUnlock()
 	j.lock.RUnlock()
 }
+
+func TestSetID(t *testing.T) {
+	mockJob := GetMockJobWithGenericSchedule(time.Now())
+
+	/// no id before init.
+	assert.Equal(t, len(mockJob.Id), 0)
+
+	mockJob.Id = "bespoke id"
+	mockJob.setID()
+
+	assert.Equal(t, mockJob.Id, "bespoke id")
+
+	mockJob.Id = ""
+	err := mockJob.setID()
+	assert.Nil(t, err)
+
+	assert.Equal(t, len(mockJob.Id), 36)
+}

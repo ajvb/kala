@@ -14,8 +14,8 @@ import (
 
 	"github.com/ajvb/kala/utils/iso8601"
 	"github.com/mixer/clock"
-
 	uuid "github.com/nu7hatch/gouuid"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -199,12 +199,8 @@ func (j *Job) Init(cache JobCache) error {
 		return err
 	}
 
-	u4, err := uuid.NewV4()
-	if err != nil {
-		log.Errorf("Error occurred when generating uuid: %s", err)
-		return err
-	}
-	j.Id = u4.String()
+	/// set the id if not provided.
+	j.setID()
 
 	// Add Job to the cache.
 	j.lock.Unlock()
@@ -570,6 +566,24 @@ func (j *Job) validation() error {
 	}
 	log.Errorf(err.Error())
 	return err
+}
+
+func (j *Job) setID() error {
+	log.Debugf("setting id for job with current id: %s", j.Id)
+
+	if len(j.Id) > 0 {
+		return nil
+	}
+
+	u4, err := uuid.NewV4()
+	if err != nil {
+		log.Errorf("Error occurred when generating uuid: %s", err)
+		return err
+	}
+
+	j.Id = u4.String()
+
+	return nil
 }
 
 func (j *Job) SetClock(clk clock.Clock) {

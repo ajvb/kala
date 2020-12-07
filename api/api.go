@@ -128,11 +128,16 @@ func unmarshalNewJob(r *http.Request) (*job.Job, error) {
 
 // HandleAddJob takes a job object and unmarshals it to a Job type,
 // and then throws the job in the schedulers.
-func HandleAddJob(cache job.JobCache, defaultOwner string) func(http.ResponseWriter, *http.Request) {
+func HandleAddJob(cache job.JobCache, defaultOwner string, disableLocalJobs bool) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		newJob, err := unmarshalNewJob(r)
 		if err != nil {
 			errorEncodeJSON(err, http.StatusBadRequest, w)
+			return
+		}
+
+		if disableLocalJobs && (newJob.JobType == job.LocalJob) {
+			errorEncodeJSON(errors.New("local jobs are disabled"), http.StatusForbidden, w)
 			return
 		}
 
@@ -164,7 +169,7 @@ func HandleAddJob(cache job.JobCache, defaultOwner string) func(http.ResponseWri
 // HandleJobRequest routes requests to /api/v1/job/{id} to either
 // handleDeleteJob if its a DELETE or handleGetJob if its a GET request
 // or updates the job if its a PUT request.
-func HandleJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
+func HandleJobRequest(cache job.JobCache, disableLocalJobs bool) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
 
@@ -189,13 +194,28 @@ func HandleJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Re
 		} else if r.Method == "GET" {
 			handleGetJob(w, r, j)
 		} else if r.Method == "PUT" {
-			err = cache.Set(j)
+			updatedJob, err := unmarshalNewJob(r)
+			if err != nil {
+				errorEncodeJSON(err, http.StatusBadRequest, w)
+				return
+			}
+
+			if disableLocalJobs && (updatedJob.JobType == job.LocalJob) {
+				errorEncodeJSON(errors.New("local jobs are disabled"), http.StatusForbidden, w)
+				return
+			}
+
+			updatedJob.Id = j.Id
+			err = updatedJob.Init(cache)
 
 			if err != nil {
-				errorEncodeJSON(err, http.StatusInternalServerError, w)
-			} else {
-				handleGetJob(w, r, j)
+				errStr := fmt.Sprintf("Error occurred when initializing the job: %+v", updatedJob)
+				log.Errorf(errStr+": %s", err)
+				errorEncodeJSON(errors.New(errStr), http.StatusBadRequest, w)
+				return
 			}
+
+			handleGetJob(w, r, updatedJob)
 		}
 	}
 }
@@ -322,13 +342,13 @@ func errorEncodeJSON(errToEncode error, status int, w http.ResponseWriter) {
 }
 
 // SetupApiRoutes is used within main to initialize all of the routes
-func SetupApiRoutes(r *mux.Router, cache job.JobCache, defaultOwner string, disableDeleteAll bool) {
+func SetupApiRoutes(r *mux.Router, cache job.JobCache, defaultOwner string, disableDeleteAll bool, disableLocalJobs bool) {
 	// Route for creating a job
-	r.HandleFunc(ApiJobPath, HandleAddJob(cache, defaultOwner)).Methods("POST")
+	r.HandleFunc(ApiJobPath, HandleAddJob(cache, defaultOwner, disableLocalJobs)).Methods("POST")
 	// Route for deleting all jobs
 	r.HandleFunc(ApiJobPath+"all/", HandleDeleteAllJobs(cache, disableDeleteAll)).Methods("DELETE")
-	// Route for deleting and getting a job
-	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest(cache)).Methods("DELETE", "GET", "PUT")
+	// Route for deleting, editing and getting a job
+	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest(cache, disableLocalJobs)).Methods("DELETE", "GET", "PUT")
 	// Route for getting job stats
 	r.HandleFunc(ApiJobPath+"stats/{id}/", HandleListJobStatsRequest(cache)).Methods("GET")
 	// Route for listing all jops
@@ -343,11 +363,11 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, defaultOwner string, disa
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
 }
 
-func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, profile bool, disableDeleteAll bool) *http.Server {
+func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, profile bool, disableDeleteAll bool, disableLocalJobs bool) *http.Server {
 	r := mux.NewRouter()
 	// Allows for the use for /job as well as /job/
 	r.StrictSlash(true)
-	SetupApiRoutes(r, cache, defaultOwner, disableDeleteAll)
+	SetupApiRoutes(r, cache, defaultOwner, disableDeleteAll, disableLocalJobs)
 	r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(http.Dir("./webui/"))))
 
 	if profile {
