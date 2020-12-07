@@ -36,7 +36,7 @@ func TestSaveAndGetJob(t *testing.T) {
 		m.ExpectBegin()
 		m.ExpectPrepare("insert .*").
 			ExpectExec().
-			WithArgs(string(j)).
+			WithArgs(genericMockJob.Id, string(j)).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		m.ExpectCommit()
 		err := db.Save(genericMockJob)
@@ -72,7 +72,7 @@ func TestDeleteJob(t *testing.T) {
 		m.ExpectBegin()
 		m.ExpectPrepare("insert .*").
 			ExpectExec().
-			WithArgs(string(j)).
+			WithArgs(genericMockJob.Id, string(j)).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 		m.ExpectCommit()
 
@@ -121,4 +121,26 @@ func TestSaveAndGetAllJobs(t *testing.T) {
 		}
 	}
 
+}
+
+func TestSaveAndGetAllJobRuns(t *testing.T) {
+	db, m := NewTestDb()
+
+	genericMockJobOne := job.GetMockJobWithGenericSchedule(time.Now())
+	genericMockJobTwo := job.GetMockJobWithGenericSchedule(time.Now())
+
+	jobOne, err := json.Marshal(genericMockJobOne)
+	if assert.NoError(t, err) {
+		if assert.NoError(t, err) {
+			jobTwo, err := json.Marshal(genericMockJobTwo)
+			assert.NoError(t, err)
+
+			aggregate := fmt.Sprintf(`[%s,%s]`, jobOne, jobTwo)
+			m.ExpectQuery(".*").WillReturnRows(sqlmock.NewRows([]string{"jobs"}).AddRow(aggregate))
+
+			jobs, err := db.GetAll()
+			assert.Nil(t, err)
+			assert.Equal(t, 2, len(jobs))
+		}
+	}
 }

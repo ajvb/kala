@@ -11,34 +11,7 @@ import (
 
 func TestCacheStart(t *testing.T) {
 	cache := NewMockCache()
-	cache.Start(time.Hour, time.Hour)
-}
-
-func TestCacheRetainShouldRemoveOldJobStats(t *testing.T) {
-	cache := NewMockCache()
-	mockDb := &MockDBGetAll{}
-	cache.jobDB = mockDb
-
-	pastDate := time.Date(2016, time.April, 12, 20, 0, 0, 0, time.UTC)
-	j := GetMockRecurringJobWithSchedule(pastDate, "PT1S")
-	j.Stats = GetMockJobStats(pastDate, 5)
-	j.Id = "0"
-
-	jobs := make([]*Job, 0)
-	jobs = append(jobs, j)
-	mockDb.response = jobs
-
-	cache.Start(0, 1*time.Minute) // Retain 1 minute
-	j.lock.RLock()
-	assert.Equal(t, 5, len(j.Stats))
-	j.lock.RUnlock()
-
-	time.Sleep(time.Second * 2)
-	cache.Retain()
-
-	j.lock.RLock()
-	assert.Equal(t, 1, len(j.Stats)) // New job stats should not be cleaned up
-	j.lock.RUnlock()
+	cache.Start(time.Hour)
 }
 
 func TestCacheStartStartsARecurringJobWithStartDateInThePast(t *testing.T) {
@@ -55,7 +28,7 @@ func TestCacheStartStartsARecurringJobWithStartDateInThePast(t *testing.T) {
 	jobs = append(jobs, j)
 	mockDb.response = jobs
 
-	cache.Start(0, -1)
+	cache.Start(0)
 	time.Sleep(time.Second * 2)
 
 	j.lock.RLock()
@@ -79,7 +52,7 @@ func TestCacheStartCanResumeJobAtNextScheduledPoint(t *testing.T) {
 	jobs = append(jobs, j)
 	mockDb.response = jobs
 
-	cache.Start(0, -1)
+	cache.Start(0)
 
 	// After 1 second, the job should not have run.
 	time.Sleep(time.Second * 1)
