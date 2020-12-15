@@ -38,7 +38,6 @@ If you need fault tolerance, distributed features, massive scale, then I recomme
 	```
 
 2. Run (Next)Kala, for example:
-
 	```
         kala -v --jobdb=postgres --pg-dsn="postgres://user:password@host:port/dbname?sslmode=disable" serve
 	```
