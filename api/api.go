@@ -10,8 +10,8 @@ import (
 	"net/http/pprof"
 	"runtime"
 
-	"github.com/ajvb/kala/api/middleware"
-	"github.com/ajvb/kala/job"
+	"github.com/nextiva/nextkala/api/middleware"
+	"github.com/nextiva/nextkala/job"
 
 	"github.com/gorilla/mux"
 	"github.com/phyber/negroni-gzip/gzip"

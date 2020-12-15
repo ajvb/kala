@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ajvb/kala/api"
-	"github.com/ajvb/kala/client"
-	"github.com/ajvb/kala/job"
+	"github.com/nextiva/nextkala/api"
+	"github.com/nextiva/nextkala/client"
+	"github.com/nextiva/nextkala/job"
 	"github.com/mixer/clock"
 )
 

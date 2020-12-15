@@ -1,8 +1,8 @@
 FROM golang
 
-WORKDIR /go/src/github.com/ajvb/kala
+WORKDIR /go/src/github.com/nextiva/nextkala
 COPY . .
-RUN go build && mv kala /usr/bin
+RUN go build && mv nextkala /usr/bin
 
-CMD ["kala", "serve"]
+CMD ["nextkala", "serve"]
 EXPOSE 8000

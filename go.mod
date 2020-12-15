@@ -1,4 +1,4 @@
-module github.com/ajvb/kala
+module github.com/nextiva/nextkala
 
 go 1.13
 

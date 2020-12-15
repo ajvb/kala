@@ -1,4 +1,4 @@
-APP := kala
+APP := nextkala
 VERSION := $(shell git describe --tags --always --dirty)
 GOPATH := $(CURDIR)/Godeps/_workspace:$(GOPATH)
 PATH := $(GOPATH)/bin:$(PATH)
