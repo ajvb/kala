@@ -35,10 +35,10 @@ If you need fault tolerance, distributed features, massive scale, then I recomme
 	go get github.com/ajvb/kala
 	```
 
-2. Run Kala
+2. Run Kala, for example:
 
 	```
-	kala serve
+  kala -v --jobdb=postgres --pg-dsn="postgres://user:password@host:port/dbname?sslmode=disable" serve
 	```
 
 # Getting Started
