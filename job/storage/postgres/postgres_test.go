@@ -9,7 +9,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 
-	"github.com/nextiva/nextkala/job"
+	"bitbucket.org/nextiva/nextkala/job"
 
 	"github.com/stretchr/testify/assert"
 )

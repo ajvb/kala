@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/nextiva/nextkala/cmd"
+	"bitbucket.org/nextiva/nextkala/cmd"
 
 	log "github.com/sirupsen/logrus"
 )

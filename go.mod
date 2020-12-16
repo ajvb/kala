@@ -1,4 +1,4 @@
-module github.com/nextiva/nextkala
+module bitbucket.org/nextiva/nextkala
 
 go 1.13
 
@@ -13,13 +13,14 @@ require (
 	github.com/mixer/clock v0.0.0-20190507173039-c311c17adb1f
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 	github.com/phyber/negroni-gzip v0.0.0-20180113114010-ef6356a5d029
+	github.com/sendgrid/rest v2.6.2+incompatible // indirect
+	github.com/sendgrid/sendgrid-go v3.7.2+incompatible
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.4.0
 	github.com/urfave/negroni v1.0.0
 	golang.org/x/sys v0.0.0-20200122134326-e047566fdf82 // indirect
-	google.golang.org/appengine v1.6.1
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v2 v2.2.5 // indirect
 )

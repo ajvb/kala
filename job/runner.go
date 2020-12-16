@@ -67,9 +67,13 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 
 		if err != nil {
 			// Log Error in Metadata
-			// TODO - Error Reporting, email error
 			log.Errorln("Error running job:", j.currentStat.JobId)
 			log.Errorln(err)
+
+			err = notifyOfJobFailure(j.job, j.currentStat)
+			if err != nil {
+				log.Errorln("Error notifying of job failure:", err)
+			}
 
 			j.meta.ErrorCount++
 			j.meta.LastError = j.job.clk.Time().Now()
