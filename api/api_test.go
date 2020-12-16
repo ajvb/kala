@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nextiva/nextkala/job"
+	"bitbucket.org/nextiva/nextkala/job"
 
 	"testing"
 

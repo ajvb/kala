@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nextiva/nextkala/utils/iso8601"
+	"bitbucket.org/nextiva/nextkala/utils/iso8601"
 )
 
 type MockDBGetAll struct {

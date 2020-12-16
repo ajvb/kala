@@ -15,7 +15,7 @@ var cfgFile string
 var RootCmd = &cobra.Command{
 	Use:   "kala",
 	Short: "Modern job scheduler",
-	Long:  `See https://github.com/nextiva/nextkala for documentation.`,
+	Long:  `See https://bitbucket.org/nextiva/nextkala for documentation.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		return viper.BindPFlags(cmd.Flags())
 	},

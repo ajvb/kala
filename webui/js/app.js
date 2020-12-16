@@ -80,7 +80,7 @@ var navbar = new Reef('#nav', {
           <div class="navbar-end">
             <div class="navbar-item">
               <div class="buttons">
-                <a class="button is-white is-outlined" href="https://github.com/nextiva/nextkala">
+                <a class="button is-white is-outlined" href="https://bitbucket.org/nextiva/nextkala">
                   <span class="icon">
                     <i class="fab fa-github"></i>
                   </span>

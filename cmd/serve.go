@@ -1,12 +1,13 @@
 package cmd
 
 import (
+	"os"
 	"strings"
 	"time"
 
-	"github.com/nextiva/nextkala/api"
-	"github.com/nextiva/nextkala/job"
-	"github.com/nextiva/nextkala/job/storage/postgres"
+	"bitbucket.org/nextiva/nextkala/api"
+	"bitbucket.org/nextiva/nextkala/job"
+	"bitbucket.org/nextiva/nextkala/job/storage/postgres"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -91,6 +92,10 @@ var serveCmd = &cobra.Command{
 }
 
 func init() {
+	if os.Getenv("SENDGRID_API_KEY") == "" {
+		log.Fatal("SENDGRID_API_KEY is not set - can not start server")
+	}
+
 	RootCmd.AddCommand(serveCmd)
 	serveCmd.Flags().StringP("port", "p", ":8000", "Port for Kala to run on.")
 	serveCmd.Flags().BoolP("no-persist", "n", false, "No Persistence Mode - In this mode no data will be saved to the database. Perfect for testing.")

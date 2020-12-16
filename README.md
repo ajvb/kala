@@ -2,8 +2,8 @@
 
 NextKala is a fork of [kala](https://github.com/ajvb/kala). 
 
-[![GoDoc](https://godoc.org/github.com/nextiva/nextkala?status.svg)](https://godoc.org/github.com/nextiva/nextkala)
-![golangci-lint](https://github.com/nextiva/nextkala/workflows/golangci-lint/badge.svg)
+[![GoDoc](https://godoc.org/bitbucket.org/nextiva/nextkala?status.svg)](https://godoc.org/bitbucket.org/nextiva/nextkala)
+![golangci-lint](https://bitbucket.org/nextiva/nextkala/workflows/golangci-lint/badge.svg)
 [![Circle CI](https://circleci.com/gh/nextiva/nextkala.svg?style=svg)](https://circleci.com/gh/nextiva/nextkala)
 [![Coverage Status](https://coveralls.io/repos/ajvb/kala/badge.svg?branch=master&service=github)](https://coveralls.io/github/nextiva/nextkala?branch=master)
 
@@ -34,10 +34,12 @@ If you need fault tolerance, distributed features, massive scale, then I recomme
 1. Get NextKala
 
 	```
-	go get github.com/nextiva/nextkala
+	go get bitbucket.org/nextiva/nextkala
 	```
 
-2. Run (Next)Kala, for example:
+2. Set the SENDGRID_API_KEY env variable.
+
+3. Run (Next)Kala, for example:
 	```
         kala -v --jobdb=postgres --pg-dsn="postgres://user:password@host:port/dbname?sslmode=disable" serve
 	```
@@ -75,7 +77,7 @@ Once it's up in running, you can utilize curl or the official go client to inter
 
 ### Examples of Usage
 
-There are more examples in the [examples directory](https://github.com/nextiva/nextkala/tree/master/examples) within this repo. Currently its pretty messy. Feel free to submit a new example if you have one.
+There are more examples in the [examples directory](https://bitbucket.org/nextiva/nextkala/tree/master/examples) within this repo. Currently its pretty messy. Feel free to submit a new example if you have one.
 
 # Deployment
 
@@ -105,9 +107,9 @@ All routes have a prefix of `/api/v1`
 ## Client Libraries
 
 #### Official:
-* [Go](https://github.com/nextiva/nextkala/tree/master/client) - Docs: http://godoc.org/github.com/nextiva/nextkala/client
+* [Go](https://bitbucket.org/nextiva/nextkala/tree/master/client) - Docs: http://godoc.org/bitbucket.org/nextiva/nextkala/client
     ```bash
-    go get github.com/nextiva/nextkala/client
+    go get bitbucket.org/nextiva/nextkala/client
     ```
 
 #### Contrib:
@@ -123,7 +125,7 @@ All routes have a prefix of `/api/v1`
 
 ## Job Data Struct
 
-[Docs can be found here](http://godoc.org/github.com/nextiva/nextkala/job#Job)
+[Docs can be found here](http://godoc.org/bitbucket.org/nextiva/nextkala/job#Job)
 
 ## Things to Note
 
@@ -136,7 +138,7 @@ All routes have a prefix of `/api/v1`
 {
         "name":"test_job",
         "id":"93b65499-b211-49ce-57e0-19e735cc5abd",
-        "command":"bash /home/ajvb/gocode/src/github.com/nextiva/nextkala/examples/example-kala-commands/example-command.sh",
+        "command":"bash /home/ajvb/gocode/src/bitbucket.org/nextiva/nextkala/examples/example-kala-commands/example-command.sh",
         "owner":"",
         "disabled":false,
         "dependent_jobs":null,
@@ -250,7 +252,7 @@ Example:
 ```bash
 $ curl http://127.0.0.1:8000/api/v1/job/
 {"jobs":{}}
-$ curl http://127.0.0.1:8000/api/v1/job/ -d '{"epsilon": "PT5S", "command": "bash /home/ajvb/gocode/src/github.com/nextiva/nextkala/examples/example-kala-commands/example-command.sh", "name": "test_job", "schedule": "R2/2017-06-04T19:25:16.828696-07:00/PT10S"}'
+$ curl http://127.0.0.1:8000/api/v1/job/ -d '{"epsilon": "PT5S", "command": "bash /home/ajvb/gocode/src/bitbucket.org/nextiva/nextkala/examples/example-kala-commands/example-command.sh", "name": "test_job", "schedule": "R2/2017-06-04T19:25:16.828696-07:00/PT10S"}'
 {"id":"93b65499-b211-49ce-57e0-19e735cc5abd"}
 
 $ cat create_remote.json
@@ -278,7 +280,7 @@ $ curl http://127.0.0.1:8000/api/v1/job/
         "93b65499-b211-49ce-57e0-19e735cc5abd":{
             "name":"test_job",
             "id":"93b65499-b211-49ce-57e0-19e735cc5abd",
-            "command":"bash /home/ajvb/gocode/src/github.com/nextiva/nextkala/examples/example-kala-commands/example-command.sh",
+            "command":"bash /home/ajvb/gocode/src/bitbucket.org/nextiva/nextkala/examples/example-kala-commands/example-command.sh",
             "owner":"",
             "disabled":false,
             "dependent_jobs":null,
@@ -305,7 +307,7 @@ Performing a DELETE will delete the Job.
 Example:
 ```bash
 $ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd/
-{"job":{"name":"test_job","id":"93b65499-b211-49ce-57e0-19e735cc5abd","command":"bash /home/ajvb/gocode/src/github.com/nextiva/nextkala/examples/example-kala-commands/example-command.sh","owner":"","disabled":false,"dependent_jobs":null,"parent_jobs":null,"schedule":"R2/2017-06-04T19:25:16.828696-07:00/PT10S","retries":0,"epsilon":"PT5S","success_count":0,"last_success":"0001-01-01T00:00:00Z","error_count":0,"last_error":"0001-01-01T00:00:00Z","last_attempted_run":"0001-01-01T00:00:00Z","next_run_at":"2017-06-04T19:25:16.828737931-07:00"}}
+{"job":{"name":"test_job","id":"93b65499-b211-49ce-57e0-19e735cc5abd","command":"bash /home/ajvb/gocode/src/bitbucket.org/nextiva/nextkala/examples/example-kala-commands/example-command.sh","owner":"","disabled":false,"dependent_jobs":null,"parent_jobs":null,"schedule":"R2/2017-06-04T19:25:16.828696-07:00/PT10S","retries":0,"epsilon":"PT5S","success_count":0,"last_success":"0001-01-01T00:00:00Z","error_count":0,"last_error":"0001-01-01T00:00:00Z","last_attempted_run":"0001-01-01T00:00:00Z","next_run_at":"2017-06-04T19:25:16.828737931-07:00"}}
 $ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd/ -X DELETE
 $ curl http://127.0.0.1:8000/api/v1/job/93b65499-b211-49ce-57e0-19e735cc5abd/
 ```
@@ -362,7 +364,7 @@ FATA[0000] Command Failed with err: exit status 1
 
 ### How to add a dependent job
 
-Check out this [example for how to add dependent jobs](https://github.com/nextiva/nextkala/blob/master/examples/python/example_dependent_jobs.py) within a python script.
+Check out this [example for how to add dependent jobs](https://bitbucket.org/nextiva/nextkala/blob/master/examples/python/example_dependent_jobs.py) within a python script.
 
 ### Notes on Dependent Jobs
 
@@ -386,4 +388,4 @@ Original Reviewers:
 
 #### Donate
 
-[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=ajvb&url=https://github.com/nextiva/nextkala&title=Kala&language=&tags=github&category=software)
+[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=ajvb&url=https://bitbucket.org/nextiva/nextkala&title=Kala&language=&tags=github&category=software)
