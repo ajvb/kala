@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/nextiva/nextkala/api"
 	"github.com/nextiva/nextkala/job"
-	"github.com/nextiva/nextkala/job/storage/boltdb"
 	"github.com/nextiva/nextkala/job/storage/postgres"
 
 	log "github.com/sirupsen/logrus"
@@ -46,10 +44,8 @@ var serveCmd = &cobra.Command{
 		var db job.JobDB
 
 		switch viper.GetString("jobdb") {
-		case "boltdb":
-			db = boltdb.GetBoltDB(viper.GetString("boltpath"))
 		case "postgres":
-			dsn := fmt.Sprintf("postgres://%s:%s@%s", viper.GetString("jobdb-username"), viper.GetString("jobdb-password"), viper.GetString("jobdb-address"))
+			dsn := viper.GetString("pg-dsn")
 			db = postgres.New(dsn)
 		default:
 			log.Fatalf("Unknown Job DB implementation '%s'", viper.GetString("jobdb"))
@@ -78,7 +74,7 @@ var serveCmd = &cobra.Command{
 		}
 
 		// Startup cache
-		cache.Start(time.Duration(persistEvery)*time.Second, time.Duration(viper.GetInt("jobstat-ttl"))*time.Minute)
+		cache.Start(time.Duration(persistEvery) * time.Second)
 
 		// Launch API server
 		log.Infof("Starting server on port %s", connectionString)
@@ -100,14 +96,10 @@ func init() {
 	serveCmd.Flags().BoolP("no-persist", "n", false, "No Persistence Mode - In this mode no data will be saved to the database. Perfect for testing.")
 	serveCmd.Flags().StringP("interface", "i", "", "Interface to listen on, default is all.")
 	serveCmd.Flags().StringP("default-owner", "o", "", "Default owner. The inputted email will be attached to any job missing an owner")
-	serveCmd.Flags().String("jobdb", "boltdb", "Implementation of job database, either 'boltdb' or 'postgres'.")
-	serveCmd.Flags().String("bolt-path", "", "Path to the bolt database file, default is current directory.")
-	serveCmd.Flags().String("jobdb-address", "", "Network address for the job database, in 'host:port' format.")
-	serveCmd.Flags().String("jobdb-username", "", "Username for the job database.")
-	serveCmd.Flags().String("jobdb-password", "", "Password for the job database.")
+	serveCmd.Flags().String("jobdb", "postgres", "Implementation of job database.  Anything you want as long as its 'postgres'.")
+	serveCmd.Flags().String("pg-dsn", "", "PostgreSQL DSN to use.")
 	serveCmd.Flags().BoolP("verbose", "v", false, "Set for verbose logging.")
 	serveCmd.Flags().IntP("persist-every", "e", 60*60, "Interval in seconds between persisting all jobs to db") //nolint:gomnd
-	serveCmd.Flags().Int("jobstat-ttl", -1, "Sets the jobstat-ttl in minutes. The default -1 value indicates JobStat entries will be kept forever")
 	serveCmd.Flags().Bool("profile", false, "Activate pprof handlers")
 	serveCmd.Flags().Bool("no-tx-persist", false, "Only persist to db periodically, not transactionally.")
 	serveCmd.Flags().Bool("no-delete-all", false, "Disable the delete all jobs endpoint.")

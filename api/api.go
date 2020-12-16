@@ -51,34 +51,6 @@ func HandleKalaStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r *h
 	}
 }
 
-type ListJobStatsResponse struct {
-	JobStats []*job.JobStat `json:"job_stats"`
-}
-
-// HandleListJobStatsRequest is the handler for getting job-specific stats
-// /api/v1/job/stats/{id}
-func HandleListJobStatsRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := mux.Vars(r)["id"]
-		j, err := cache.Get(id)
-		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		resp := &ListJobStatsResponse{
-			JobStats: j.Stats,
-		}
-
-		w.Header().Set(contentType, jsonContentType)
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Errorf("Error occurred when marshaling response: %s", err)
-			return
-		}
-	}
-}
-
 type ListJobsResponse struct {
 	Jobs map[string]*job.Job `json:"jobs"`
 }
@@ -327,6 +299,74 @@ func HandleEnableJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *h
 	}
 }
 
+type ListJobStatsResponse struct {
+	JobStats []*job.JobStat `json:"job_stats"`
+}
+
+// HandleListJobRunsRequest is the handler listing executions
+// /api/v1/job/{id}/executions
+func HandleListJobRunsRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := mux.Vars(r)["id"]
+
+		_, err := cache.Get(id)
+		if err != nil {
+			log.Errorf("Error occurred--the requested job is not in the job cache.")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		allJobs, err := cache.GetAllRuns(id)
+		if err != nil {
+			log.Errorf("Error occurred when trying to get the job runs you requested.")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		resp := &ListJobStatsResponse{
+			JobStats: allJobs,
+		}
+
+		w.Header().Set(contentType, jsonContentType)
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			log.Errorf("Error occurred when marshaling response: %s", err)
+			return
+		}
+	}
+}
+
+// JobRunResponse is for returning a single job execution
+type JobRunResponse struct {
+	JobRun *job.JobStat `json:"job_run"`
+}
+
+// HandleJobRunRequest is the handler for doing things to a single job run
+// /api/v1/job/{job_id}/executions/{run_id}/
+func HandleJobRunRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		runID := mux.Vars(r)["id"]
+
+		run, err := cache.GetRun(runID)
+		if err != nil {
+			log.Errorf("Error occurred when trying to get the job run you requested.")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		resp := &JobRunResponse{
+			JobRun: run,
+		}
+
+		w.Header().Set(contentType, jsonContentType)
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			log.Errorf("Error occurred when marshaling response: %s", err)
+			return
+		}
+	}
+}
+
 type apiError struct {
 	Error string `json:"error"`
 }
@@ -349,8 +389,6 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, defaultOwner string, disa
 	r.HandleFunc(ApiJobPath+"all/", HandleDeleteAllJobs(cache, disableDeleteAll)).Methods("DELETE")
 	// Route for deleting, editing and getting a job
 	r.HandleFunc(ApiJobPath+"{id}/", HandleJobRequest(cache, disableLocalJobs)).Methods("DELETE", "GET", "PUT")
-	// Route for getting job stats
-	r.HandleFunc(ApiJobPath+"stats/{id}/", HandleListJobStatsRequest(cache)).Methods("GET")
 	// Route for listing all jops
 	r.HandleFunc(ApiJobPath, HandleListJobsRequest(cache)).Methods("GET")
 	// Route for manually start a job
@@ -361,6 +399,10 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, defaultOwner string, disa
 	r.HandleFunc(ApiJobPath+"disable/{id}/", HandleDisableJobRequest(cache)).Methods("POST")
 	// Route for getting app-level metrics
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
+	// Route for a single job execution actions
+	r.HandleFunc(ApiJobPath+"{job_id}/executions/{id}/", HandleJobRunRequest(cache)).Methods("GET", "POST", "PUT")
+	// Route for a single job execution actions
+	r.HandleFunc(ApiJobPath+"{id}/executions/", HandleListJobRunsRequest(cache)).Methods("GET")
 }
 
 func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, profile bool, disableDeleteAll bool, disableLocalJobs bool) *http.Server {

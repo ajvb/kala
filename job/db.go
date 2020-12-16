@@ -19,6 +19,9 @@ type JobDB interface {
 	Delete(id string) error
 	Save(job *Job) error
 	Close() error
+	SaveRun(*JobStat) error
+	GetAllRuns(jobID string) ([]*JobStat, error)
+	GetRun(runID string) (*JobStat, error)
 }
 
 func (j *Job) Delete(cache JobCache) error {

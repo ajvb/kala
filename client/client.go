@@ -173,7 +173,7 @@ func (kc *KalaClient) DeleteAllJobs() (bool, error) {
 //		stats, err := c.GetJobStats(id)
 func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 	js := &api.ListJobStatsResponse{}
-	_, err := kc.do(methodGet, kc.url(jobPath, "stats", id), http.StatusOK, nil, js)
+	_, err := kc.do(methodGet, kc.url(jobPath, id, "executions"), http.StatusOK, nil, js)
 	return js.JobStats, err
 }
 

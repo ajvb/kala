@@ -37,10 +37,9 @@ If you need fault tolerance, distributed features, massive scale, then I recomme
 	go get github.com/nextiva/nextkala
 	```
 
-2. Run NextKala
-
+2. Run (Next)Kala, for example:
 	```
-	nextkala serve
+        kala -v --jobdb=postgres --pg-dsn="postgres://user:password@host:port/dbname?sslmode=disable" serve
 	```
 
 # Getting Started
@@ -59,13 +58,7 @@ INFO[0000] Preparing cache
 INFO[0000] Starting server on port :2222
 ```
 
-NextKala uses BoltDB by default for the job database by using `jobdb` and `boltpath` params:
-
-```bash
-nextkala serve --jobdb=boltdb --boltpath=/path/to/dir
-```
-
-use Postgres by using the `jobdb`, `jobdb-address` params:
+Postgres is the jobdb.  Set by using the `jobdb`, `jobdb-address` params:
 
 ```bash
 nextkala serve --jobdb=postgres --jobdb-address=server1.example.com/kala --jobdb-username=admin --jobdb-password=password
@@ -238,7 +231,8 @@ Examples:
 |Editing a Job | PUT | /api/v1/job/{id}/ |
 |Deleting a Job | DELETE | /api/v1/job/{id}/ |
 |Deleting all Jobs | DELETE | /api/v1/job/all/ |
-|Getting metrics about a certain Job | GET | /api/v1/job/stats/{id}/ |
+|Getting metrics about a certain Job | GET | /api/v1/job/{jobID}/executions/ |
+|Getting metrics about a certain Job Run | GET | /api/v1/job/{jobID}/executions/{runID}/ |
 |Starting a Job manually | POST | /api/v1/job/start/{id}/ |
 |Disabling a Job | POST | /api/v1/job/disable/{id}/ |
 |Enabling a Job | POST | /api/v1/job/enable/{id}/ |

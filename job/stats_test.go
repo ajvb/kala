@@ -16,15 +16,17 @@ func TestJobStats(t *testing.T) {
 	j.Run(cache)
 	now := time.Now()
 
-	assert.NotNil(t, j.Stats[0])
-	assert.Equal(t, j.Stats[0].JobId, j.Id)
-	assert.WithinDuration(t, j.Stats[0].RanAt, now, time.Second)
-	assert.Equal(t, j.Stats[0].NumberOfRetries, uint(0))
-	assert.True(t, j.Stats[0].Success)
-	assert.NotNil(t, j.Stats[0].ExecutionDuration)
+	runs, _ := cache.GetAllRuns(j.Id)
+
+	assert.NotNil(t, runs[0])
+	assert.Equal(t, len(runs[0].Id), 36)
+	assert.WithinDuration(t, runs[0].RanAt, now, time.Second)
+	assert.Equal(t, runs[0].NumberOfRetries, uint(0))
+	assert.True(t, runs[0].Success)
+	assert.NotNil(t, runs[0].ExecutionDuration)
 	/// the mock test actually calls the date function and therefore the output
 	/// is not deterministic so test if it's a string of the right length.
-	assert.Equal(t, len(j.Stats[0].Output), 31)
+	assert.Equal(t, len(runs[0].Output), 31)
 }
 
 func TestKalaStats(t *testing.T) {
@@ -52,7 +54,7 @@ func TestKalaStats(t *testing.T) {
 	assert.Equal(t, kalaStat.SuccessCount, uint(5))
 	assert.Equal(t, kalaStat.ErrorCount, uint(0))
 	assert.True(t, (nextRunAt.UnixNano()-kalaStat.NextRunAt.UnixNano()) > 0)
-	assert.WithinDuration(t, kalaStat.NextRunAt, nextRunAt, time.Second)
+	assert.WithinDuration(t, kalaStat.NextRunAt, nextRunAt, 2*time.Second)
 	assert.WithinDuration(t, kalaStat.LastAttemptedRun, now, time.Millisecond*100)
 	assert.WithinDuration(t, kalaStat.CreatedAt, createdAt, time.Millisecond*100)
 }

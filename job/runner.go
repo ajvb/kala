@@ -92,6 +92,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 
 	log.Infof("Job %s:%s finished.", j.job.Name, j.job.Id)
 	log.Debugf("Job %s:%s output: %s", j.job.Name, j.job.Id, out)
+
 	j.meta.SuccessCount++
 	j.meta.NumberOfFinishedRuns++
 	j.meta.LastSuccess = j.job.clk.Time().Now()

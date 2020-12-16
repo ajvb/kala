@@ -104,7 +104,7 @@ type Job struct {
 	RemoteProperties RemoteProperties `json:"remote_properties"`
 
 	// Collection of Job Stats
-	Stats []*JobStat `json:"stats"`
+	// Stats []*JobStat `json:"stats"`
 
 	lock sync.RWMutex
 
@@ -475,7 +475,6 @@ func (j *Job) RunOnFailureJob(cache JobCache) {
 }
 
 func (j *Job) Run(cache JobCache) {
-
 	j.lock.RLock()
 	jobRunner := &JobRunner{job: j, meta: j.Metadata}
 	j.lock.RUnlock()
@@ -489,8 +488,10 @@ func (j *Job) Run(cache JobCache) {
 
 	j.lock.Lock()
 	j.Metadata = newMeta
+
 	if newStat != nil {
-		j.Stats = append(j.Stats, newStat)
+		log.Infof("Saving stat run %+v", newStat)
+		cache.SaveRun(newStat)
 	}
 
 	// Kinda annoying and inefficient that it needs to be done this way.
@@ -546,7 +547,7 @@ func (j *Job) ShouldStartWaiting() bool {
 		return false
 	}
 
-	if j.hasFixedRepetitions() && int(j.timesToRepeat) < len(j.Stats) {
+	if j.hasFixedRepetitions() && int(j.timesToRepeat) < int(j.Metadata.NumberOfFinishedRuns) {
 		return false
 	}
 	return true

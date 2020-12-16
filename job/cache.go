@@ -25,6 +25,9 @@ type JobCache interface {
 	Persist() error
 	Enable(j *Job) error
 	Disable(j *Job) error
+	SaveRun(run *JobStat) error
+	GetAllRuns(jobID string) ([]*JobStat, error)
+	GetRun(runID string) (*JobStat, error)
 }
 
 type JobsMap struct {
@@ -178,6 +181,20 @@ func (c *MemoryJobCache) Disable(j *Job) error {
 	return disable(j, c, c.PersistOnWrite)
 }
 
+func (c *MemoryJobCache) SaveRun(run *JobStat) error {
+	err := c.jobDB.SaveRun(run)
+
+	return err
+}
+
+func (c *MemoryJobCache) GetAllRuns(jobID string) ([]*JobStat, error) {
+	return c.jobDB.GetAllRuns(jobID)
+}
+
+func (c *MemoryJobCache) GetRun(runID string) (*JobStat, error) {
+	return c.jobDB.GetRun(runID)
+}
+
 func (c *MemoryJobCache) Persist() error {
 	c.jobs.Lock.RLock()
 	defer c.jobs.Lock.RUnlock()
@@ -212,13 +229,12 @@ type LockFreeJobCache struct {
 
 func NewLockFreeJobCache(jobDB JobDB) *LockFreeJobCache {
 	return &LockFreeJobCache{
-		jobs:            hashmap.New(8), //nolint:gomnd
-		jobDB:           jobDB,
-		retentionPeriod: -1,
+		jobs:  hashmap.New(8), //nolint:gomnd
+		jobDB: jobDB,
 	}
 }
 
-func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.Duration) {
+func (c *LockFreeJobCache) Start(persistWaitTime time.Duration) {
 	if persistWaitTime == 0 {
 		c.PersistOnWrite = true
 	}
@@ -245,12 +261,6 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.
 	// Occasionally, save items in cache to db.
 	if persistWaitTime > 0 {
 		go c.PersistEvery(persistWaitTime)
-	}
-
-	// Run retention every minute to clean up old job stats entries
-	if jobstatTtl > 0 {
-		c.retentionPeriod = jobstatTtl
-		go c.RetainEvery(1 * time.Minute)
 	}
 
 	// Process-level defer for shutting down the db.
@@ -349,6 +359,20 @@ func (c *LockFreeJobCache) Disable(j *Job) error {
 	return disable(j, c, c.PersistOnWrite)
 }
 
+func (c *LockFreeJobCache) SaveRun(run *JobStat) error {
+	err := c.jobDB.SaveRun(run)
+
+	return err
+}
+
+func (c *LockFreeJobCache) GetAllRuns(jobID string) ([]*JobStat, error) {
+	return c.jobDB.GetAllRuns(jobID)
+}
+
+func (c *LockFreeJobCache) GetRun(runID string) (*JobStat, error) {
+	return c.jobDB.GetRun(runID)
+}
+
 func (c *LockFreeJobCache) Persist() error {
 	jm := c.GetAll()
 	for _, j := range jm.Jobs {
@@ -371,51 +395,6 @@ func (c *LockFreeJobCache) PersistEvery(persistWaitTime time.Duration) {
 		err = c.Persist()
 		if err != nil {
 			log.Errorf("Error occurred persisting the database. Err: %s", err)
-		}
-	}
-}
-
-func (c *LockFreeJobCache) locateJobStatsIndexForRetention(stats []*JobStat) (marker int) {
-	now := time.Now()
-	expiresAt := now.Add(-c.retentionPeriod)
-	pos := -1
-	for i, el := range stats {
-		diff := el.RanAt.Sub(expiresAt)
-		if diff < 0 {
-			pos = i
-		}
-	}
-	return pos
-}
-
-func (c *LockFreeJobCache) Retain() error {
-	for el := range c.jobs.Iter() {
-		job := el.Value.(*Job)
-		c.compactJobStats(job)
-	}
-	return nil
-}
-
-func (c *LockFreeJobCache) compactJobStats(job *Job) {
-	job.lock.Lock()
-	defer job.lock.Unlock()
-	pos := c.locateJobStatsIndexForRetention(job.Stats)
-	if pos >= 0 {
-		log.Infof("JobStats TTL: removing %d items", pos+1)
-		tmp := make([]*JobStat, len(job.Stats)-pos-1)
-		copy(tmp, job.Stats[pos+1:])
-		job.Stats = tmp
-	}
-}
-
-func (c *LockFreeJobCache) RetainEvery(retentionWaitTime time.Duration) {
-	wait := time.NewTicker(retentionWaitTime).C
-	var err error
-	for {
-		<-wait
-		err = c.Retain()
-		if err != nil {
-			log.Errorf("Error occurred during invoking retention. Err: %s", err)
 		}
 	}
 }
