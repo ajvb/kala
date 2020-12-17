@@ -18,7 +18,6 @@ NextKala is a simplistic, modern, and performant job scheduler written in Go.  F
 - Configurable Retries
 - Scheduling with ISO 8601 Date and Interval notation
 - Dependent Jobs
-- Persistent with several database drivers
 - Web UI
 
 **Note that it is not battle-tested. Use at your own risk.**
