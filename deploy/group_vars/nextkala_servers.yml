@@ -1,0 +1,5 @@
+---
+app_name: nextkala
+app_location: /srv/nextkala
+kala_user: nextkala
+kala_group: nextkala

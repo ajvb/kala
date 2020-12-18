@@ -1,0 +1,42 @@
+---
+- name: Ensure a user for kala to run as
+  user:
+    name: "{{ kala_user }}"
+    state: present
+
+- name: Ensure a group for kala to run as
+  group:
+    name: "{{ kala_group }}"
+    state: present  
+
+- name: Copy systemd unit file
+  template:
+    src: nextkala.service.j2
+    dest: "/etc/systemd/system/{{ app_name }}.service"
+
+- name: Create directory to hold the binary
+  file:
+    path: "{{ app_location }}"
+    state: directory
+    owner: "{{ kala_user }}"
+    group: "{{ kala_group }}"
+
+- name: Copy nextkala binary
+  copy: 
+    src: "../bin/{{ app_name }}"
+    dest: "{{ app_location }}/{{ app_name }}"
+    owner: "{{ kala_user }}"
+    group: "{{ kala_group }}"
+    mode: '0755'
+
+- name: Ensure service is enabled
+  systemd:
+    state: started
+    enabled: yes
+    name: "{{ app_name }}"      
+
+- name: Restart nextkala service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: "{{ app_name }}"
