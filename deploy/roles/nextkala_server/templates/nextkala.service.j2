@@ -1,0 +1,12 @@
+[Unit]
+Description=NextKala
+
+[Service]
+Type=simple
+User={{ kala_user }}
+Group={{ kala_group }}
+Environment="SENDGRID_API_KEY='{{ sendgrid_api_key }}'"
+ExecStart={{ app_location}}/{{ app_name }} -v --jobdb=postgres --pg-dsn="{{ postgres_dsn }}" serve
+
+[Install]
+WantedBy=multi-user.target
