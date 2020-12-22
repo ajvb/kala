@@ -50,45 +50,38 @@ func TestCachePersistence(t *testing.T) {
 
 	mdb1b := NewMemoryDB()
 	cache1b := NewMemoryJobCache(mdb1b)
-	cache1b.PersistOnWrite = true
 
 	mdb2a := NewMemoryDB()
 	cache2a := NewLockFreeJobCache(mdb2a)
 
 	mdb2b := NewMemoryDB()
 	cache2b := NewLockFreeJobCache(mdb2b)
-	cache2b.PersistOnWrite = true
 
 	tt := []struct {
-		db            JobDB
-		c             JobCache
-		shouldPersist bool
+		db JobDB
+		c  JobCache
 	}{
 		{
-			db:            mdb1a,
-			c:             cache1a,
-			shouldPersist: false,
+			db: mdb1a,
+			c:  cache1a,
 		},
 		{
-			db:            mdb1b,
-			c:             cache1b,
-			shouldPersist: true,
+			db: mdb1b,
+			c:  cache1b,
 		},
 		{
-			db:            mdb2a,
-			c:             cache2a,
-			shouldPersist: false,
+			db: mdb2a,
+			c:  cache2a,
 		},
 		{
-			db:            mdb2b,
-			c:             cache2b,
-			shouldPersist: true,
+			db: mdb2b,
+			c:  cache2b,
 		},
 	}
 
 	for _, row := range tt {
 		t.Run("", func(t *testing.T) {
-			testCachePersistence(t, row.c, row.db, row.shouldPersist)
+			testCachePersistence(t, row.c, row.db)
 		})
 	}
 
@@ -98,7 +91,7 @@ func TestCachePersistence(t *testing.T) {
 // We verify that it's either persisting to the JobDB upon each creation/update/delete, or not, as appropriate.
 // Note that deletes always propagate to the db, and return an error if that fails,
 // but if transactional persistence is turned off the cache will still delete from itself.
-func testCachePersistence(t *testing.T, cache JobCache, db JobDB, shouldPersist bool) {
+func testCachePersistence(t *testing.T, cache JobCache, db JobDB) {
 
 	t.Run("testCachePersistence", func(t *testing.T) {
 
@@ -106,46 +99,29 @@ func testCachePersistence(t *testing.T, cache JobCache, db JobDB, shouldPersist 
 		assert.NoError(t, j.Init(cache)) // Saves the job
 
 		saved, err := db.Get(j.Id)
-		if shouldPersist {
-			assert.NoError(t, err)
-			assert.Equal(t, j.Id, saved.Id)
-		} else {
-			assert.IsType(t, ErrJobNotFound(""), err)
-			assert.Equal(t, (*Job)(nil), saved)
-		}
+
+		assert.NoError(t, err)
+		assert.Equal(t, j.Id, saved.Id)
 
 		t.Run("disable", func(t *testing.T) {
 			j.Disable(cache)
 			ret, err := db.Get(j.Id)
-			if shouldPersist {
-				assert.NoError(t, err)
-				assert.Equal(t, true, ret.Disabled)
-			} else {
-				assert.IsType(t, ErrJobNotFound(""), err)
-				assert.Equal(t, (*Job)(nil), ret)
-			}
 
+			assert.NoError(t, err)
+			assert.Equal(t, true, ret.Disabled)
 		})
 
 		t.Run("enable", func(t *testing.T) {
 			j.Enable(cache)
-			ret, err := db.Get(j.Id)
-			if shouldPersist {
-				assert.NoError(t, err)
-				assert.Equal(t, !shouldPersist, ret.Disabled)
-			} else {
-				assert.IsType(t, ErrJobNotFound(""), err)
-				assert.Equal(t, (*Job)(nil), ret)
-			}
+			_, err := db.Get(j.Id)
+
+			assert.NoError(t, err)
 		})
 
 		t.Run("delete", func(t *testing.T) {
-
 			// If we haven't been persisting, persist it to the DB now
 			// because we need it there for this test.
-			if !shouldPersist {
-				assert.NoError(t, cache.Persist())
-			}
+			assert.NoError(t, cache.Persist())
 
 			assert.NoError(t, cache.Delete(j.Id))
 			ret, err := db.Get(j.Id)
@@ -156,21 +132,13 @@ func testCachePersistence(t *testing.T, cache JobCache, db JobDB, shouldPersist 
 
 				j := GetMockJob()
 				assert.NoError(t, j.Init(cache))
-				if !shouldPersist {
-					assert.NoError(t, cache.Persist())
-				}
 				assert.NoError(t, db.Delete(j.Id))
 
 				assert.Error(t, cache.Delete(j.Id))
 				ret, err := cache.Get(j.Id)
-				if shouldPersist {
-					assert.NoError(t, err)
-					assert.Equal(t, j.Id, ret.Id)
-				} else {
-					assert.Error(t, err)
-					assert.Equal(t, (*Job)(nil), ret)
-				}
 
+				assert.NoError(t, err)
+				assert.Equal(t, j.Id, ret.Id)
 			})
 
 		})
