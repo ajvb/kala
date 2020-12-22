@@ -400,7 +400,7 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, defaultOwner string, disa
 	// Route for getting app-level metrics
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
 	// Route for a single job execution actions
-	r.HandleFunc(ApiJobPath+"{job_id}/executions/{id}/", HandleJobRunRequest(cache)).Methods("GET", "POST", "PUT")
+	r.HandleFunc(ApiJobPath+"{job_id}/executions/{id}/", HandleJobRunRequest(cache)).Methods("GET")
 	// Route for a single job execution actions
 	r.HandleFunc(ApiJobPath+"{id}/executions/", HandleListJobRunsRequest(cache)).Methods("GET")
 }
