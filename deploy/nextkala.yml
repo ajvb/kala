@@ -1,0 +1,7 @@
+- hosts: nextkala_servers 
+  gather_facts: no
+  roles:
+    - role: nextkala_server
+      tags:
+        - deploy
+  become: yes
