@@ -27,6 +27,7 @@ type JobRunner struct {
 
 var (
 	ErrJobDisabled       = errors.New("Job cannot run, as it is disabled")
+	ErrJobDeleted        = errors.New("Job cannot run, as it is deleted")
 	ErrCmdIsEmpty        = errors.New("Job Command is empty.")
 	ErrJobTypeInvalid    = errors.New("Job Type is not valid.")
 	ErrInvalidDelimiters = errors.New("Job has invalid templating delimiters.")
@@ -40,6 +41,10 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 
 	j.meta.LastAttemptedRun = j.job.clk.Time().Now()
 
+	if !cache.Has(j.job.Id) {
+		log.Infof("Job %s with id %s tried to run, but exited early because its deleted", j.job.Name, j.job.Id)
+		return nil, j.meta, ErrJobDeleted
+	}
 	if j.job.Disabled {
 		log.Infof("Job %s tried to run, but exited early because its disabled.", j.job.Name)
 		return nil, j.meta, ErrJobDisabled
