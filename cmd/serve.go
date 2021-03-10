@@ -98,6 +98,7 @@ var serveCmd = &cobra.Command{
 				}
 				clientCert = append(clientCert, certs)
 				db = mysql.New(dsn, &tls.Config{
+					MinVersion:   tls.VersionTLS12,
 					RootCAs:      rootCertPool,
 					Certificates: clientCert,
 					ServerName:   viper.GetString("jobdb-tls-servername"),
