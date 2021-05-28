@@ -480,6 +480,11 @@ func (j *Job) RunOnFailureJob(cache JobCache) {
 
 func (j *Job) Run(cache JobCache) {
 
+	if !cache.Has(j.Id) {
+		log.Infof("Job %s with id %s tried to run, but exited early because its deleted", j.Name, j.Id)
+		return
+	}
+
 	j.lock.RLock()
 	jobRunner := &JobRunner{job: j, meta: j.Metadata}
 	j.lock.RUnlock()
@@ -499,17 +504,14 @@ func (j *Job) Run(cache JobCache) {
 
 	// Kinda annoying and inefficient that it needs to be done this way.
 	// Some refactoring is probably in order.
-	if got, err := cache.Get(j.Id); got == nil || err != nil {
-		log.Warnf("Job %s with id %s ran, but seems to have been deleted from cache; results won't be persisted.", j.Name, j.Id)
-	} else {
-		j.lock.Unlock()
-		j.lock.RLock()
-		if err := cache.Set(j); err != nil {
-			log.Errorf("Job %s with id %s ran, but the results couldn't be persisted: %v", j.Name, j.Id, err)
-		}
-		j.lock.RUnlock()
-		j.lock.Lock()
+
+	j.lock.Unlock()
+	j.lock.RLock()
+	if err := cache.Set(j); err != nil {
+		log.Errorf("Job %s with id %s ran, but the results couldn't be persisted: %v", j.Name, j.Id, err)
 	}
+	j.lock.RUnlock()
+	j.lock.Lock()
 
 	if j.ShouldStartWaiting() {
 		go j.StartWaiting(cache, true)

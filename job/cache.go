@@ -19,6 +19,7 @@ var (
 
 type JobCache interface {
 	Get(id string) (*Job, error)
+	Has(id string) bool
 	GetAll() *JobsMap
 	Set(j *Job) error
 	Delete(id string) error
@@ -107,6 +108,15 @@ func (c *MemoryJobCache) Get(id string) (*Job, error) {
 	}
 
 	return j, nil
+}
+
+func (c *MemoryJobCache) Has(id string) bool {
+	c.jobs.Lock.RLock()
+	defer c.jobs.Lock.RUnlock()
+
+	j := c.jobs.Jobs[id]
+
+	return j != nil
 }
 
 func (c *MemoryJobCache) GetAll() *JobsMap {
@@ -281,6 +291,12 @@ func (c *LockFreeJobCache) Get(id string) (*Job, error) {
 		return nil, ErrJobDoesntExist
 	}
 	return j, nil
+}
+
+func (c *LockFreeJobCache) Has(id string) bool {
+	_, exists := c.jobs.GetStringKey(id)
+
+	return exists
 }
 
 func (c *LockFreeJobCache) GetAll() *JobsMap {
