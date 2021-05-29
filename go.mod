@@ -11,7 +11,7 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gorilla/context v0.0.0-20141217160251-215affda49ad // indirect
 	github.com/gorilla/mux v0.0.0-20150808061613-ffb3f683aad4
-	github.com/hashicorp/consul/api v1.1.0
+	github.com/hashicorp/consul/api v1.1.1-0.20190508183408-34eff659dcc5
 	github.com/hashicorp/go-msgpack v1.1.5 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/memberlist v0.2.2 // indirect
