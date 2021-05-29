@@ -151,6 +151,10 @@ var actions = (function() {
             });
           } else if (val) {
             job[key] = val;
+            if (/(timeout|body|method|url|headers)/i.test(key)) {
+              job['remote_properties'] = job['remote_properties'] || {};
+              job['remote_properties'][key] = job[key];
+            }
           }
         }
       } catch ( err ) {
