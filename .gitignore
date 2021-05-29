@@ -3,5 +3,6 @@
 *.coverprofile
 .vscode/
 kala
+vendor
 .idea/*
 .DS_Store

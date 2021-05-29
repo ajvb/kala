@@ -7,7 +7,9 @@ require (
 	github.com/armon/go-metrics v0.3.3 // indirect
 	github.com/boltdb/bolt v1.3.1-0.20170131192018-e9cf4fae01b5
 	github.com/cornelk/hashmap v1.0.1
+	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/garyburd/redigo v1.0.1-0.20170208211623-48545177e92a
+	github.com/go-bindata/go-bindata v3.1.2+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gorilla/context v0.0.0-20141217160251-215affda49ad // indirect
 	github.com/gorilla/mux v0.0.0-20150808061613-ffb3f683aad4
