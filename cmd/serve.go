@@ -136,7 +136,7 @@ var serveCmd = &cobra.Command{
 
 		// Launch API server
 		log.Infof("Starting server on port %s", connectionString)
-		srv := api.MakeServer(connectionString, cache, viper.GetString("default-owner"), viper.GetBool("profile"))
+		srv := api.MakeServer(connectionString, cache, viper.GetString("default-owner"), viper.GetBool("profile"), viper.GetString("webui-path"))
 		log.Fatal(srv.ListenAndServe())
 	},
 }
@@ -156,6 +156,7 @@ func init() {
 	serveCmd.Flags().String("jobdb-tls-certpath", "", "Path to tls client cert file for the job database.")
 	serveCmd.Flags().String("jobdb-tls-keypath", "", "Path to tls client key file for the job database.")
 	serveCmd.Flags().String("jobdb-tls-servername", "", "Server name to verify cert for the job database.")
+	serveCmd.Flags().String("webui-path", "", "Path to directory webui containing UI files. Default is using embeded UI")
 	serveCmd.Flags().BoolP("verbose", "v", false, "Set for verbose logging.")
 	serveCmd.Flags().IntP("persist-every", "e", 60*60, "Interval in seconds between persisting all jobs to db") //nolint:gomnd
 	serveCmd.Flags().Int("jobstat-ttl", -1, "Sets the jobstat-ttl in minutes. The default -1 value indicates JobStat entries will be kept forever")

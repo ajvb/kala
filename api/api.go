@@ -1,6 +1,7 @@
 package api
 
 import (
+	"embed"
 	"encoding/json"
 	"errors"
 	"io"
@@ -328,12 +329,19 @@ func SetupApiRoutes(r *mux.Router, cache job.JobCache, defaultOwner string) {
 	r.HandleFunc(ApiUrlPrefix+"stats/", HandleKalaStatsRequest(cache)).Methods("GET")
 }
 
-func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, profile bool) *http.Server {
+//go:embed webui/*
+var fs embed.FS
+
+func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, profile bool, dirUI string) *http.Server {
 	r := mux.NewRouter()
 	// Allows for the use for /job as well as /job/
 	r.StrictSlash(true)
 	SetupApiRoutes(r, cache, defaultOwner)
-	r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(http.Dir("./webui/"))))
+	if dirUI != "" {
+		r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(http.Dir(dirUI))))
+	} else {
+		r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(http.FS(fs))))
+	}
 
 	if profile {
 		runtime.SetMutexProfileFraction(5) //nolint:gomnd
