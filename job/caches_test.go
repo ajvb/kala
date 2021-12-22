@@ -2,6 +2,7 @@ package job
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -47,17 +48,23 @@ func TestCachePersistence(t *testing.T) {
 
 	mdb1a := NewMemoryDB()
 	cache1a := NewMemoryJobCache(mdb1a)
+	cache1a.Start(1 * time.Second) // Retain 1 second
 
 	mdb1b := NewMemoryDB()
 	cache1b := NewMemoryJobCache(mdb1b)
 	cache1b.PersistOnWrite = true
+	cache1b.Start(1 * time.Second) // Retain 1 minute
 
 	mdb2a := NewMemoryDB()
 	cache2a := NewLockFreeJobCache(mdb2a)
+	cache2a.Start(0, 1*time.Second) // Retain 1 second
 
 	mdb2b := NewMemoryDB()
 	cache2b := NewLockFreeJobCache(mdb2b)
 	cache2b.PersistOnWrite = true
+	cache2a.Start(0, 1*time.Second) // Retain 1 second
+
+	time.Sleep(5 * time.Second)
 
 	tt := []struct {
 		db            JobDB
@@ -169,6 +176,10 @@ func testCachePersistence(t *testing.T, cache JobCache, db JobDB, shouldPersist 
 				} else {
 					assert.Error(t, err)
 					assert.Equal(t, (*Job)(nil), ret)
+				}
+
+				for _, element := range cache.GetAll().Jobs {
+					assert.NotEqual(t, element.Name, "mock_job")
 				}
 
 			})

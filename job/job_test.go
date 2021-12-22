@@ -986,6 +986,90 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 	j.lock.RUnlock()
 }
 
+// https://github.com/ajvb/kala/issues/237
+func TestDeletedJobsStillRunning(t *testing.T) {
+	mdb2b := NewMemoryDB()
+	cache := NewLockFreeJobCache(mdb2b)
+	cache.PersistOnWrite = true
+
+	fiveSecondsFromNow := time.Now().Add(5 * time.Second)
+
+	mockJobTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
+	mockJobTBD.Name = "mock_job_to_be_deleted"
+	mockJobTBD.Id = "0"
+	mockJobTBD.ranChan = make(chan struct{})
+	mockJobTBD.Init(cache)
+
+	mockJobNTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
+	mockJobNTBD.Name = "mock_job_to_not_be_deleted"
+	mockJobNTBD.Id = "1"
+	mockJobNTBD.Init(cache)
+
+	cache.Start(0, 2*time.Second) // Retain 1 second
+
+	cache.Delete(mockJobTBD.Id)
+	time.Sleep(5 * time.Second)
+
+	// Make sure it is deleted
+	_, err := cache.Get(mockJobTBD.Id)
+	assert.Error(t, err)
+	assert.Equal(t, ErrJobDoesntExist, err)
+
+	// Check if mockChildJobWithNoBackup is deleted
+	allJobsRunning := cache.GetAll()
+	for _, element := range allJobsRunning.Jobs {
+		assert.NotEqual(t, element.Id, "0")
+	}
+
+	select {
+	case <-mockJobTBD.ranChan:
+		assert.Fail(t, "Expected job not run")
+	case <-time.After(time.Second * 10):
+	}
+}
+
+func TestDeletedFromApiJobsStillRunning(t *testing.T) {
+	mdb2b := NewMemoryDB()
+	cache := NewLockFreeJobCache(mdb2b)
+	cache.PersistOnWrite = true
+
+	fiveSecondsFromNow := time.Now().Add(5 * time.Second)
+
+	mockJobTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
+	mockJobTBD.Name = "mock_job_to_be_deleted"
+	mockJobTBD.Id = "0"
+	mockJobTBD.ranChan = make(chan struct{})
+	mockJobTBD.Init(cache)
+
+	mockJobNTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
+	mockJobNTBD.Name = "mock_job_to_not_be_deleted"
+	mockJobNTBD.Id = "1"
+	mockJobNTBD.Init(cache)
+
+	cache.Start(0, 2*time.Second) // Retain 1 minute
+
+	findedJobTBD, _ := cache.Get(mockJobTBD.Id)
+	findedJobTBD.Delete(cache)
+	time.Sleep(5 * time.Second)
+
+	// Make sure it is deleted
+	_, err := cache.Get(mockJobTBD.Id)
+	assert.Error(t, err)
+	assert.Equal(t, ErrJobDoesntExist, err)
+
+	// Check if mockChildJobWithNoBackup is deleted
+	allJobsRunning := cache.GetAll()
+	for _, element := range allJobsRunning.Jobs {
+		assert.NotEqual(t, element.Id, "0")
+	}
+
+	select {
+	case <-mockJobTBD.ranChan:
+		assert.Fail(t, "Expected job not run")
+	case <-time.After(time.Second * 10):
+	}
+}
+
 func TestRemoteJobRunner(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Hello, client")
