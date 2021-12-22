@@ -1,3 +1,5 @@
+// +build linux
+
 package mysql
 
 import (
@@ -7,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
 	mysqltest "github.com/lestrrat-go/test-mysqld"
 	"github.com/stretchr/testify/assert"
