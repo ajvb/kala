@@ -1,8 +1,9 @@
 package job
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // This file contains tests that can be run against all types of JobCaches.
@@ -168,10 +169,6 @@ func testCachePersistence(t *testing.T, cache JobCache, db JobDB, shouldPersist 
 				} else {
 					assert.Error(t, err)
 					assert.Equal(t, (*Job)(nil), ret)
-				}
-
-				for _, element := range cache.GetAll().Jobs {
-					assert.NotEqual(t, element.Name, "mock_job")
 				}
 
 			})
