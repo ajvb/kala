@@ -20,7 +20,7 @@ func TestCacheRetainShouldRemoveOldJobStats(t *testing.T) {
 	cache.jobDB = mockDb
 
 	pastDate := time.Date(2016, time.April, 12, 20, 0, 0, 0, time.UTC)
-	j := GetMockRecurringJobWithSchedule(pastDate, "PT2S")
+	j := GetMockRecurringJobWithSchedule(pastDate, "PT1S")
 	j.Stats = GetMockJobStats(pastDate, 5)
 	j.Id = "0"
 
@@ -33,7 +33,7 @@ func TestCacheRetainShouldRemoveOldJobStats(t *testing.T) {
 	assert.Equal(t, 5, len(j.Stats))
 	j.lock.RUnlock()
 
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 2)
 	cache.Retain()
 
 	j.lock.RLock()
