@@ -1,8 +1,9 @@
 package job
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // This file contains tests that can be run against all types of JobCaches.
