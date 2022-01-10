@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.11
+      - image: circleci/golang:1.15-buster-node-browsers
       - image: progrium/consul
         command: "-server -bootstrap"
       - image: mongo:3.4
