@@ -1,5 +1,5 @@
 dateutils==0.6.6
-ipython==3.0.0
+ipython==7.16.3
 python-dateutil==2.4.1
 pytz==2014.10
 requests==2.20.0
