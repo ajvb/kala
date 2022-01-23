@@ -9,8 +9,8 @@ import (
 
 	"github.com/ajvb/kala/job"
 
-	"github.com/boltdb/bolt"
 	log "github.com/sirupsen/logrus"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (
