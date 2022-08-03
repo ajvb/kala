@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,7 +38,7 @@ func generateNewJobMap() map[string]string {
 
 func generateNewRemoteJobMap() map[string]interface{} {
 	return map[string]interface{}{
-		"name":  "mock_remote_job + strconv.Itoa(rand.Intn(100)),
+		"name":  "mock_remote_job" + strconv.Itoa(rand.Intn(100)),
 		"owner": "example@example.com",
 		"type":  1,
 		"remote_properties": map[string]string{
