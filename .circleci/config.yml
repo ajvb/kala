@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: cimg/go:1.17
+      - image: cimg/go:1.17.0
       - image: progrium/consul
         command: "-server -bootstrap"
       - image: mongo:3.4
