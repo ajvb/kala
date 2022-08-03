@@ -28,7 +28,7 @@ func generateNewJobMap() map[string]string {
 
 	return map[string]string{
 		"schedule": scheduleStr,
-		"name":     "mock_job",
+		"name":     "mock_job" + strconv.Itoa(rand.Intn(100)),
 		"command":  "bash -c 'date'",
 		"owner":    "example@example.com",
 	}
@@ -36,7 +36,7 @@ func generateNewJobMap() map[string]string {
 
 func generateNewRemoteJobMap() map[string]interface{} {
 	return map[string]interface{}{
-		"name":  "mock_remote_job",
+		"name":  "mock_remote_job + strconv.Itoa(rand.Intn(100)),
 		"owner": "example@example.com",
 		"type":  1,
 		"remote_properties": map[string]string{
