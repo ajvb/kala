@@ -1,7 +1,7 @@
 package job
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -94,7 +94,7 @@ func TestTemplatize(t *testing.T) {
 	t.Run("body", func(t *testing.T) {
 
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			b, _ := ioutil.ReadAll(r.Body)
+			b, _ := io.ReadAll(r.Body)
 			w.Write(b)
 			w.WriteHeader(200)
 		}))

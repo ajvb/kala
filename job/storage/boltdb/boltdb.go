@@ -22,7 +22,7 @@ func GetBoltDB(path string) *BoltJobDB {
 		path += "/"
 	}
 	path += "jobdb.db"
-	var perms os.FileMode = 0600
+	var perms os.FileMode = 0o0600
 	database, err := bolt.Open(path, perms, &bolt.Options{Timeout: time.Second * 10}) //nolint:gomnd
 	if err != nil {
 		log.Fatal(err)

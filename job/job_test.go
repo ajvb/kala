@@ -1036,7 +1036,7 @@ func TestDeletedFromApiJobsStillRunning(t *testing.T) {
 	fiveSecondsFromNow := time.Now().Add(5 * time.Second)
 
 	mockJobTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
-	mockJobTBD.Name = "mock_job_to_be_deleted"
+	mockJobTBD.Name = "mock_job_to_be_deleted_from_api"
 	mockJobTBD.Id = "0"
 	mockJobTBD.ranChan = make(chan struct{})
 	mockJobTBD.Init(cache)

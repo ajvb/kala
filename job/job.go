@@ -19,6 +19,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const BASE_10 = 10
+
 var (
 	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
 
@@ -275,7 +277,7 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 		// Repeat forever
 		j.timesToRepeat = -1
 	} else {
-		j.timesToRepeat, err = strconv.ParseInt(strings.Split(splitTime[0], "R")[1], 10, 0)
+		j.timesToRepeat, err = strconv.ParseInt(strings.Split(splitTime[0], "R")[1], BASE_10, 0)
 		if err != nil {
 			log.Errorf("Error converting timesToRepeat to an int: %s", err)
 			return err

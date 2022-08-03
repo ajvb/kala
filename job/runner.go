@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -15,6 +15,8 @@ import (
 	"github.com/mattn/go-shellwords"
 	log "github.com/sirupsen/logrus"
 )
+
+const HTTP_CODE_OK = 200
 
 type JobRunner struct {
 	job  *Job
@@ -161,7 +163,7 @@ func (j *JobRunner) RemoteRun() (string, error) {
 		return "", err
 	}
 	defer res.Body.Close()
-	b, err := ioutil.ReadAll(res.Body)
+	b, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", err
 	}
@@ -276,7 +278,7 @@ func (j *JobRunner) collectStats(success bool) {
 func (j *JobRunner) checkExpected(statusCode int) bool {
 	// If no expected response codes passed, add 200 status code as expected
 	if len(j.job.RemoteProperties.ExpectedResponseCodes) == 0 {
-		j.job.RemoteProperties.ExpectedResponseCodes = append(j.job.RemoteProperties.ExpectedResponseCodes, 200)
+		j.job.RemoteProperties.ExpectedResponseCodes = append(j.job.RemoteProperties.ExpectedResponseCodes, HTTP_CODE_OK)
 	}
 	for _, expected := range j.job.RemoteProperties.ExpectedResponseCodes {
 		if expected == statusCode {

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/pprof"
 	"runtime"
@@ -27,6 +26,9 @@ const (
 
 	contentType     = "Content-Type"
 	jsonContentType = "application/json;charset=UTF-8"
+
+	MAX_BODY_SIZE       = 1048576
+	READ_HEADER_TIMEOUT = 60
 )
 
 type KalaStatsResponse struct {
@@ -110,7 +112,7 @@ type AddJobResponse struct {
 func unmarshalNewJob(r *http.Request) (*job.Job, error) {
 	newJob := &job.Job{}
 
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	body, err := io.ReadAll(io.LimitReader(r.Body, MAX_BODY_SIZE))
 	if err != nil {
 		log.Errorf("Error occurred when reading r.Body: %s", err)
 		return nil, err
@@ -354,7 +356,8 @@ func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, prof
 	n.UseHandler(r)
 
 	return &http.Server{
-		Addr:    listenAddr,
-		Handler: n,
+		ReadHeaderTimeout: READ_HEADER_TIMEOUT,
+		Addr:              listenAddr,
+		Handler:           n,
 	}
 }
