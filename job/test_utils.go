@@ -3,8 +3,6 @@ package job
 import (
 	"errors"
 	"fmt"
-	"math/rand"
-	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -54,7 +52,7 @@ func GetMockJob() *Job {
 
 func GetMockFailingJob() *Job {
 	return &Job{
-		Name:    "mock_failing_job" + strconv.Itoa(rand.Intn(100)),
+		Name:    "mock_failing_job",
 		Command: "asdf",
 		Owner:   "example@example.com",
 		Retries: 2,
@@ -63,7 +61,7 @@ func GetMockFailingJob() *Job {
 
 func GetMockRemoteJob(props RemoteProperties) *Job {
 	return &Job{
-		Name:             "mock_remote_job" + strconv.Itoa(rand.Intn(100)),
+		Name:             "mock_remote_job",
 		Command:          "",
 		JobType:          RemoteJob,
 		RemoteProperties: props,
