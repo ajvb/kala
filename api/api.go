@@ -28,7 +28,7 @@ const (
 	jsonContentType = "application/json;charset=UTF-8"
 
 	MAX_BODY_SIZE       = 1048576
-	READ_HEADER_TIMEOUT = 60
+	READ_HEADER_TIMEOUT = 0
 )
 
 type KalaStatsResponse struct {
