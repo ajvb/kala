@@ -5,7 +5,6 @@ go 1.13
 require (
 	github.com/DATA-DOG/go-sqlmock v1.3.0
 	github.com/armon/go-metrics v0.3.3 // indirect
-	github.com/boltdb/bolt v1.3.1-0.20170131192018-e9cf4fae01b5
 	github.com/cornelk/hashmap v1.0.1
 	github.com/garyburd/redigo v1.0.1-0.20170208211623-48545177e92a
 	github.com/go-sql-driver/mysql v1.4.1
@@ -23,13 +22,15 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mixer/clock v0.0.0-20190507173039-c311c17adb1f
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
+	github.com/ory/dockertest/v3 v3.8.1
 	github.com/phyber/negroni-gzip v0.0.0-20180113114010-ef6356a5d029
 	github.com/rafaeljusto/redigomock v0.0.0-20170720131524-7ae0511314e9
-	github.com/sirupsen/logrus v1.4.2
+	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.7.0
 	github.com/urfave/negroni v1.0.0
+	go.etcd.io/bbolt v1.3.5
 	google.golang.org/appengine v1.6.6 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20160818020120-3f83fa500528
 )
