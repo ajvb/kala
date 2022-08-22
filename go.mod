@@ -17,7 +17,7 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/lestrrat-go/tcputil v0.0.0-20180223003554-d3c7f98154fb // indirect
 	github.com/lestrrat-go/test-mysqld v0.0.0-20190527004737-6c91be710371
-	github.com/lib/pq v1.0.0
+	github.com/lib/pq v1.10.6
 	github.com/mattn/go-shellwords v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mixer/clock v0.0.0-20190507173039-c311c17adb1f
