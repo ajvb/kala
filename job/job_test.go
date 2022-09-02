@@ -990,7 +990,6 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 func TestDeletedJobsStillRunning(t *testing.T) {
 	mdb2b := NewMemoryDB()
 	cache := NewLockFreeJobCache(mdb2b)
-	cache.PersistOnWrite = true
 
 	fiveSecondsFromNow := time.Now().Add(5 * time.Second)
 
@@ -1005,10 +1004,8 @@ func TestDeletedJobsStillRunning(t *testing.T) {
 	mockJobNTBD.Id = "1"
 	mockJobNTBD.Init(cache)
 
-	cache.Start(0, 2*time.Second) // Retain 1 second
-
 	cache.Delete(mockJobTBD.Id)
-	time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	// Make sure it is deleted
 	_, err := cache.Get(mockJobTBD.Id)
@@ -1024,14 +1021,13 @@ func TestDeletedJobsStillRunning(t *testing.T) {
 	select {
 	case <-mockJobTBD.ranChan:
 		assert.Fail(t, "Expected job not run")
-	case <-time.After(time.Second * 10):
+	case <-time.After(time.Second * 5):
 	}
 }
 
 func TestDeletedFromApiJobsStillRunning(t *testing.T) {
 	mdb2b := NewMemoryDB()
 	cache := NewLockFreeJobCache(mdb2b)
-	cache.PersistOnWrite = true
 
 	fiveSecondsFromNow := time.Now().Add(5 * time.Second)
 
@@ -1046,11 +1042,9 @@ func TestDeletedFromApiJobsStillRunning(t *testing.T) {
 	mockJobNTBD.Id = "1"
 	mockJobNTBD.Init(cache)
 
-	cache.Start(0, 2*time.Second) // Retain 1 minute
-
 	findedJobTBD, _ := cache.Get(mockJobTBD.Id)
 	findedJobTBD.Delete(cache)
-	time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	// Make sure it is deleted
 	_, err := cache.Get(mockJobTBD.Id)
@@ -1066,7 +1060,7 @@ func TestDeletedFromApiJobsStillRunning(t *testing.T) {
 	select {
 	case <-mockJobTBD.ranChan:
 		assert.Fail(t, "Expected job not run")
-	case <-time.After(time.Second * 10):
+	case <-time.After(time.Second * 3):
 	}
 }
 
@@ -1081,7 +1075,6 @@ func TestRemoteJobRunner(t *testing.T) {
 	})
 
 	cache := NewMockCache()
-	cache.PersistOnWrite = true
 	mockRemoteJob.Init(cache)
 	cache.Start(0, 2*time.Second) // Retain 1 minute
 
@@ -1102,7 +1095,6 @@ func TestRemoteJobBadStatus(t *testing.T) {
 	})
 
 	cache := NewMockCache()
-	cache.PersistOnWrite = true
 	mockRemoteJob.Init(cache)
 	cache.Start(0, 2*time.Second) // Retain 1 minute
 
@@ -1122,7 +1114,6 @@ func TestRemoteJobBadStatusSuccess(t *testing.T) {
 	})
 
 	cache := NewMockCache()
-	cache.PersistOnWrite = true
 	mockRemoteJob.Init(cache)
 	cache.Start(0, 2*time.Second) // Retain 1 minute
 
