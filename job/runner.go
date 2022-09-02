@@ -276,9 +276,6 @@ func (j *JobRunner) collectStats(success bool) {
 }
 
 func (j *JobRunner) checkExpected(statusCode int) bool {
-	j.job.lock.RLock()
-	defer j.job.lock.RUnlock()
-
 	// If no expected response codes passed, add 200 status code as expected
 	if len(j.job.RemoteProperties.ExpectedResponseCodes) == 0 {
 		j.job.RemoteProperties.ExpectedResponseCodes = append(j.job.RemoteProperties.ExpectedResponseCodes, HTTP_CODE_OK)
@@ -305,8 +302,6 @@ func (j *JobRunner) responseTimeout() time.Duration {
 
 // setHeaders sets default and user specific headers to the http request
 func (j *JobRunner) setHeaders(req *http.Request) {
-	j.job.lock.RLock()
-	defer j.job.lock.RUnlock()
 	if j.job.RemoteProperties.Headers == nil {
 		j.job.RemoteProperties.Headers = http.Header{}
 	}
