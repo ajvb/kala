@@ -20,11 +20,8 @@ import (
 const HTTP_CODE_OK = 200
 
 type JobRunner struct {
-	job  *Job
-	meta Metadata
-
-	mu sync.Mutex
-
+	job              *Job
+	meta             Metadata
 	numberOfAttempts uint
 	currentRetries   uint
 	currentStat      *JobStat
