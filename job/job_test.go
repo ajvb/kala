@@ -1077,7 +1077,10 @@ func TestRemoteJobRunner(t *testing.T) {
 	cache := NewMockCache()
 
 	mockRemoteJob.Run(cache)
+
+	mockRemoteJob.lock.RLock()
 	assert.True(t, mockRemoteJob.Metadata.SuccessCount == 1)
+	mockRemoteJob.lock.RUnlock()
 }
 
 func TestRemoteJobBadStatus(t *testing.T) {
