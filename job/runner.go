@@ -23,6 +23,8 @@ type JobRunner struct {
 	job  *Job
 	meta Metadata
 
+	mu sync.Mutex
+
 	numberOfAttempts uint
 	currentRetries   uint
 	currentStat      *JobStat
@@ -277,12 +279,9 @@ func (j *JobRunner) collectStats(success bool) {
 	j.currentStat.NumberOfRetries = j.job.Retries - j.currentRetries
 }
 
-// TODO Still need improve..
-var lock = sync.RWMutex{}
-
 func (j *JobRunner) checkExpected(statusCode int) bool {
-	lock.Lock()
-	defer lock.Unlock()
+	j.mu.Lock()
+	defer j.mu.Unlock()
 
 	// If no expected response codes passed, add 200 status code as expected
 	if len(j.job.RemoteProperties.ExpectedResponseCodes) == 0 {
@@ -310,8 +309,8 @@ func (j *JobRunner) responseTimeout() time.Duration {
 
 // setHeaders sets default and user specific headers to the http request
 func (j *JobRunner) setHeaders(req *http.Request) {
-	lock.Lock()
-	defer lock.Unlock()
+	j.mu.Lock()
+	defer j.mu.Unlock()
 
 	if j.job.RemoteProperties.Headers == nil {
 		j.job.RemoteProperties.Headers = http.Header{}
