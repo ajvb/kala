@@ -482,8 +482,9 @@ func (j *Job) RunOnFailureJob(cache JobCache) {
 
 func (j *Job) Run(cache JobCache) {
 
-	if !cache.Has(j.Id) {
-		log.Infof("Job %s with id %s tried to run, but exited early because its deleted", j.Name, j.Id)
+	_, err := cache.Get(j.Id)
+	if errors.Is(err, ErrJobDoesntExist) {
+		log.Infof("Job %s with id %s tried to run, but exited early because it has been deleted", j.Name, j.Id)
 		return
 	}
 

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
@@ -43,8 +44,9 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 
 	j.meta.LastAttemptedRun = j.job.clk.Time().Now()
 
-	if !cache.Has(j.job.Id) {
-		log.Infof("Job %s with id %s tried to run, but exited early because its deleted", j.job.Name, j.job.Id)
+	_, err := cache.Get(j.job.Id)
+	if errors.Is(err, ErrJobDoesntExist) {
+		log.Infof("Job %s with id %s tried to run, but exited early because it has benn deleted", j.job.Name, j.job.Id)
 		return nil, j.meta, ErrJobDeleted
 	}
 	if j.job.Disabled {
@@ -275,7 +277,13 @@ func (j *JobRunner) collectStats(success bool) {
 	j.currentStat.NumberOfRetries = j.job.Retries - j.currentRetries
 }
 
+// TODO Still need improve..
+var lock = sync.RWMutex{}
+
 func (j *JobRunner) checkExpected(statusCode int) bool {
+	lock.Lock()
+	defer lock.Unlock()
+
 	// If no expected response codes passed, add 200 status code as expected
 	if len(j.job.RemoteProperties.ExpectedResponseCodes) == 0 {
 		j.job.RemoteProperties.ExpectedResponseCodes = append(j.job.RemoteProperties.ExpectedResponseCodes, HTTP_CODE_OK)
@@ -302,6 +310,9 @@ func (j *JobRunner) responseTimeout() time.Duration {
 
 // setHeaders sets default and user specific headers to the http request
 func (j *JobRunner) setHeaders(req *http.Request) {
+	lock.Lock()
+	defer lock.Unlock()
+
 	if j.job.RemoteProperties.Headers == nil {
 		j.job.RemoteProperties.Headers = http.Header{}
 	}
