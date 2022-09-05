@@ -1096,6 +1096,8 @@ func TestRemoteJobBadStatus(t *testing.T) {
 	})
 
 	cache := NewMockCache()
+	mockRemoteJob.Init(cache)
+	cache.Start(0, 2*time.Second) // Retain 1 minute
 
 	mockRemoteJob.Run(cache)
 	assert.True(t, mockRemoteJob.Metadata.SuccessCount == 0)
