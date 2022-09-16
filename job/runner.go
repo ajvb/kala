@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
-	"sync"
 	"text/template"
 	"time"
 
@@ -276,12 +275,9 @@ func (j *JobRunner) collectStats(success bool) {
 	j.currentStat.NumberOfRetries = j.job.Retries - j.currentRetries
 }
 
-// TODO Still need improve..
-var lock = sync.RWMutex{}
-
 func (j *JobRunner) checkExpected(statusCode int) bool {
-	lock.Lock()
-	defer lock.Unlock()
+	// j.job.lock.Lock()
+	// defer j.job.lock.Unlock()
 
 	// If no expected response codes passed, add 200 status code as expected
 	if len(j.job.RemoteProperties.ExpectedResponseCodes) == 0 {
@@ -309,8 +305,8 @@ func (j *JobRunner) responseTimeout() time.Duration {
 
 // setHeaders sets default and user specific headers to the http request
 func (j *JobRunner) setHeaders(req *http.Request) {
-	lock.Lock()
-	defer lock.Unlock()
+	// j.job.lock.Lock()
+	// defer j.job.lock.Unlock()
 
 	if j.job.RemoteProperties.Headers == nil {
 		j.job.RemoteProperties.Headers = http.Header{}
