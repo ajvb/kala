@@ -225,7 +225,7 @@ func TestPersistEpsilon(t *testing.T) {
 	if dsn == "" {
 		mysqld, err := mysqltest.NewMysqld(nil)
 		if assert.NoError(t, err) {
-			dsn = mysqld.Datasource("test", "", "", 0)
+			dsn = mysqld.Datasource("test", "root", "", 0)
 			defer mysqld.Stop()
 		} else {
 			t.FailNow()
