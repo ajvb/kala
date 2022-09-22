@@ -56,7 +56,7 @@ var serveCmd = &cobra.Command{
 
 		switch viper.GetString("jobdb") {
 		case "boltdb":
-			db = boltdb.GetBoltDB(viper.GetString("boltpath"))
+			db = boltdb.GetBoltDB(viper.GetString("bolt-path"))
 		case "redis":
 			if viper.GetString("jobdb-password") != "" {
 				option := redislib.DialPassword(viper.GetString("jobdb-password"))
