@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.15-buster-node-browsers
+      - image: cimg/go:1.17.13
       - image: progrium/consul
         command: "-server -bootstrap"
       - image: mongo:3.4
@@ -11,7 +11,7 @@ jobs:
           MYSQL_ALLOW_EMPTY_PASSWORD: 1
           MYSQL_DATABASE: test
 
-    working_directory: /go/src/github.com/ajvb/kala
+    working_directory: /home/circleci/go/src/github.com/ajvb/kala
     environment:
       TEST_RESULTS: /tmp/test-results
       GO111MODULE: "on"

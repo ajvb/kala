@@ -19,6 +19,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const BASE_10 = 10
+
 var (
 	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
 
@@ -275,7 +277,7 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 		// Repeat forever
 		j.timesToRepeat = -1
 	} else {
-		j.timesToRepeat, err = strconv.ParseInt(strings.Split(splitTime[0], "R")[1], 10, 0)
+		j.timesToRepeat, err = strconv.ParseInt(strings.Split(splitTime[0], "R")[1], BASE_10, 0)
 		if err != nil {
 			log.Errorf("Error converting timesToRepeat to an int: %s", err)
 			return err
@@ -480,6 +482,12 @@ func (j *Job) RunOnFailureJob(cache JobCache) {
 
 func (j *Job) Run(cache JobCache) {
 
+	_, err := cache.Get(j.Id)
+	if errors.Is(err, ErrJobDoesntExist) {
+		log.Infof("Job %s with id %s tried to run, but exited early because it has been deleted", j.Name, j.Id)
+		return
+	}
+
 	j.lock.RLock()
 	jobRunner := &JobRunner{job: j, meta: j.Metadata}
 	j.lock.RUnlock()
@@ -499,17 +507,14 @@ func (j *Job) Run(cache JobCache) {
 
 	// Kinda annoying and inefficient that it needs to be done this way.
 	// Some refactoring is probably in order.
-	if got, err := cache.Get(j.Id); got == nil || err != nil {
-		log.Warnf("Job %s with id %s ran, but seems to have been deleted from cache; results won't be persisted.", j.Name, j.Id)
-	} else {
-		j.lock.Unlock()
-		j.lock.RLock()
-		if err := cache.Set(j); err != nil {
-			log.Errorf("Job %s with id %s ran, but the results couldn't be persisted: %v", j.Name, j.Id, err)
-		}
-		j.lock.RUnlock()
-		j.lock.Lock()
+
+	j.lock.Unlock()
+	j.lock.RLock()
+	if err := cache.Set(j); err != nil {
+		log.Errorf("Job %s with id %s ran, but the results couldn't be persisted: %v", j.Name, j.Id, err)
 	}
+	j.lock.RUnlock()
+	j.lock.Lock()
 
 	if j.ShouldStartWaiting() {
 		go j.StartWaiting(cache, true)

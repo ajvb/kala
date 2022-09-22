@@ -66,7 +66,6 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     - lll
     - megacheck
     - misspell
@@ -101,6 +100,9 @@ linters:
     - whitespace
     - wsl
     - godot
+
+    - interfacer
+
 
 issues:
   exclude:

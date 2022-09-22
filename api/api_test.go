@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -210,7 +210,7 @@ func (a *ApiTestSuite) TestGetJobSuccess() {
 	a.NoError(err)
 
 	var jobResp JobResponse
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	a.NoError(err)
 	resp.Body.Close()
 	err = json.Unmarshal(body, &jobResp)
@@ -236,7 +236,7 @@ func (a *ApiTestSuite) TestHandleListJobStatsRequest() {
 	a.NoError(err)
 
 	var jobStatsResp ListJobStatsResponse
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	a.NoError(err)
 	resp.Body.Close()
 	err = json.Unmarshal(body, &jobStatsResp)
@@ -428,7 +428,7 @@ func setupTestReq(t assert.TestingT, method, path string, data []byte) (*httptes
 }
 
 func unmarshallRequestBody(t assert.TestingT, resp *http.Response, obj interface{}) {
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	resp.Body.Close()
 	err = json.Unmarshal(body, obj)
