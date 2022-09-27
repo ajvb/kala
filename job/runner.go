@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -16,10 +16,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type JobRunner struct {
-	job  *Job
-	meta Metadata
+const HTTP_CODE_OK = 200
 
+type JobRunner struct {
+	job              *Job
+	meta             Metadata
 	numberOfAttempts uint
 	currentRetries   uint
 	currentStat      *JobStat
@@ -27,6 +28,7 @@ type JobRunner struct {
 
 var (
 	ErrJobDisabled       = errors.New("Job cannot run, as it is disabled")
+	ErrJobDeleted        = errors.New("Job cannot run, as it is deleted")
 	ErrCmdIsEmpty        = errors.New("Job Command is empty.")
 	ErrJobTypeInvalid    = errors.New("Job Type is not valid.")
 	ErrInvalidDelimiters = errors.New("Job has invalid templating delimiters.")
@@ -40,6 +42,11 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 
 	j.meta.LastAttemptedRun = j.job.clk.Time().Now()
 
+	_, err := cache.Get(j.job.Id)
+	if errors.Is(err, ErrJobDoesntExist) {
+		log.Infof("Job %s with id %s tried to run, but exited early because it has benn deleted", j.job.Name, j.job.Id)
+		return nil, j.meta, ErrJobDeleted
+	}
 	if j.job.Disabled {
 		log.Infof("Job %s tried to run, but exited early because its disabled.", j.job.Name)
 		return nil, j.meta, ErrJobDisabled
@@ -156,7 +163,7 @@ func (j *JobRunner) RemoteRun() (string, error) {
 		return "", err
 	}
 	defer res.Body.Close()
-	b, err := ioutil.ReadAll(res.Body)
+	b, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", err
 	}
@@ -269,9 +276,12 @@ func (j *JobRunner) collectStats(success bool) {
 }
 
 func (j *JobRunner) checkExpected(statusCode int) bool {
+	// j.job.lock.Lock()
+	// defer j.job.lock.Unlock()
+
 	// If no expected response codes passed, add 200 status code as expected
 	if len(j.job.RemoteProperties.ExpectedResponseCodes) == 0 {
-		j.job.RemoteProperties.ExpectedResponseCodes = append(j.job.RemoteProperties.ExpectedResponseCodes, 200)
+		j.job.RemoteProperties.ExpectedResponseCodes = append(j.job.RemoteProperties.ExpectedResponseCodes, HTTP_CODE_OK)
 	}
 	for _, expected := range j.job.RemoteProperties.ExpectedResponseCodes {
 		if expected == statusCode {
@@ -295,6 +305,9 @@ func (j *JobRunner) responseTimeout() time.Duration {
 
 // setHeaders sets default and user specific headers to the http request
 func (j *JobRunner) setHeaders(req *http.Request) {
+	// j.job.lock.Lock()
+	// defer j.job.lock.Unlock()
+
 	if j.job.RemoteProperties.Headers == nil {
 		j.job.RemoteProperties.Headers = http.Header{}
 	}

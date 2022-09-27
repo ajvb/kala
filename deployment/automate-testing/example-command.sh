@@ -1,0 +1,1 @@
+echo $(date) >> ./deployment/automate-testing/date.txt

@@ -9,8 +9,8 @@ import (
 
 	"github.com/ajvb/kala/job"
 
-	"github.com/boltdb/bolt"
 	log "github.com/sirupsen/logrus"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (
@@ -22,7 +22,7 @@ func GetBoltDB(path string) *BoltJobDB {
 		path += "/"
 	}
 	path += "jobdb.db"
-	var perms os.FileMode = 0600
+	var perms os.FileMode = 0o0600
 	database, err := bolt.Open(path, perms, &bolt.Options{Timeout: time.Second * 10}) //nolint:gomnd
 	if err != nil {
 		log.Fatal(err)

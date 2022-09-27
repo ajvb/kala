@@ -2,8 +2,6 @@ package job
 
 import (
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -986,50 +984,82 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 	j.lock.RUnlock()
 }
 
-func TestRemoteJobRunner(t *testing.T) {
-	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Hello, client")
-	}))
-	defer testServer.Close()
+// https://github.com/ajvb/kala/issues/237
+func TestDeletedJobsStillRunning(t *testing.T) {
+	mdb2b := NewMemoryDB()
+	cache := NewLockFreeJobCache(mdb2b)
 
-	mockRemoteJob := GetMockRemoteJob(RemoteProperties{
-		Url: testServer.URL,
-	})
+	fiveSecondsFromNow := time.Now().Add(5 * time.Second)
 
-	cache := NewMockCache()
-	mockRemoteJob.Run(cache)
-	assert.True(t, mockRemoteJob.Metadata.SuccessCount == 1)
+	mockJobTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
+	mockJobTBD.Name = "mock_job_to_be_deleted"
+	mockJobTBD.Id = "0"
+	mockJobTBD.ranChan = make(chan struct{})
+	mockJobTBD.Init(cache)
+
+	mockJobNTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
+	mockJobNTBD.Name = "mock_job_to_not_be_deleted"
+	mockJobNTBD.Id = "1"
+	mockJobNTBD.Init(cache)
+
+	cache.Delete(mockJobTBD.Id)
+	time.Sleep(2 * time.Second)
+
+	// Make sure it is deleted
+	_, err := cache.Get(mockJobTBD.Id)
+	assert.Error(t, err)
+	assert.Equal(t, ErrJobDoesntExist, err)
+
+	// Check if mockChildJobWithNoBackup is deleted
+	allJobsRunning := cache.GetAll()
+	for _, element := range allJobsRunning.Jobs {
+		assert.NotEqual(t, element.Id, "0")
+	}
+
+	select {
+	case <-mockJobTBD.ranChan:
+		assert.Fail(t, "Expected job not run")
+	case <-time.After(time.Second * 5):
+	}
 }
 
-func TestRemoteJobBadStatus(t *testing.T) {
-	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "something failed", http.StatusInternalServerError)
-	}))
-	defer testServer.Close()
+func TestDeletedFromApiJobsStillRunning(t *testing.T) {
+	mdb2b := NewMemoryDB()
+	cache := NewLockFreeJobCache(mdb2b)
 
-	mockRemoteJob := GetMockRemoteJob(RemoteProperties{
-		Url: testServer.URL,
-	})
+	fiveSecondsFromNow := time.Now().Add(5 * time.Second)
 
-	cache := NewMockCache()
-	mockRemoteJob.Run(cache)
-	assert.True(t, mockRemoteJob.Metadata.SuccessCount == 0)
-}
+	mockJobTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
+	mockJobTBD.Name = "mock_job_to_be_deleted_from_api"
+	mockJobTBD.Id = "0"
+	mockJobTBD.ranChan = make(chan struct{})
+	mockJobTBD.Init(cache)
 
-func TestRemoteJobBadStatusSuccess(t *testing.T) {
-	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "something failed", http.StatusInternalServerError)
-	}))
-	defer testServer.Close()
+	mockJobNTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
+	mockJobNTBD.Name = "mock_job_to_not_be_deleted"
+	mockJobNTBD.Id = "1"
+	mockJobNTBD.Init(cache)
 
-	mockRemoteJob := GetMockRemoteJob(RemoteProperties{
-		Url:                   testServer.URL,
-		ExpectedResponseCodes: []int{500},
-	})
+	findedJobTBD, _ := cache.Get(mockJobTBD.Id)
+	findedJobTBD.Delete(cache)
+	time.Sleep(2 * time.Second)
 
-	cache := NewMockCache()
-	mockRemoteJob.Run(cache)
-	assert.True(t, mockRemoteJob.Metadata.SuccessCount == 1)
+	// Make sure it is deleted
+	_, err := cache.Get(mockJobTBD.Id)
+	assert.Error(t, err)
+	assert.Equal(t, ErrJobDoesntExist, err)
+
+	// Check if mockChildJobWithNoBackup is deleted
+	allJobsRunning := cache.GetAll()
+	for _, element := range allJobsRunning.Jobs {
+		assert.NotEqual(t, element.Id, "0")
+	}
+
+	select {
+	case <-mockJobTBD.ranChan:
+		assert.Fail(t, "Expected job not run")
+	case <-time.After(time.Second * 3):
+	}
 }
 
 func waitForJob(j *Job) {

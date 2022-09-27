@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -56,7 +56,7 @@ var serveCmd = &cobra.Command{
 
 		switch viper.GetString("jobdb") {
 		case "boltdb":
-			db = boltdb.GetBoltDB(viper.GetString("boltpath"))
+			db = boltdb.GetBoltDB(viper.GetString("bolt-path"))
 		case "redis":
 			if viper.GetString("jobdb-password") != "" {
 				option := redislib.DialPassword(viper.GetString("jobdb-password"))
@@ -84,7 +84,7 @@ var serveCmd = &cobra.Command{
 			if viper.GetString("jobdb-tls-capath") != "" {
 				// https://godoc.org/github.com/go-sql-driver/mysql#RegisterTLSConfig
 				rootCertPool := x509.NewCertPool()
-				pem, err := ioutil.ReadFile(viper.GetString("jobdb-tls-capath"))
+				pem, err := os.ReadFile(viper.GetString("jobdb-tls-capath"))
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -98,6 +98,7 @@ var serveCmd = &cobra.Command{
 				}
 				clientCert = append(clientCert, certs)
 				db = mysql.New(dsn, &tls.Config{
+					MinVersion:   tls.VersionTLS12,
 					RootCAs:      rootCertPool,
 					Certificates: clientCert,
 					ServerName:   viper.GetString("jobdb-tls-servername"),
