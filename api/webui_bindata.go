@@ -117,7 +117,7 @@ func webuiAndroidChrome192x192Png() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/android-chrome-192x192.png", size: 6319, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/android-chrome-192x192.png", size: 6319, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -137,7 +137,7 @@ func webuiAndroidChrome512x512Png() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/android-chrome-512x512.png", size: 20074, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/android-chrome-512x512.png", size: 20074, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -157,7 +157,7 @@ func webuiAppleTouchIconPng() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/apple-touch-icon.png", size: 5873, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/apple-touch-icon.png", size: 5873, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -177,7 +177,7 @@ func webuiCssBulmaCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/css/bulma.css", size: 229979, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/css/bulma.css", size: 229979, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -197,7 +197,7 @@ func webuiCssBulmaCssMap() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/css/bulma.css.map", size: 88682, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/css/bulma.css.map", size: 88682, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -217,7 +217,7 @@ func webuiCssBulmaMinCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/css/bulma.min.css", size: 194750, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/css/bulma.min.css", size: 194750, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -237,7 +237,7 @@ func webuiCssLoaderCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/css/loader.css", size: 412, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/css/loader.css", size: 412, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -257,7 +257,7 @@ func webuiFavicon16x16Png() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/favicon-16x16.png", size: 460, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/favicon-16x16.png", size: 460, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -277,7 +277,7 @@ func webuiFavicon32x32Png() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/favicon-32x32.png", size: 867, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/favicon-32x32.png", size: 867, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -297,7 +297,7 @@ func webuiFaviconIco() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/favicon.ico", size: 15406, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/favicon.ico", size: 15406, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -317,7 +317,7 @@ func webuiIndexHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/index.html", size: 1312, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/index.html", size: 1312, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -337,7 +337,7 @@ func webuiJsFormdataJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/js/FormData.js", size: 11860, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/js/FormData.js", size: 11860, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -357,7 +357,7 @@ func webuiJsActionsJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/js/actions.js", size: 4537, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/js/actions.js", size: 4537, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -377,7 +377,7 @@ func webuiJsAppJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/js/app.js", size: 13905, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/js/app.js", size: 13905, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -397,7 +397,7 @@ func webuiJsFetchJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/js/fetch.js", size: 10375, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/js/fetch.js", size: 10375, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -417,7 +417,7 @@ func webuiJsFontawesomeJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/js/fontawesome.js", size: 986033, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/js/fontawesome.js", size: 986033, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -437,7 +437,7 @@ func webuiJsKalaJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/js/kala.js", size: 2853, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/js/kala.js", size: 2853, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -457,7 +457,7 @@ func webuiJsPromiseJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/js/promise.js", size: 7236, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/js/promise.js", size: 7236, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -477,7 +477,7 @@ func webuiJsReefReefPolyfillsMinJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/js/reef/reef.polyfills.min.js", size: 9129, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/js/reef/reef.polyfills.min.js", size: 9129, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -497,7 +497,7 @@ func webuiJsReefRouterMinJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/js/reef/router.min.js", size: 4878, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/js/reef/router.min.js", size: 4878, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -517,7 +517,7 @@ func webuiJsRoutesJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/js/routes.js", size: 420, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/js/routes.js", size: 420, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -537,7 +537,7 @@ func webuiJsStoreJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/js/store.js", size: 1661, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/js/store.js", size: 1661, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -557,7 +557,7 @@ func webuiJsUtilsJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/js/utils.js", size: 308, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/js/utils.js", size: 308, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -577,7 +577,7 @@ func webuiLogoPng() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/logo.png", size: 24916, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/logo.png", size: 24916, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -597,7 +597,7 @@ func webuiSiteWebmanifest() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "webui/site.webmanifest", size: 263, mode: os.FileMode(420), modTime: time.Unix(1603663800, 0)}
+	info := bindataFileInfo{name: "webui/site.webmanifest", size: 263, mode: os.FileMode(420), modTime: time.Unix(1664269001, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
