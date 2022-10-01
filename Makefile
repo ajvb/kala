@@ -21,4 +21,12 @@ start-consul: bin/$(APP)
 test:
 	go test -v ./...
 
-.PHONY: bin/$(APP) bin clean start test
+gen: tools
+	go-bindata-assetfs -pkg api -o api/webui_bindata.go webui/...
+
+tools:
+	go install github.com/go-bindata/go-bindata/...
+	go install github.com/elazarl/go-bindata-assetfs/...
+
+
+.PHONY: bin/$(APP) bin clean start test gen tools

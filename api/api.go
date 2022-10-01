@@ -335,7 +335,7 @@ func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, prof
 	// Allows for the use for /job as well as /job/
 	r.StrictSlash(true)
 	SetupApiRoutes(r, cache, defaultOwner)
-	r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(http.Dir("./webui/"))))
+	r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(assetFS())))
 
 	if profile {
 		runtime.SetMutexProfileFraction(5) //nolint:gomnd
