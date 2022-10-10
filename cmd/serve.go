@@ -81,7 +81,7 @@ var serveCmd = &cobra.Command{
 		case "mysql", "mariadb":
 			dsn := fmt.Sprintf("%s:%s@%s", viper.GetString("jobdb-username"), viper.GetString("jobdb-password"), viper.GetString("jobdb-address"))
 			log.Debug("Mysql/Maria DSN: ", dsn)
-			if viper.GetString("jobdb-tls-capath") != "" {
+			if viper.IsSet("jobdb-tls-capath") {
 				// https://godoc.org/github.com/go-sql-driver/mysql#RegisterTLSConfig
 				rootCertPool := x509.NewCertPool()
 				pem, err := os.ReadFile(viper.GetString("jobdb-tls-capath"))
@@ -97,12 +97,35 @@ var serveCmd = &cobra.Command{
 					log.Fatal(err)
 				}
 				clientCert = append(clientCert, certs)
-				db = mysql.New(dsn, &tls.Config{
+				cfg := tls.Config{
 					MinVersion:   tls.VersionTLS12,
 					RootCAs:      rootCertPool,
 					Certificates: clientCert,
-					ServerName:   viper.GetString("jobdb-tls-servername"),
-				})
+				}
+				if viper.IsSet("jobdb-tls-servername") {
+					sn := viper.GetString("jobdb-tls-servername")
+					cfg.ServerName = sn
+					// Solve gcp invalid hostname in CN: https://github.com/golang/go/issues/40748#issuecomment-673599371
+					if strings.Contains(sn, ":") {
+						cfg.InsecureSkipVerify = true
+						cfg.VerifyConnection = func(cs tls.ConnectionState) error {
+							commonName := cs.PeerCertificates[0].Subject.CommonName
+							if commonName != cs.ServerName {
+								return fmt.Errorf("invalid certificate name %q, expected %q", commonName, cs.ServerName)
+							}
+							opts := x509.VerifyOptions{
+								Roots:         rootCertPool,
+								Intermediates: x509.NewCertPool(),
+							}
+							for _, cert := range cs.PeerCertificates[1:] {
+								opts.Intermediates.AddCert(cert)
+							}
+							_, err := cs.PeerCertificates[0].Verify(opts)
+							return err
+						}
+					}
+				}
+				db = mysql.New(dsn, &cfg)
 			} else {
 				db = mysql.New(dsn, nil)
 			}
