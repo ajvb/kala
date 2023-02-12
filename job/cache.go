@@ -88,7 +88,10 @@ func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 		log.Infof("Shutting down....")
 
 		// Persist all jobs to database
-		log.Errorln(c.Persist())
+		err = c.Persist()
+		if err != nil {
+			log.Errorln(err)
+		}
 
 		// Close the database
 		c.jobDB.Close()
