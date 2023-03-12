@@ -6,3 +6,4 @@ kala
 vendor
 .idea/*
 .DS_Store
+/vendor
