@@ -2,7 +2,7 @@ dateutils==0.6.6
 ipython==8.10.0
 python-dateutil==2.4.1
 pytz==2014.10
-requests==2.20.0
+requests==2.31.0
 simplejson==3.6.5
 six==1.9.0
 wsgiref==0.1.2
