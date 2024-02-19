@@ -2,11 +2,11 @@ version: 2
 jobs:
   build:
     docker:
-      - image: cimg/go:1.17.13
+      - image: cimg/go:1.21
       - image: progrium/consul
         command: "-server -bootstrap"
-      - image: mongo:3.4
-      - image: mysql:5.7
+      - image: mongo:latest
+      - image: mysql:latest
         environment:
           MYSQL_ALLOW_EMPTY_PASSWORD: 1
           MYSQL_DATABASE: test

@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cornelk/hashmap"
+	"github.com/dustinxie/lockfree"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -206,7 +206,7 @@ func (c *MemoryJobCache) PersistEvery(persistWaitTime time.Duration) {
 }
 
 type LockFreeJobCache struct {
-	jobs            *hashmap.HashMap
+	jobs            lockfree.HashMap
 	jobDB           JobDB
 	retentionPeriod time.Duration
 	PersistOnWrite  bool
@@ -215,7 +215,7 @@ type LockFreeJobCache struct {
 
 func NewLockFreeJobCache(jobDB JobDB) *LockFreeJobCache {
 	return &LockFreeJobCache{
-		jobs:            hashmap.New(8), //nolint:gomnd
+		jobs:            lockfree.NewHashMap(), //nolint:gomnd
 		jobDB:           jobDB,
 		retentionPeriod: -1,
 	}
@@ -275,7 +275,7 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.
 }
 
 func (c *LockFreeJobCache) Get(id string) (*Job, error) {
-	val, exists := c.jobs.GetStringKey(id)
+	val, exists := c.jobs.Get(id)
 	if val == nil || !exists {
 		return nil, ErrJobDoesntExist
 	}
@@ -288,9 +288,13 @@ func (c *LockFreeJobCache) Get(id string) (*Job, error) {
 
 func (c *LockFreeJobCache) GetAll() *JobsMap {
 	jm := NewJobsMap()
-	for el := range c.jobs.Iter() {
-		jm.Jobs[el.Key.(string)] = el.Value.(*Job)
+  m := c.jobs
+
+  m.Lock()
+	for k, v, ok := m.Next(); ok; k, v, ok = m.Next() {
+    jm.Jobs[k.(string)] = v.(*Job)
 	}
+	m.Unlock()
 	return jm
 }
 
@@ -392,10 +396,14 @@ func (c *LockFreeJobCache) locateJobStatsIndexForRetention(stats []*JobStat) (ma
 }
 
 func (c *LockFreeJobCache) Retain() error {
-	for el := range c.jobs.Iter() {
-		job := el.Value.(*Job)
+  m := c.jobs
+
+  m.Lock()
+  for _, v, ok := m.Next(); ok; _, v, ok = m.Next() {
+		job := v.(*Job)
 		c.compactJobStats(job)
 	}
+  m.Unlock()
 	return nil
 }
 
