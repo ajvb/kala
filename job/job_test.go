@@ -371,6 +371,9 @@ func TestDependentJobsParentDoesNotExist(t *testing.T) {
 	err := mockChildJob.Init(cache)
 	assert.Error(t, err)
 	assert.Equal(t, err, ErrJobDoesntExist)
+
+	_, err = cache.Get(mockChildJob.Id)
+	assert.Equal(t, ErrJobDoesntExist, err, "a child with a missing parent must not remain in the cache")
 }
 
 // Parent with two childs
