@@ -208,6 +208,17 @@ func (j *Job) Init(cache JobCache) error {
 	}
 	j.Id = u4.String()
 
+	// Verify the job's parents before adding it to the cache. Otherwise a
+	// missing parent leaves a child that the API reported as rejected.
+	parentJobs := make([]*Job, 0, len(j.ParentJobs))
+	for _, p := range j.ParentJobs {
+		parentJob, err := cache.Get(p)
+		if err != nil {
+			return err
+		}
+		parentJobs = append(parentJobs, parentJob)
+	}
+
 	// Add Job to the cache.
 	j.lock.Unlock()
 	err = cache.Set(j)
@@ -216,13 +227,9 @@ func (j *Job) Init(cache JobCache) error {
 		return err
 	}
 
-	if len(j.ParentJobs) != 0 {
+	if len(parentJobs) != 0 {
 		// Add new job to parent jobs
-		for _, p := range j.ParentJobs {
-			parentJob, err := cache.Get(p)
-			if err != nil {
-				return err
-			}
+		for _, parentJob := range parentJobs {
 			parentJob.DependentJobs = append(parentJob.DependentJobs, j.Id)
 		}
 
