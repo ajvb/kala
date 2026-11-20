@@ -284,7 +284,16 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 		// Repeat forever
 		j.timesToRepeat = -1
 	} else {
-		j.timesToRepeat, err = strconv.ParseInt(strings.Split(splitTime[0], "R")[1], BASE_10, 0)
+		// A repeat part with no "R" in it (for example "X") has no second element
+		// after splitting, so check before indexing.
+		repeatParts := strings.Split(splitTime[0], "R")
+		if len(repeatParts) < 2 { //nolint:gomnd
+			return fmt.Errorf(
+				"Schedule repeat part %q must be R or R<number>. Should look like: R/2014-03-08T20:00:00Z/PT2H",
+				splitTime[0],
+			)
+		}
+		j.timesToRepeat, err = strconv.ParseInt(repeatParts[1], BASE_10, 0)
 		if err != nil {
 			log.Errorf("Error converting timesToRepeat to an int: %s", err)
 			return err
