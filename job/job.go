@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ajvb/kala/utils/iso8601"
+	"github.com/ajvb/kala/v2/utils/iso8601"
 	"github.com/mixer/clock"
 
 	uuid "github.com/nu7hatch/gouuid"
@@ -589,7 +589,7 @@ func (j *Job) validation() error {
 	default:
 		return nil
 	}
-	log.Errorf(err.Error())
+	log.Errorf("%s", err)
 	return err
 }
 

@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/ajvb/kala/api"
-	"github.com/ajvb/kala/job"
+	"github.com/ajvb/kala/v2/api"
+	"github.com/ajvb/kala/v2/job"
 
 	"testing"
 

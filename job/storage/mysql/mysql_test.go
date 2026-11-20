@@ -15,7 +15,7 @@ import (
 	mysqltest "github.com/lestrrat-go/test-mysqld"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ajvb/kala/job"
+	"github.com/ajvb/kala/v2/job"
 )
 
 func NewTestDb() (*DB, sqlmock.Sqlmock) {
