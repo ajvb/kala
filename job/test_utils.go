@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ajvb/kala/utils/iso8601"
+	"github.com/ajvb/kala/v2/utils/iso8601"
 )
 
 type MockDBGetAll struct {

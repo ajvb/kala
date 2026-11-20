@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ajvb/kala/job"
+	"github.com/ajvb/kala/v2/job"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

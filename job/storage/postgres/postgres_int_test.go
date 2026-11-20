@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ajvb/kala/job"
+	"github.com/ajvb/kala/v2/job"
 	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/assert"
 

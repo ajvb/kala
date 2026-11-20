@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ajvb/kala/cmd"
+	"github.com/ajvb/kala/v2/cmd"
 
 	log "github.com/sirupsen/logrus"
 )
