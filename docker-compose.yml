@@ -2,10 +2,10 @@ version: '3'
 
 services:
   consul:
-    image: progrium/consul
+    image: hashicorp/consul:1.20
     ports:
       - "8500:8500"
-    command: "-server -bootstrap"
+    command: "agent -dev -client=0.0.0.0"
   redis:
     image: redis:4
     ports:

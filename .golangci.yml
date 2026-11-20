@@ -1,142 +1,103 @@
+version: "2"
+
 run:
   modules-download-mode: readonly
-
-linters-settings:
-
-  gocritic:
-    enabled-tags:
-      - performance
-      - style
-      - diagnostic
-      - experimental
-      - opinionated
-    disabled-checks:
-      - regexpMust
-      - hugeParam
-      - commentedOutCode
-      - paramTypeCombine
-      - whyNoLint
-
-  gofmt:
-    simplify: false
-
-  golint:
-    min-confidence: 0.8
-
-  gomnd:
-    settings:
-      mnd:
-        checks: argument,case,condition,operation,return,assign
-        ignored-numbers: ["0.0", "1.0"] # "0" and "1" are ignored by default
-
-  govet:
-    check-shadowing: true
-
-    enable: [atomicalign]
-    enable-all: false
-    disable: [shadow]
-    disable-all: false
-
-  misspell:
-    locale: US
-
-  nolintlint:
-    allow-unused: false
-    allow-leading-space: true
-    require-explanation: true
-    allow-no-explanation: [gomnd, lll]
-    require-specific: true
 
 linters:
   enable:
     - asciicheck
     - bodyclose
-    - deadcode
     - dogsled
-    - errcheck
+    - dupl
     - gocognit
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
-    - gomnd
     - goprintffuncname
     - gosec
-    - gosimple
-    - govet
-    - ineffassign
     - lll
-    - megacheck
     - misspell
+    - mnd
     - nakedret
     - nestif
     - nolintlint
     - prealloc
     - rowserrcheck
-    - staticcheck
-    - structcheck
-    - stylecheck
-    - typecheck
     - unconvert
     - unparam
-    - unused
-    - varcheck
-    - dupl
-
-  disable:
-    - funlen
-    - maligned
-    - scopelint # Deprecated
-    - depguard
-    - gochecknoglobals
-    - gochecknoinits
-    - godox
-
-    - goerr113
-    - golint
-    - testpackage
-
-    - whitespace
-    - wsl
-    - godot
-
-    - interfacer
-
-
-issues:
-  exclude:
-
-  exclude-rules:
-
-    # Exclude some linters from running on tests files.
-    - path: (_test\.go|test_utils\.go)
-      linters:
-        - gocyclo
-        - errcheck
-        - dupl
-        - gosec
-        - goconst
-        - funlen
-        - gochecknoglobals
-        - gocognit
-        - nestif
+  settings:
+    gocritic:
+      enabled-tags:
+        - performance
+        - style
+        - diagnostic
+        - experimental
+        - opinionated
+      disabled-checks:
+        - regexpMust
+        - hugeParam
+        - commentedOutCode
+        - paramTypeCombine
+        - whyNoLint
+    govet:
+      enable:
+        - atomicalign
+    misspell:
+      locale: US
+    mnd:
+      checks:
+        - argument
+        - case
+        - condition
+        - operation
+        - return
+        - assign
+      ignored-numbers:
+        - "0.0"
+        - "1.0"
+    nolintlint:
+      allow-unused: false
+      require-explanation: true
+      allow-no-explanation:
+        - mnd
         - lll
-        - bodyclose
-        - gomnd
+      require-specific: true
+    staticcheck:
+      checks:
+        - all
+        # Error-string style rules that v1 code does not follow.
+        - -ST1000
+        - -ST1003
+        - -ST1005
+        - -ST1020
+        - -ST1021
+        - -ST1022
+  exclusions:
+    rules:
+      # Exclude some linters from running on test files.
+      - path: (_test\.go|test_utils\.go)
+        linters:
+          - bodyclose
+          - dupl
+          - errcheck
+          - gocognit
+          - goconst
+          - gocyclo
+          - gosec
+          - lll
+          - mnd
+          - nestif
+      - linters:
+          - lll
+        source: "(//|Errorf|Printf|logf|Fatalf|Flags|Wrapf|Newf|Warnf)"
 
-    - linters:
-        - stylecheck
-      text: "ST(1003|1005|1000|1021|1020|1022):"
-
-    - linters:
-        - lll
-      source: "(//|Errorf|Printf|logf|Fatalf|Flags|Wrapf|Newf|Warnf)"
-
-    - linters:
-        - govet
-      text: "shadow: declaration of \"err\" shadows declaration at line"
-      source: "(if err := .+; err != nil {|, err :=)"
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: false
 
 severity:
-  default-severity: error
+  default: error

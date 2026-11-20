@@ -1,0 +1,109 @@
+name: Known failing
+
+# These checks fail today for reasons that later changes fix. They run so the
+# failures stay visible and new ones are noticed, but they are NOT required
+# checks and are not part of the CI badge. Move each one into ci.yml when it
+# passes.
+
+on:
+  push:
+    branches: [master, v1, v2-dev, v2]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: known-failing-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Pinned so a new release of the tool cannot change results by itself.
+  STATICCHECK_VERSION: v0.8.2
+
+jobs:
+  # These five packages and the client module crash or hang on current Go until
+  # the clock dependency is replaced: Timer.Stop on its copied timer fails with
+  # "stop of synctest timer from outside bubble" or spins (on Go 1.26 the Consul
+  # storage tests and then the client tests hung for the whole timeout, in tests
+  # that delete a job).
+  test-known-failing:
+    name: test, known failing (go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.26", "1.27"]
+    services:
+      mongo:
+        image: mongo:3.4
+        ports: ["27017:27017"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: ${{ matrix.go }}
+          check-latest: true
+      - name: Start Consul
+        run: |
+          docker run -d --name consul -p 8500:8500 hashicorp/consul:1.20 agent -dev -client=0.0.0.0
+          for i in $(seq 1 20); do
+            nc -z localhost 8500 && exit 0
+            sleep 1
+          done
+          echo "Consul did not start" >&2
+          exit 1
+      - run: go test -race -count=1 -timeout 120s ./api ./job ./job/storage/boltdb ./job/storage/consul ./job/storage/mongo
+      - name: Test the client module
+        if: always()
+        working-directory: client
+        run: go test -race -count=1 -timeout 120s ./...
+
+  # vet and staticcheck report findings that exist today (copied locks,
+  # capitalised error strings, generated code). Every step runs even if an
+  # earlier one fails, so all findings are visible.
+  vet:
+    name: vet and staticcheck (known findings)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - run: go vet ./...
+      - if: always()
+        run: cd client && go vet ./...
+      - if: always()
+        run: go install honnef.co/go/tools/cmd/staticcheck@${STATICCHECK_VERSION}
+      - if: always()
+        run: staticcheck ./...
+      - if: always()
+        run: cd client && staticcheck ./...
+
+  # The repository's lint rules (.golangci.yml) on a current golangci-lint.
+  # They report findings that exist today; fixing them is a later change.
+  lint:
+    name: golangci-lint (known findings)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.15.0
+      - if: always()
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.15.0
+          working-directory: client
