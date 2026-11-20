@@ -22,8 +22,10 @@ env:
   STATICCHECK_VERSION: v0.8.2
 
 jobs:
-  # These four packages crash or hang on current Go ("stop of synctest timer
-  # from outside bubble") until the clock dependency is replaced.
+  # These five packages crash or hang on current Go until the clock dependency
+  # is replaced: Timer.Stop on its copied timer fails with "stop of synctest
+  # timer from outside bubble" or spins (the Consul storage test hung for three
+  # minutes on Go 1.26 only, in a test that deletes a job).
   test-known-failing:
     name: test, known failing (go ${{ matrix.go }})
     runs-on: ubuntu-latest
@@ -42,7 +44,16 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
           check-latest: true
-      - run: go test -race -count=1 -timeout 120s ./api ./job ./job/storage/boltdb ./job/storage/mongo
+      - name: Start Consul
+        run: |
+          docker run -d --name consul -p 8500:8500 hashicorp/consul:1.20 agent -dev -client=0.0.0.0
+          for i in $(seq 1 20); do
+            nc -z localhost 8500 && exit 0
+            sleep 1
+          done
+          echo "Consul did not start" >&2
+          exit 1
+      - run: go test -race -count=1 -timeout 120s ./api ./job ./job/storage/boltdb ./job/storage/consul ./job/storage/mongo
 
   # vet and staticcheck report findings that exist today (copied locks,
   # capitalised error strings, generated code). Every step runs even if an
