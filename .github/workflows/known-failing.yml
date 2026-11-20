@@ -22,10 +22,11 @@ env:
   STATICCHECK_VERSION: v0.8.2
 
 jobs:
-  # These five packages crash or hang on current Go until the clock dependency
-  # is replaced: Timer.Stop on its copied timer fails with "stop of synctest
-  # timer from outside bubble" or spins (the Consul storage test hung for three
-  # minutes on Go 1.26 only, in a test that deletes a job).
+  # These five packages and the client module crash or hang on current Go until
+  # the clock dependency is replaced: Timer.Stop on its copied timer fails with
+  # "stop of synctest timer from outside bubble" or spins (on Go 1.26 the Consul
+  # storage tests and then the client tests hung for the whole timeout, in tests
+  # that delete a job).
   test-known-failing:
     name: test, known failing (go ${{ matrix.go }})
     runs-on: ubuntu-latest
@@ -54,6 +55,10 @@ jobs:
           echo "Consul did not start" >&2
           exit 1
       - run: go test -race -count=1 -timeout 120s ./api ./job ./job/storage/boltdb ./job/storage/consul ./job/storage/mongo
+      - name: Test the client module
+        if: always()
+        working-directory: client
+        run: go test -race -count=1 -timeout 120s ./...
 
   # vet and staticcheck report findings that exist today (copied locks,
   # capitalised error strings, generated code). Every step runs even if an

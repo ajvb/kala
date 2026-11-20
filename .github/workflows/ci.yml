@@ -39,9 +39,10 @@ jobs:
       - run: go mod verify
       - run: go build -trimpath ./...
 
-  # Tests with the race detector. Everything except five packages that
-  # currently crash on current Go because of the mixer/clock dependency; those
-  # run in the separate known-failing workflow until that dependency is replaced.
+  # Tests with the race detector for the server module. Everything except five
+  # packages, and the client module's tests, that currently crash or hang on
+  # current Go because of the mixer/clock dependency; those run in the separate
+  # known-failing workflow until that dependency is replaced.
   test:
     name: test (go ${{ matrix.go }})
     runs-on: ubuntu-latest
@@ -74,9 +75,6 @@ jobs:
         run: |
           pkgs=$(go list ./... | grep -v -E '/(api|job|job/storage/boltdb|job/storage/consul|job/storage/mongo)$')
           go test -race -count=1 -timeout 180s $pkgs
-      - name: Test the client module
-        working-directory: client
-        run: go test -race -count=1 -timeout 180s ./...
 
   # Ported from the CircleCI configuration: build the binary, start the
   # server on Consul and create a job through the API.
