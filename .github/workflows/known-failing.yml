@@ -1,0 +1,93 @@
+name: Known failing
+
+# These checks fail today for reasons that later changes fix. They run so the
+# failures stay visible and new ones are noticed, but they are NOT required
+# checks and are not part of the CI badge. Move each one into ci.yml when it
+# passes.
+
+on:
+  push:
+    branches: [master, v1, v2-dev, v2]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: known-failing-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Pinned so a new release of the tool cannot change results by itself.
+  STATICCHECK_VERSION: v0.8.2
+
+jobs:
+  # These four packages crash or hang on current Go ("stop of synctest timer
+  # from outside bubble") until the clock dependency is replaced.
+  test-known-failing:
+    name: test, known failing (go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.26", "1.27"]
+    services:
+      mongo:
+        image: mongo:3.4
+        ports: ["27017:27017"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: ${{ matrix.go }}
+          check-latest: true
+      - run: go test -race -count=1 -timeout 120s ./api ./job ./job/storage/boltdb ./job/storage/mongo
+
+  # vet and staticcheck report findings that exist today (copied locks,
+  # capitalised error strings, generated code). Every step runs even if an
+  # earlier one fails, so all findings are visible.
+  vet:
+    name: vet and staticcheck (known findings)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - run: go vet ./...
+      - if: always()
+        run: cd client && go vet ./...
+      - if: always()
+        run: go install honnef.co/go/tools/cmd/staticcheck@${STATICCHECK_VERSION}
+      - if: always()
+        run: staticcheck ./...
+      - if: always()
+        run: cd client && staticcheck ./...
+
+  # The repository's lint rules (.golangci.yml) on a current golangci-lint.
+  # They report findings that exist today; fixing them is a later change.
+  lint:
+    name: golangci-lint (known findings)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.15.0
+      - if: always()
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.15.0
+          working-directory: client

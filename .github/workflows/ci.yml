@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: [master, v1, v2-dev, v2]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # The server module is in the repository root and the Go client is its own
+  # module in client/. Each job runs for both where it makes sense.
+  build:
+    name: build (go ${{ matrix.go }}, ${{ matrix.module }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.26", "1.27"]
+        module: [".", "client"]
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: ${{ matrix.go }}
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - run: go mod verify
+      - run: go build -trimpath ./...
+
+  # Tests with the race detector. Everything except four packages that
+  # currently crash on current Go because of the mixer/clock dependency; those
+  # run in the separate known-failing workflow until that dependency is replaced.
+  test:
+    name: test (go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.26", "1.27"]
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+          MYSQL_DATABASE: test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      MYSQL_DSN: root:@/test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: ${{ matrix.go }}
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - name: Start Consul
+        run: |
+          docker run -d --name consul -p 8500:8500 hashicorp/consul:1.20 agent -dev -client=0.0.0.0
+          for i in $(seq 1 20); do
+            nc -z localhost 8500 && exit 0
+            sleep 1
+          done
+          echo "Consul did not start" >&2
+          exit 1
+      - name: Test the server module
+        run: |
+          pkgs=$(go list ./... | grep -v -E '/(api|job|job/storage/boltdb|job/storage/mongo)$')
+          go test -race -count=1 -timeout 180s $pkgs
+      - name: Test the client module
+        working-directory: client
+        run: go test -race -count=1 -timeout 180s ./...
+
+  # Ported from the CircleCI configuration: build the binary, start the
+  # server on Consul and create a job through the API.
+  smoke:
+    name: smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+      - name: Start Consul
+        run: |
+          docker run -d --name consul -p 8500:8500 hashicorp/consul:1.20 agent -dev -client=0.0.0.0
+          for i in $(seq 1 20); do
+            nc -z localhost 8500 && exit 0
+            sleep 1
+          done
+          echo "Consul did not start" >&2
+          exit 1
+      - run: go build -trimpath -o bin/kala .
+      - name: Start the server and create a job
+        run: |
+          ./bin/kala serve --jobdb=consul --jobdb-address=127.0.0.1:8500 -p 8000 > serve.log 2>&1 &
+          echo $! > serve.pid
+          status=$(curl --silent --output response.json --write-out '%{http_code}' \
+            --retry 15 --retry-delay 1 --retry-connrefused \
+            -X POST -H "Content-Type: application/json" \
+            -d '{"command": "echo cool", "name": "test_job"}' \
+            http://localhost:8000/api/v1/job/)
+          cat response.json; echo
+          kill "$(cat serve.pid)" || true
+          if [ "$status" != "201" ]; then
+            echo "expected HTTP 201, got $status" >&2
+            cat serve.log >&2
+            exit 1
+          fi
+
+  # One stable name for the branch ruleset to require, so the matrix above can
+  # change (for example a new Go version) without editing the ruleset.
+  ci-ok:
+    name: ci-ok
+    if: always()
+    needs: [build, test, smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All required jobs succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: $RESULTS"
+          for r in $RESULTS; do
+            [ "$r" = "success" ] || { echo "a required job did not succeed" >&2; exit 1; }
+          done
