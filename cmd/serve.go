@@ -79,7 +79,10 @@ var serveCmd = &cobra.Command{
 			dsn := fmt.Sprintf("postgres://%s:%s@%s", viper.GetString("jobdb-username"), viper.GetString("jobdb-password"), viper.GetString("jobdb-address"))
 			db = postgres.New(dsn)
 		case "mysql", "mariadb":
-			dsn := fmt.Sprintf("%s:%s@%s", viper.GetString("jobdb-username"), viper.GetString("jobdb-password"), viper.GetString("jobdb-address"))
+			dsn := fmt.Sprintf(
+				"%s:%s@%s",
+				viper.GetString("jobdb-username"), viper.GetString("jobdb-password"), viper.GetString("jobdb-address"),
+			)
 			log.Debug("Mysql/Maria DSN: ", dsn)
 			if viper.IsSet("jobdb-tls-capath") {
 				// https://godoc.org/github.com/go-sql-driver/mysql#RegisterTLSConfig
@@ -107,7 +110,7 @@ var serveCmd = &cobra.Command{
 					cfg.ServerName = sn
 					// Solve gcp invalid hostname in CN: https://github.com/golang/go/issues/40748#issuecomment-673599371
 					if strings.Contains(sn, ":") {
-						cfg.InsecureSkipVerify = true
+						cfg.InsecureSkipVerify = true //nolint:gosec // the certificate is verified by VerifyConnection below
 						cfg.VerifyConnection = func(cs tls.ConnectionState) error {
 							commonName := cs.PeerCertificates[0].Subject.CommonName
 							if commonName != cs.ServerName {
@@ -181,7 +184,7 @@ func init() {
 	serveCmd.Flags().String("jobdb-tls-keypath", "", "Path to tls client key file for the job database.")
 	serveCmd.Flags().String("jobdb-tls-servername", "", "Server name to verify cert for the job database.")
 	serveCmd.Flags().BoolP("verbose", "v", false, "Set for verbose logging.")
-	serveCmd.Flags().IntP("persist-every", "e", 60*60, "Interval in seconds between persisting all jobs to db") //nolint:gomnd
+	serveCmd.Flags().IntP("persist-every", "e", 60*60, "Interval in seconds between persisting all jobs to db") //nolint:mnd
 	serveCmd.Flags().Int("jobstat-ttl", -1, "Sets the jobstat-ttl in minutes. The default -1 value indicates JobStat entries will be kept forever")
 	serveCmd.Flags().Bool("profile", false, "Activate pprof handlers")
 	serveCmd.Flags().Bool("no-tx-persist", false, "Only persist to db periodically, not transactionally.")

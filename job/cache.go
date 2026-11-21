@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	ErrJobDoesntExist = errors.New("The job you requested does not exist")
+	ErrJobDoesntExist = errors.New("the job you requested does not exist")
 )
 
 type JobCache interface {
@@ -95,7 +95,9 @@ func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 		}
 
 		// Close the database
-		c.jobDB.Close()
+		if err := c.jobDB.Close(); err != nil {
+			log.Errorf("Error closing the database: %s", err)
+		}
 
 		os.Exit(0)
 	}()
@@ -219,7 +221,7 @@ type LockFreeJobCache struct {
 func NewLockFreeJobCache(jobDB JobDB, opts ...CacheOption) *LockFreeJobCache {
 	o := newCacheOptions(opts)
 	return &LockFreeJobCache{
-		jobs:            hashmap.New(8), //nolint:gomnd
+		jobs:            hashmap.New(8), //nolint:mnd
 		jobDB:           jobDB,
 		retentionPeriod: -1,
 		clk:             o.clock,
@@ -279,7 +281,9 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.
 		log.Errorln(c.Persist())
 
 		// Close the database
-		c.jobDB.Close()
+		if err := c.jobDB.Close(); err != nil {
+			log.Errorf("Error closing the database: %s", err)
+		}
 
 		os.Exit(0)
 	}()

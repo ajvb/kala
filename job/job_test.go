@@ -317,9 +317,7 @@ func TestOneOffJobs(t *testing.T) {
 	j.lock.RUnlock()
 }
 
-//
 // Dependent Job Tests
-//
 func TestDependentJobsSimple(t *testing.T) {
 
 	clk := newSteppingClock(time.Now())

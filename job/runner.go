@@ -27,11 +27,11 @@ type JobRunner struct {
 }
 
 var (
-	ErrJobDisabled       = errors.New("Job cannot run, as it is disabled")
-	ErrJobDeleted        = errors.New("Job cannot run, as it is deleted")
-	ErrCmdIsEmpty        = errors.New("Job Command is empty.")
-	ErrJobTypeInvalid    = errors.New("Job Type is not valid.")
-	ErrInvalidDelimiters = errors.New("Job has invalid templating delimiters.")
+	ErrJobDisabled       = errors.New("job cannot run, as it is disabled")
+	ErrJobDeleted        = errors.New("job cannot run, as it is deleted")
+	ErrCmdIsEmpty        = errors.New("job command is empty")
+	ErrJobTypeInvalid    = errors.New("job type is not valid")
+	ErrInvalidDelimiters = errors.New("job has invalid templating delimiters")
 )
 
 // Run calls the appropriate run function, collects metadata around the success
@@ -162,7 +162,7 @@ func (j *JobRunner) RemoteRun() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer res.Body.Close()
+	defer res.Body.Close() //nolint:errcheck // a failed close of a response body cannot be handled
 	b, err := io.ReadAll(res.Body)
 	if err != nil {
 		return "", err
@@ -219,7 +219,7 @@ func (j *JobRunner) tryTemplatize(content string) (string, error) {
 	}
 
 	split := strings.Split(delims, " ")
-	if len(split) != 2 { //nolint:gomnd
+	if len(split) != 2 { //nolint:mnd
 		return "", ErrInvalidDelimiters
 	}
 

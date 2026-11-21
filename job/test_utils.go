@@ -183,7 +183,7 @@ func (m *MemoryDB) Delete(id string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	if _, exists := m.m[id]; !exists {
-		return errors.New("Doesn't exist") // Used for testing
+		return errors.New("doesn't exist") // Used for testing
 	}
 	delete(m.m, id)
 	// log.Printf("After delete: %+v", m)

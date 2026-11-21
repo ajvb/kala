@@ -20,10 +20,10 @@ const (
 )
 
 var (
-	ErrJobNotFound      = errors.New("Job not found")
-	ErrJobCreationError = errors.New("Error creating job")
+	ErrJobNotFound      = errors.New("job not found")
+	ErrJobCreationError = errors.New("error creating job")
 
-	ErrGenericError = errors.New("An error occurred performing your request")
+	ErrGenericError = errors.New("an error occurred performing your request")
 
 	jobPath = api.JobPath[:len(api.JobPath)-1]
 )
@@ -35,7 +35,8 @@ type KalaClient struct {
 
 // New is used to create a new KalaClient based off of the apiEndpoint
 // Example:
-// 		c := New("http://127.0.0.1:8000")
+//
+//	c := New("http://127.0.0.1:8000")
 func New(apiEndpoint string) *KalaClient {
 	apiEndpoint = strings.TrimSuffix(apiEndpoint, "/")
 	apiUrlPrefix := api.ApiUrlPrefix[:len(api.ApiUrlPrefix)-1]
@@ -83,7 +84,7 @@ func (kc *KalaClient) do(method, url string, expectedStatus int, payload, target
 	if err != nil {
 		return
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck // a failed close of a response body cannot be handled
 	if status := resp.StatusCode; status != expectedStatus {
 		return status, ErrGenericError
 	}
@@ -93,13 +94,14 @@ func (kc *KalaClient) do(method, url string, expectedStatus int, payload, target
 // CreateJob is used for creating a new job within Kala. Note that the
 // Name and Command fields are the only ones that are required.
 // Example:
-// 		c := New("http://127.0.0.1:8000")
-// 		body := &job.Job{
-//			Schedule: "R2/2015-06-04T19:25:16.828696-07:00/PT10S",
-//			Name:	  "test_job",
-//			Command:  "bash -c 'date'",
-//		}
-//		id, err := c.CreateJob(body)
+//
+//	c := New("http://127.0.0.1:8000")
+//	body := &job.Job{
+//		Schedule: "R2/2015-06-04T19:25:16.828696-07:00/PT10S",
+//		Name:	  "test_job",
+//		Command:  "bash -c 'date'",
+//	}
+//	id, err := c.CreateJob(body)
 func (kc *KalaClient) CreateJob(body *job.Job) (string, error) {
 	id := &api.AddJobResponse{}
 	_, err := kc.do(methodPost, kc.url(jobPath), http.StatusCreated, body, id)
@@ -114,9 +116,10 @@ func (kc *KalaClient) CreateJob(body *job.Job) (string, error) {
 
 // GetJob is used to retrieve a Job from Kala by its ID.
 // Example:
-// 		c := New("http://127.0.0.1:8000")
-//		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
-//		job, err := c.GetJob(id)
+//
+//	c := New("http://127.0.0.1:8000")
+//	id := "93b65499-b211-49ce-57e0-19e735cc5abd"
+//	job, err := c.GetJob(id)
 func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 	j := &api.JobResponse{}
 	_, err := kc.do(methodGet, kc.url(jobPath, id), http.StatusOK, nil, j)
@@ -132,8 +135,9 @@ func (kc *KalaClient) GetJob(id string) (*job.Job, error) {
 // GetAllJobs returns a map of string (ID's) to job.Job's which contains
 // all Jobs currently within Kala.
 // Example:
-// 		c := New("http://127.0.0.1:8000")
-//		jobs, err := c.GetAllJobs()
+//
+//	c := New("http://127.0.0.1:8000")
+//	jobs, err := c.GetAllJobs()
 func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 	jobs := &api.ListJobsResponse{}
 	_, err := kc.do(methodGet, kc.url(jobPath), http.StatusOK, nil, jobs)
@@ -142,14 +146,15 @@ func (kc *KalaClient) GetAllJobs() (map[string]*job.Job, error) {
 
 // DeleteJob is used to delete a Job from Kala by its ID.
 // Example:
-// 		c := New("http://127.0.0.1:8000")
-//		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
-//		ok, err := c.DeleteJob(id)
+//
+//	c := New("http://127.0.0.1:8000")
+//	id := "93b65499-b211-49ce-57e0-19e735cc5abd"
+//	ok, err := c.DeleteJob(id)
 func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 	status, err := kc.do(methodDelete, kc.url(jobPath, id), http.StatusNoContent, nil, nil)
 	if err != nil {
 		if err == ErrGenericError {
-			return false, fmt.Errorf("Delete failed with a status code of %d", status)
+			return false, fmt.Errorf("delete failed with a status code of %d", status)
 		}
 		return false, err
 	}
@@ -158,17 +163,19 @@ func (kc *KalaClient) DeleteJob(id string) (bool, error) {
 
 // DeleteAllJobs is used to delete all jobs from Kala
 // Example:
-// 		c := New("http://127.0.0.1:8000")
-//		ok, err := c.DeleteAllJobs()
+//
+//	c := New("http://127.0.0.1:8000")
+//	ok, err := c.DeleteAllJobs()
 func (kc *KalaClient) DeleteAllJobs() (bool, error) {
 	return kc.DeleteJob("all")
 }
 
 // GetJobStats is used to retrieve stats about a Job from Kala by its ID.
 // Example:
-// 		c := New("http://127.0.0.1:8000")
-//		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
-//		stats, err := c.GetJobStats(id)
+//
+//	c := New("http://127.0.0.1:8000")
+//	id := "93b65499-b211-49ce-57e0-19e735cc5abd"
+//	stats, err := c.GetJobStats(id)
 func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 	js := &api.ListJobStatsResponse{}
 	_, err := kc.do(methodGet, kc.url(jobPath, "stats", id), http.StatusOK, nil, js)
@@ -177,9 +184,10 @@ func (kc *KalaClient) GetJobStats(id string) ([]*job.JobStat, error) {
 
 // StartJob is used to manually start a Job by its ID.
 // Example:
-// 		c := New("http://127.0.0.1:8000")
-//		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
-//		ok, err := c.StartJob(id)
+//
+//	c := New("http://127.0.0.1:8000")
+//	id := "93b65499-b211-49ce-57e0-19e735cc5abd"
+//	ok, err := c.StartJob(id)
 func (kc *KalaClient) StartJob(id string) (bool, error) {
 	_, err := kc.do(methodPost, kc.url(jobPath, "start", id), http.StatusNoContent, nil, nil)
 	if err != nil {
@@ -193,8 +201,9 @@ func (kc *KalaClient) StartJob(id string) (bool, error) {
 
 // GetKalaStats retrieves system-level metrics about Kala
 // Example:
-// 		c := New("http://127.0.0.1:8000")
-//		stats, err := c.GetKalaStats()
+//
+//	c := New("http://127.0.0.1:8000")
+//	stats, err := c.GetKalaStats()
 func (kc *KalaClient) GetKalaStats() (*job.KalaStats, error) {
 	ks := &api.KalaStatsResponse{}
 	_, err := kc.do(methodGet, kc.url("stats"), http.StatusOK, nil, ks)
@@ -203,14 +212,15 @@ func (kc *KalaClient) GetKalaStats() (*job.KalaStats, error) {
 
 // DisableJob is used to disable a Job in Kala using its ID.
 // Example:
-// 		c := New("http://127.0.0.1:8000")
-//		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
-//		ok, err := c.DisableJob(id)
+//
+//	c := New("http://127.0.0.1:8000")
+//	id := "93b65499-b211-49ce-57e0-19e735cc5abd"
+//	ok, err := c.DisableJob(id)
 func (kc *KalaClient) DisableJob(id string) (bool, error) {
 	status, err := kc.do(methodPost, kc.url(jobPath, "disable", id), http.StatusNoContent, nil, nil)
 	if err != nil {
 		if err == ErrGenericError {
-			return false, fmt.Errorf("Disable failed with a status code of %d", status)
+			return false, fmt.Errorf("disable failed with a status code of %d", status)
 		}
 		return false, err
 	}
@@ -219,14 +229,15 @@ func (kc *KalaClient) DisableJob(id string) (bool, error) {
 
 // EnableJob is used to enable a disabled Job in Kala using its ID.
 // Example:
-// 		c := New("http://127.0.0.1:8000")
-//		id := "93b65499-b211-49ce-57e0-19e735cc5abd"
-//		ok, err := c.EnableJob(id)
+//
+//	c := New("http://127.0.0.1:8000")
+//	id := "93b65499-b211-49ce-57e0-19e735cc5abd"
+//	ok, err := c.EnableJob(id)
 func (kc *KalaClient) EnableJob(id string) (bool, error) {
 	status, err := kc.do(methodPost, kc.url(jobPath, "enable", id), http.StatusNoContent, nil, nil)
 	if err != nil {
 		if err == ErrGenericError {
-			return false, fmt.Errorf("Enable failed with a status code of %d", status)
+			return false, fmt.Errorf("enable failed with a status code of %d", status)
 		}
 		return false, err
 	}
