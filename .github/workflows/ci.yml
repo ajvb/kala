@@ -39,7 +39,8 @@ jobs:
       - run: go mod verify
       - run: go build -trimpath ./...
 
-  # Tests with the race detector, for the server module and the client module.
+  # Unit tests with the race detector, for the server module and the client
+  # module.
   test:
     name: test (go ${{ matrix.go }})
     runs-on: ubuntu-latest
@@ -48,21 +49,6 @@ jobs:
       matrix:
         go: ["1.26", "1.27"]
     timeout-minutes: 20
-    services:
-      mongo:
-        image: mongo:3.4
-        ports: ["27017:27017"]
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: "1"
-          MYSQL_DATABASE: test
-        ports: ["3306:3306"]
-        options: >-
-          --health-cmd "mysqladmin ping -h 127.0.0.1"
-          --health-interval 5s --health-timeout 5s --health-retries 20
-    env:
-      MYSQL_DSN: root:@/test
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
@@ -72,20 +58,36 @@ jobs:
           cache-dependency-path: |
             go.sum
             client/go.sum
-      - name: Start Consul
-        run: |
-          docker run -d --name consul -p 8500:8500 hashicorp/consul:1.20 agent -dev -client=0.0.0.0
-          for i in $(seq 1 20); do
-            nc -z localhost 8500 && exit 0
-            sleep 1
-          done
-          echo "Consul did not start" >&2
-          exit 1
       - name: Test the server module
         run: go test -race -count=1 -timeout 300s ./...
       - name: Test the client module
         working-directory: client
         run: go test -race -count=1 -timeout 300s ./...
+
+  # The integration tests (build tag "integration"): the storage tests start
+  # their own database containers.
+  integration:
+    name: integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - name: Pull the images the storage tests use
+        # Pulling is outside the tests' own time limits. Keep this list in step
+        # with the containers started in job/storage/*.
+        run: |
+          for image in hashicorp/consul:1.20 mongo:3.4 mysql:5.7 postgres:11; do
+            docker pull --quiet "$image" &
+          done
+          wait
+      - run: go test -race -count=1 -timeout 300s -tags integration ./job/storage/... ./internal/...
 
   # Ported from the CircleCI configuration: build the binary, start the
   # server on Consul and create a job through the API.
@@ -137,8 +139,8 @@ jobs:
           cache-dependency-path: |
             go.sum
             client/go.sum
-      - run: go vet ./...
-      - run: cd client && go vet ./...
+      - run: go vet -tags integration ./...
+      - run: cd client && go vet -tags integration ./...
 
   # golangci-lint runs staticcheck, gosec, errcheck and the other linters in
   # .golangci.yml, for the server module and the client module.
@@ -182,7 +184,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [build, test, smoke, clock-usage, vet, lint]
+    needs: [build, test, integration, smoke, clock-usage, vet, lint]
     runs-on: ubuntu-latest
     steps:
       - name: All required jobs succeeded

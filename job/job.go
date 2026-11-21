@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -610,4 +611,77 @@ func (j *Job) MarshalJSON() ([]byte, error) {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 	return json.Marshal((*RJob)(j))
+}
+
+// Compare reports whether j and other are the same job: every exported field is
+// equal (times are compared as instants, and a nil slice equals an empty one).
+// Unexported fields such as the lock, the timer and the clock are ignored. If
+// the jobs differ, the error names each field that differs and its two values.
+// It returns an error and false if either job is nil.
+func (j *Job) Compare(other *Job) (bool, error) {
+	if j == nil || other == nil {
+		return false, errors.New("cannot compare a nil job")
+	}
+	if j == other {
+		return true, nil
+	}
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+	other.lock.RLock()
+	defer other.lock.RUnlock()
+
+	var diffs []string
+	compareExported("", reflect.ValueOf(j).Elem(), reflect.ValueOf(other).Elem(), &diffs)
+	if len(diffs) > 0 {
+		return false, fmt.Errorf("the jobs differ: %s", strings.Join(diffs, "; "))
+	}
+	return true, nil
+}
+
+var timeType = reflect.TypeOf(time.Time{})
+
+// compareExported adds to diffs one entry for each exported field (or element)
+// of a and b that differs. name is the path to a and b, for example "Metadata".
+func compareExported(name string, a, b reflect.Value, diffs *[]string) {
+	switch {
+	case a.Type() == timeType:
+		ta, tb := a.Interface().(time.Time), b.Interface().(time.Time)
+		if !ta.Equal(tb) {
+			*diffs = append(*diffs, fmt.Sprintf("%s: %v != %v", name, ta, tb))
+		}
+	case a.Kind() == reflect.Struct:
+		for i := 0; i < a.NumField(); i++ {
+			if !a.Type().Field(i).IsExported() {
+				continue
+			}
+			field := a.Type().Field(i).Name
+			if name != "" {
+				field = name + "." + field
+			}
+			compareExported(field, a.Field(i), b.Field(i), diffs)
+		}
+	case a.Kind() == reflect.Pointer:
+		switch {
+		case a.IsNil() != b.IsNil():
+			*diffs = append(*diffs, fmt.Sprintf("%s: %v != %v", name, a.Interface(), b.Interface()))
+		case !a.IsNil():
+			compareExported(name, a.Elem(), b.Elem(), diffs)
+		}
+	case a.Kind() == reflect.Slice:
+		if a.Len() != b.Len() {
+			*diffs = append(*diffs, fmt.Sprintf("%s: length %d != %d", name, a.Len(), b.Len()))
+			return
+		}
+		for i := 0; i < a.Len(); i++ {
+			compareExported(fmt.Sprintf("%s[%d]", name, i), a.Index(i), b.Index(i), diffs)
+		}
+	case a.Kind() == reflect.Map:
+		if !reflect.DeepEqual(a.Interface(), b.Interface()) && (a.Len() != 0 || b.Len() != 0) {
+			*diffs = append(*diffs, fmt.Sprintf("%s: %v != %v", name, a.Interface(), b.Interface()))
+		}
+	default:
+		if !reflect.DeepEqual(a.Interface(), b.Interface()) {
+			*diffs = append(*diffs, fmt.Sprintf("%s: %v != %v", name, a.Interface(), b.Interface()))
+		}
+	}
 }

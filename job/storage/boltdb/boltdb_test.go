@@ -39,13 +39,8 @@ func TestSaveAndGetJob(t *testing.T) {
 	j, err := db.Get(genericMockJob.Id)
 	assert.Nil(t, err)
 
-	assert.WithinDuration(t, j.NextRunAt, genericMockJob.NextRunAt, 100*time.Microsecond)
-	assert.Equal(t, j.Name, genericMockJob.Name)
-	assert.Equal(t, j.Id, genericMockJob.Id)
-	assert.Equal(t, j.Command, genericMockJob.Command)
-	assert.Equal(t, j.Schedule, genericMockJob.Schedule)
-	assert.Equal(t, j.Owner, genericMockJob.Owner)
-	assert.Equal(t, j.Metadata.SuccessCount, genericMockJob.Metadata.SuccessCount)
+	ok, err := genericMockJob.Compare(j)
+	assert.True(t, ok, err)
 }
 
 func TestDeleteJob(t *testing.T) {
