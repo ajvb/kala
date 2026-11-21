@@ -125,6 +125,43 @@ jobs:
             exit 1
           fi
 
+  vet:
+    name: vet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - run: go vet ./...
+      - run: cd client && go vet ./...
+
+  # golangci-lint runs staticcheck, gosec, errcheck and the other linters in
+  # .golangci.yml, for the server module and the client module.
+  lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.15.0
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.15.0
+          working-directory: client
+
   # Scheduling code reads the time and starts timers only through its clock
   # (the clock package), so tests can control them.
   clock-usage:
@@ -145,7 +182,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [build, test, smoke, clock-usage]
+    needs: [build, test, smoke, clock-usage, vet, lint]
     runs-on: ubuntu-latest
     steps:
       - name: All required jobs succeeded

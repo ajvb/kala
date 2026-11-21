@@ -117,7 +117,7 @@ func unmarshalNewJob(r *http.Request) (*job.Job, error) {
 		log.Errorf("Error occurred when reading r.Body: %s", err)
 		return nil, err
 	}
-	defer r.Body.Close()
+	defer r.Body.Close() //nolint:errcheck // a failed close of a request body cannot be handled
 
 	if err := json.Unmarshal(body, newJob); err != nil {
 		log.Errorf("Error occurred when unmarshaling data: %s", err)
@@ -143,7 +143,7 @@ func HandleAddJob(cache job.JobCache, defaultOwner string) func(http.ResponseWri
 
 		err = newJob.Init(cache)
 		if err != nil {
-			errStr := "Error occurred when initializing the job"
+			errStr := "error occurred when initializing the job"
 			log.Errorf(errStr+": %s", err)
 			errorEncodeJSON(errors.New(errStr), http.StatusBadRequest, w)
 			return
@@ -179,14 +179,15 @@ func HandleJobRequest(cache job.JobCache) func(w http.ResponseWriter, r *http.Re
 			return
 		}
 
-		if r.Method == "DELETE" {
+		switch r.Method {
+		case "DELETE":
 			err = j.Delete(cache)
 			if err != nil {
 				errorEncodeJSON(err, http.StatusInternalServerError, w)
 			} else {
 				w.WriteHeader(http.StatusNoContent)
 			}
-		} else if r.Method == "GET" {
+		case "GET":
 			handleGetJob(w, r, j)
 		}
 	}
@@ -338,7 +339,7 @@ func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, prof
 	r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(assetFS())))
 
 	if profile {
-		runtime.SetMutexProfileFraction(5) //nolint:gomnd
+		runtime.SetMutexProfileFraction(5) //nolint:mnd
 		// Register pprof handlers
 		r.HandleFunc("/debug/pprof/", pprof.Index)
 		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)

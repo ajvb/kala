@@ -24,9 +24,9 @@ const BASE_10 = 10
 var (
 	RFC3339WithoutTimezone = "2006-01-02T15:04:05"
 
-	ErrInvalidJob       = errors.New("Invalid Local Job. Job's must contain a Name and a Command field")
-	ErrInvalidRemoteJob = errors.New("Invalid Remote Job. Job's must contain a Name and a url field")
-	ErrInvalidJobType   = errors.New("Invalid Job type. Types supported: 0 for local and 1 for remote")
+	ErrInvalidJob       = errors.New("invalid local job: jobs must contain a name and a command field")
+	ErrInvalidRemoteJob = errors.New("invalid remote job: jobs must contain a name and a url field")
+	ErrInvalidJobType   = errors.New("invalid job type: supported types are 0 for local and 1 for remote")
 )
 
 type Job struct {
@@ -161,10 +161,10 @@ type Metadata struct {
 }
 
 // Bytes returns the byte representation of the Job.
-func (j Job) Bytes() ([]byte, error) { //nolint:govet // Copying the lock is okay here
+func (j *Job) Bytes() ([]byte, error) {
 	buff := new(bytes.Buffer)
 	enc := gob.NewEncoder(buff)
-	err := enc.Encode(j) //nolint:govet // Copying the lock is okay here
+	err := enc.Encode(j)
 	if err != nil {
 		return nil, err
 	}
@@ -270,9 +270,9 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 
 	var err error
 	splitTime := strings.Split(j.Schedule, "/")
-	if len(splitTime) != 3 { //nolint:gomnd
+	if len(splitTime) != 3 { //nolint:mnd
 		return fmt.Errorf(
-			"Schedule not formatted correctly. Should look like: R/2014-03-08T20:00:00Z/PT2H",
+			"schedule not formatted correctly: it should look like R/2014-03-08T20:00:00Z/PT2H",
 		)
 	}
 
@@ -284,9 +284,9 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 		// A repeat part with no "R" in it (for example "X") has no second element
 		// after splitting, so check before indexing.
 		repeatParts := strings.Split(splitTime[0], "R")
-		if len(repeatParts) < 2 { //nolint:gomnd
+		if len(repeatParts) < 2 { //nolint:mnd
 			return fmt.Errorf(
-				"Schedule repeat part %q must be R or R<number>. Should look like: R/2014-03-08T20:00:00Z/PT2H",
+				"schedule repeat part %q must be R or R<number>: it should look like R/2014-03-08T20:00:00Z/PT2H",
 				splitTime[0],
 			)
 		}
@@ -609,5 +609,5 @@ type RJob Job
 func (j *Job) MarshalJSON() ([]byte, error) {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
-	return json.Marshal(RJob(*j)) //nolint:govet // Copying the lock is okay here
+	return json.Marshal((*RJob)(j))
 }

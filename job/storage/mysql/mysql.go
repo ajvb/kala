@@ -37,7 +37,10 @@ func New(dsn string, tlsConfig *tls.Config) *DB {
 		log.Fatal(err)
 	}
 	// passive attempt to create table
-	_, _ = connection.Exec(fmt.Sprintf(`create table %s (id varchar(36), job JSON, primary key (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`, TableName))
+	_, _ = connection.Exec(fmt.Sprintf(
+		`create table %s (id varchar(36), job JSON, primary key (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
+		TableName,
+	))
 	return &DB{
 		conn: connection,
 	}
@@ -106,13 +109,13 @@ func (d DB) Save(j *job.Job) error {
 	}
 	statement, err := transaction.Prepare(query)
 	if err != nil {
-		transaction.Rollback() //nolint:errcheck // adding insult to injury
+		rollback(transaction)
 		return err
 	}
-	defer statement.Close()
+	defer statement.Close() //nolint:errcheck // a failed close of a prepared statement cannot be handled
 	_, err = statement.Exec(j.Id, string(r))
 	if err != nil {
-		transaction.Rollback() //nolint:errcheck // adding insult to injury
+		rollback(transaction)
 		return err
 	}
 	return transaction.Commit()
@@ -121,4 +124,12 @@ func (d DB) Save(j *job.Job) error {
 // Close closes the connection to Postgres.
 func (d DB) Close() error {
 	return d.conn.Close()
+}
+
+// rollback undoes the transaction after a failed step. The caller returns the
+// error of that step, so a failed rollback is only logged.
+func rollback(transaction *sql.Tx) {
+	if err := transaction.Rollback(); err != nil {
+		log.Errorf("Error rolling back the transaction: %s", err)
+	}
 }

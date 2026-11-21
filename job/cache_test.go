@@ -26,8 +26,7 @@ func TestCacheRetainShouldRemoveOldJobStats(t *testing.T) {
 	j.Stats = GetMockJobStats(pastDate, 5)
 	j.Id = "0"
 
-	jobs := make([]*Job, 0)
-	jobs = append(jobs, j)
+	jobs := []*Job{j}
 	mockDb.response = jobs
 
 	cache.Start(0, 1*time.Minute) // Retain 1 minute
@@ -53,8 +52,7 @@ func TestCacheStartStartsARecurringJobWithStartDateInThePast(t *testing.T) {
 	j := GetMockRecurringJobWithSchedule(pastDate, "PT1S")
 	j.Id = "0"
 
-	jobs := make([]*Job, 0)
-	jobs = append(jobs, j)
+	jobs := []*Job{j}
 	mockDb.response = jobs
 
 	cache.Start(0, -1)
@@ -77,8 +75,7 @@ func TestCacheStartCanResumeJobAtNextScheduledPoint(t *testing.T) {
 	j.ResumeAtNextScheduledTime = true
 	j.InitDelayDuration(false)
 
-	jobs := make([]*Job, 0)
-	jobs = append(jobs, j)
+	jobs := []*Job{j}
 	mockDb.response = jobs
 
 	cache.Start(0, -1)

@@ -138,7 +138,7 @@ func TestV1OneOffForm(t *testing.T) {
 		j.Schedule = "R0/" + start
 		err := j.Init(NewMockCache())
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "Schedule not formatted correctly")
+		assert.Contains(t, err.Error(), "schedule not formatted correctly")
 	})
 	t.Run("R0 accepts a garbage duration because it is never parsed", func(t *testing.T) {
 		j := GetMockJob()

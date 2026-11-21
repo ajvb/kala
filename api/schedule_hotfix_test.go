@@ -31,7 +31,7 @@ func TestAddJobWithInvalidScheduleReturns400AndLeavesCacheUnchanged(t *testing.T
 		assert.Equal(t, http.StatusBadRequest, w.Code, schedule)
 		var respErr apiError
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &respErr), schedule)
-		assert.Equal(t, "Error occurred when initializing the job", respErr.Error, schedule)
+		assert.Equal(t, "error occurred when initializing the job", respErr.Error, schedule)
 		assert.Empty(t, cache.GetAll().Jobs, "cache must be unchanged for %q", schedule)
 	}
 }
