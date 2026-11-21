@@ -16,7 +16,6 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-shellwords v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/mixer/clock v0.0.0-20190507173039-c311c17adb1f
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 	github.com/ory/dockertest/v3 v3.8.1
 	github.com/phyber/negroni-gzip v0.0.0-20180113114010-ef6356a5d029

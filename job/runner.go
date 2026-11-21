@@ -40,7 +40,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 	j.job.lock.RLock()
 	defer j.job.lock.RUnlock()
 
-	j.meta.LastAttemptedRun = j.job.clk.Time().Now()
+	j.meta.LastAttemptedRun = j.job.clock().Now()
 
 	_, err := cache.Get(j.job.Id)
 	if errors.Is(err, ErrJobDoesntExist) {
@@ -77,7 +77,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 			log.Errorln(err)
 
 			j.meta.ErrorCount++
-			j.meta.LastError = j.job.clk.Time().Now()
+			j.meta.LastError = j.job.clock().Now()
 
 			// Handle retrying
 			if j.shouldRetry() {
@@ -99,7 +99,7 @@ func (j *JobRunner) Run(cache JobCache) (*JobStat, Metadata, error) {
 	log.Debugf("Job %s:%s output: %s", j.job.Name, j.job.Id, out)
 	j.meta.SuccessCount++
 	j.meta.NumberOfFinishedRuns++
-	j.meta.LastSuccess = j.job.clk.Time().Now()
+	j.meta.LastSuccess = j.job.clock().Now()
 
 	j.collectStats(true)
 
@@ -250,8 +250,8 @@ func (j *JobRunner) shouldRetry() bool {
 	// Check Epsilon
 	if j.job.Epsilon != "" && j.job.Schedule != "" {
 		if !j.job.epsilonDuration.IsZero() {
-			timeSinceStart := j.job.clk.Time().Now().Sub(j.job.NextRunAt)
-			timeLeftToRetry := j.job.epsilonDuration.RelativeTo(j.job.clk.Time().Now()) - timeSinceStart
+			timeSinceStart := j.job.clock().Now().Sub(j.job.NextRunAt)
+			timeLeftToRetry := j.job.epsilonDuration.RelativeTo(j.job.clock().Now()) - timeSinceStart
 			if timeLeftToRetry < 0 {
 				return false
 			}
@@ -263,14 +263,14 @@ func (j *JobRunner) shouldRetry() bool {
 
 func (j *JobRunner) runSetup() {
 	// Setup Job Stat
-	j.currentStat = NewJobStat(j.job.Id)
+	j.currentStat = NewJobStat(j.job.Id, j.job.clock().Now())
 
 	// Init retries
 	j.currentRetries = j.job.Retries
 }
 
 func (j *JobRunner) collectStats(success bool) {
-	j.currentStat.ExecutionDuration = j.job.clk.Time().Now().Sub(j.currentStat.RanAt)
+	j.currentStat.ExecutionDuration = j.job.clock().Now().Sub(j.currentStat.RanAt)
 	j.currentStat.Success = success
 	j.currentStat.NumberOfRetries = j.job.Retries - j.currentRetries
 }

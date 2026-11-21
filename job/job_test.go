@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mixer/clock"
+	"github.com/ajvb/kala/v2/clock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -102,13 +102,12 @@ func TestDelayParsing(t *testing.T) {
 	// a P1Y duration will equal 366 days when crossing a leap year boundary.
 	now := parseTime(t, "2019-Jan-02 15:04")
 
-	clk := clock.NewMockClock(now)
+	clk := clock.NewFake(now)
 
 	testTime := clk.Now().Add(time.Minute * 1)
 
 	for _, delayTest := range delayParsingTests {
-		cache := NewMockCache()
-		cache.Clock.SetClock(clk)
+		cache := NewMockCache(WithClock(clk))
 		genericMockJob := GetMockJobWithSchedule(1, testTime, delayTest.intervalStr)
 		genericMockJob.Init(cache)
 		assert.Equal(t, delayTest.expected, genericMockJob.delayDuration.RelativeTo(clk.Now()), "Parsed duration was incorrect")
@@ -222,10 +221,9 @@ func TestJobRunAndRepeat(t *testing.T) {
 }
 
 func TestRecurringJobIsRepeating(t *testing.T) {
-	clk := clock.NewMockClock(time.Now())
+	clk := clock.NewFake(time.Now())
 
-	cache := NewMockCache()
-	cache.Clock.SetClock(clk)
+	cache := NewMockCache(WithClock(clk))
 
 	oneSecondFromNow := clk.Now().Add(time.Second * 4)
 	j := GetMockRecurringJobWithSchedule(oneSecondFromNow, "PT5S")
@@ -233,7 +231,7 @@ func TestRecurringJobIsRepeating(t *testing.T) {
 	j.ranChan = make(chan struct{})
 
 	for i := 0; i < 2; i++ {
-		clk.AddTime(time.Second * 5)
+		clk.Advance(time.Second * 5)
 		awaitJobRan(t, j, time.Second*10)
 		now := clk.Now()
 		j.lock.RLock()
@@ -324,11 +322,9 @@ func TestOneOffJobs(t *testing.T) {
 //
 func TestDependentJobsSimple(t *testing.T) {
 
-	clk := NewHybridClock()
-	clk.Play()
+	clk := newSteppingClock(time.Now())
 
-	cache := NewMockCache()
-	cache.Clock.SetClock(clk)
+	cache := NewMockCache(WithClock(clk))
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
@@ -349,7 +345,7 @@ func TestDependentJobsSimple(t *testing.T) {
 	assert.Equal(t, j.DependentJobs[0], mockChildJob.Id)
 
 	j.Run(cache)
-	clk.AddTime(time.Second * 2)
+	clk.Advance(time.Second * 2)
 	briefPause()
 	n := clk.Now()
 
@@ -379,11 +375,9 @@ func TestDependentJobsParentDoesNotExist(t *testing.T) {
 // Parent with two childs
 func TestDependentJobsTwoChilds(t *testing.T) {
 
-	clk := NewHybridClock()
-	clk.Play()
+	clk := newSteppingClock(time.Now())
 
-	cache := NewMockCache()
-	cache.Clock.SetClock(clk)
+	cache := NewMockCache(WithClock(clk))
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
@@ -417,7 +411,7 @@ func TestDependentJobsTwoChilds(t *testing.T) {
 	assert.True(t, len(j.DependentJobs) == 2)
 
 	j.Run(cache)
-	clk.AddTime(time.Second * 2)
+	clk.Advance(time.Second * 2)
 	briefPause()
 	n := clk.Now()
 
@@ -433,11 +427,9 @@ func TestDependentJobsTwoChilds(t *testing.T) {
 // Parent with child with two childs.
 func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 
-	clk := NewHybridClock()
-	clk.Play()
+	clk := newSteppingClock(time.Now())
 
-	cache := NewMockCache()
-	cache.Clock.SetClock(clk)
+	cache := NewMockCache(WithClock(clk))
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
@@ -485,7 +477,7 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 	assert.True(t, len(c.DependentJobs) == 2)
 
 	j.Run(cache)
-	clk.AddTime(time.Second * 2)
+	clk.Advance(time.Second * 2)
 	briefPause()
 	n := clk.Now()
 
@@ -507,11 +499,9 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 // Parent with a chain of length 5
 func TestDependentJobsFiveChain(t *testing.T) {
 
-	clk := NewHybridClock()
-	clk.Play()
+	clk := newSteppingClock(time.Now())
 
-	cache := NewMockCache()
-	cache.Clock.SetClock(clk)
+	cache := NewMockCache(WithClock(clk))
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
@@ -588,7 +578,7 @@ func TestDependentJobsFiveChain(t *testing.T) {
 	assert.True(t, len(cFour.DependentJobs) == 1)
 
 	j.Run(cache)
-	clk.AddTime(time.Second * 2)
+	clk.Advance(time.Second * 2)
 	briefPause()
 	n := clk.Now()
 
@@ -611,11 +601,9 @@ func TestDependentJobsFiveChain(t *testing.T) {
 // Link in the chain fails
 func TestDependentJobsChainWithFailingJob(t *testing.T) {
 
-	clk := NewHybridClock()
-	clk.Play()
+	clk := newSteppingClock(time.Now())
 
-	cache := NewMockCache()
-	cache.Clock.SetClock(clk)
+	cache := NewMockCache(WithClock(clk))
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
@@ -668,7 +656,7 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 	assert.True(t, len(cTwo.DependentJobs) == 1)
 
 	j.Run(cache)
-	clk.AddTime(time.Second)
+	clk.Advance(time.Second)
 	briefPause()
 	n := clk.Now()
 
@@ -683,11 +671,9 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 // Parent with a chain of length 5 with the first being slow and the rest being fast.
 func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 
-	clk := NewHybridClock()
-	clk.Play()
+	clk := newSteppingClock(time.Now())
 
-	cache := NewMockCache()
-	cache.Clock.SetClock(clk)
+	cache := NewMockCache(WithClock(clk))
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
@@ -766,7 +752,7 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	assert.True(t, len(cFour.DependentJobs) == 1)
 
 	j.Run(cache)
-	clk.AddTime(time.Second * 3)
+	clk.Advance(time.Second * 3)
 	briefPause()
 	n := clk.Now()
 
@@ -790,11 +776,9 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 // Two Parents with the same child
 func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 
-	clk := NewHybridClock()
-	clk.Play()
+	clk := newSteppingClock(time.Now())
 
-	cache := NewMockCache()
-	cache.Clock.SetClock(clk)
+	cache := NewMockCache(WithClock(clk))
 
 	mockJobOne := GetMockJobWithGenericSchedule(clk.Now())
 	mockJobOne.Name = "mock_parent_one"
@@ -830,7 +814,7 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 	assert.True(t, len(parentTwo.DependentJobs) == 1)
 
 	parentOne.Run(cache)
-	clk.AddTime(time.Second)
+	clk.Advance(time.Second)
 	briefPause()
 	n := clk.Now()
 
@@ -841,10 +825,10 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 	assert.True(t, parentTwo.Metadata.LastAttemptedRun.IsZero())
 	assert.True(t, parentTwo.Metadata.LastSuccess.IsZero())
 
-	clk.AddTime(time.Second * 3)
+	clk.Advance(time.Second * 3)
 	briefPause()
 	parentTwo.Run(cache)
-	clk.AddTime(time.Second)
+	clk.Advance(time.Second)
 	briefPause()
 	n = clk.Now()
 
@@ -889,11 +873,9 @@ func TestDependentJobsChildGetsDeleted(t *testing.T) {
 // Child gets disabled
 func TestDependentJobsChildGetsDisabled(t *testing.T) {
 
-	clk := NewHybridClock()
-	clk.Play()
+	clk := newSteppingClock(time.Now())
 
-	cache := NewMockCache()
-	cache.Clock.SetClock(clk)
+	cache := NewMockCache(WithClock(clk))
 
 	// Creates parent job with a schedule
 	// Sets up timer to run job
@@ -921,7 +903,7 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 
 	n := clk.Now()
 	j.Run(cache)
-	clk.AddTime(time.Second * 2)
+	clk.Advance(time.Second * 2)
 	briefPause()
 
 	// Child job should not have been run

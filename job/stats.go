@@ -22,7 +22,7 @@ type KalaStats struct {
 // NewKalaStats is used to easily generate a current app-level metrics report.
 func NewKalaStats(cache JobCache) *KalaStats {
 	ks := &KalaStats{
-		CreatedAt: time.Now(),
+		CreatedAt: clockOf(cache).Now(),
 	}
 	jobs := cache.GetAll()
 	jobs.Lock.RLock()
@@ -79,9 +79,9 @@ type JobStat struct {
 	ExecutionDuration time.Duration `json:"execution_duration"`
 }
 
-func NewJobStat(id string) *JobStat {
+func NewJobStat(id string, ranAt time.Time) *JobStat {
 	return &JobStat{
 		JobId: id,
-		RanAt: time.Now(),
+		RanAt: ranAt,
 	}
 }

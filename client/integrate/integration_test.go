@@ -9,19 +9,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ajvb/kala/v2/api"
 	"github.com/ajvb/kala/client/v2"
+	"github.com/ajvb/kala/v2/api"
+	"github.com/ajvb/kala/v2/clock"
 	"github.com/ajvb/kala/v2/job"
-	"github.com/mixer/clock"
 )
 
 func TestIntegrationTest(t *testing.T) {
 
 	jobDB := &job.MockDB{}
-	cache := job.NewLockFreeJobCache(jobDB)
-
-	clk := clock.NewMockClock()
-	cache.Clock.SetClock(clk)
+	clk := clock.NewFake(time.Now())
+	cache := job.NewLockFreeJobCache(jobDB, job.WithClock(clk))
 
 	addr := newLocalListener(t)
 
@@ -55,32 +53,41 @@ func TestIntegrationTest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	clk.AddTime(time.Minute)
+	clk.Advance(time.Minute)
 	select {
 	case <-hit:
 		t.Fatalf("Did not expect job to have run yet.")
 	case <-time.After(time.Second):
 	}
 
-	clk.AddTime(time.Minute)
+	clk.Advance(time.Minute)
 	select {
 	case <-hit:
 		t.Fatalf("Still did not expect job to have run yet.")
 	case <-time.After(time.Second):
 	}
 
-	clk.AddTime(time.Minute * 3)
+	clk.Advance(time.Minute * 3)
 	select {
 	case <-hit:
 	case <-time.After(time.Second * 5):
 		t.Fatalf("Expected job to have run.")
 	}
 
-	clk.AddTime(time.Minute * 5)
-	select {
-	case <-hit:
-	case <-time.After(time.Second * 5):
-		t.Fatalf("Expected job to have run again.")
+	// The job schedules its next run after the current run finishes, which
+	// happens in the background. A timer that is already due fires on the next
+	// Advance, so keep advancing (by nothing) until the second run happens.
+	clk.Advance(time.Minute * 5)
+	deadline := time.After(time.Second * 5)
+	for ran := false; !ran; {
+		select {
+		case <-hit:
+			ran = true
+		case <-deadline:
+			t.Fatalf("Expected job to have run again.")
+		case <-time.After(time.Millisecond * 10):
+			clk.Advance(0)
+		}
 	}
 
 }

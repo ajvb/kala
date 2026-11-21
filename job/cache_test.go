@@ -4,7 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ajvb/kala/v2/clock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // This file contains tests for specific JobCaches.
@@ -117,4 +119,19 @@ func TestCacheStartCanResumeJobAtNextScheduledPoint(t *testing.T) {
 	assert.Equal(t, 2, int(j.Metadata.SuccessCount))
 	j.lock.RUnlock()
 
+}
+
+func TestNilClockOptionKeepsTheRealClock(t *testing.T) {
+	cache := NewMockCache(WithClock(nil))
+
+	require.NotNil(t, cache.Clock())
+	assert.WithinDuration(t, time.Now(), cache.Clock().Now(), 5*time.Second)
+	assert.NotPanics(t, func() { NewKalaStats(cache) })
+}
+
+func TestCacheClockIsTheOneItWasBuiltWith(t *testing.T) {
+	fake := clock.NewFake(time.Date(2030, 1, 1, 0, 0, 0, 0, time.UTC))
+	cache := NewMockCache(WithClock(fake))
+
+	assert.Same(t, fake, cache.Clock())
 }

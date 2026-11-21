@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mixer/clock"
+	"github.com/ajvb/kala/v2/clock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -124,14 +124,13 @@ func TestRecur(t *testing.T) {
 
 			now := parseTimeInLocation(t, testStruct.Start, testStruct.Location)
 
-			clk := clock.NewMockClock(now)
+			clk := clock.NewFake(now)
 
 			start := now.Add(time.Second * 5)
 			j := GetMockRecurringJobWithSchedule(start, testStruct.Interval)
-			j.clk.SetClock(clk)
 			j.succeedInstantly = true // Eliminate any potential variance due to the overhead of shelling out.
 
-			cache := NewMockCache()
+			cache := NewMockCache(WithClock(clk))
 			j.Init(cache)
 			j.ranChan = make(chan struct{})
 
@@ -139,7 +138,7 @@ func TestRecur(t *testing.T) {
 
 			for i, chk := range checkpoints {
 
-				clk.SetTime(parseTimeInLocation(t, chk, testStruct.Location))
+				clk.Advance(parseTimeInLocation(t, chk, testStruct.Location).Sub(clk.Now()))
 
 				select {
 				case <-j.ranChan:
@@ -151,7 +150,7 @@ func TestRecur(t *testing.T) {
 				assert.Equal(t, i, int(j.Metadata.SuccessCount), fmt.Sprintf("1st Test of %s index %d", testStruct.Name, i))
 				j.lock.RUnlock()
 
-				clk.AddTime(time.Second * 6)
+				clk.Advance(time.Second * 6)
 
 				select {
 				case <-j.ranChan:

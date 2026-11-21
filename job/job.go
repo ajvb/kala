@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ajvb/kala/v2/clock"
 	"github.com/ajvb/kala/v2/utils/iso8601"
-	"github.com/mixer/clock"
 
 	uuid "github.com/nu7hatch/gouuid"
 	log "github.com/sirupsen/logrus"
@@ -87,7 +87,9 @@ type Job struct {
 	TemplateDelimiters string
 
 	// The clock for this job; used to mock time during tests.
-	clk Clock
+	// clk is set once, when the job is added to a cache, before the job is shared.
+	// A job that was never added to a cache uses the real clock.
+	clk clock.Clock
 
 	// If the job is disabled (or the system inoperative) and we pass
 	// the scheduled run point, when the job becomes active again,
@@ -188,12 +190,7 @@ func (j *Job) Init(cache JobCache) error {
 	j.lock.Lock()
 	defer j.lock.Unlock()
 
-	// use the cache's clock if available (useful for tests)
-	if clker, ok := cache.(Clocker); ok {
-		if clker.TimeSet() {
-			j.clk.SetClock(clker.Time())
-		}
-	}
+	j.clk = clockOf(cache)
 
 	// validate job type and params
 	err := j.validation()
@@ -309,7 +306,7 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 		}
 	}
 	if checkTime {
-		diff := j.scheduleTime.Sub(j.clk.Time().Now())
+		diff := j.scheduleTime.Sub(j.clock().Now())
 		if diff < 0 {
 			return fmt.Errorf("Job %s:%s cannot be scheduled %s ago", j.Name, j.Id, diff.String())
 		}
@@ -323,7 +320,7 @@ func (j *Job) InitDelayDuration(checkTime bool) error {
 			log.Errorf("Error converting delayDuration to a iso8601.Duration: %s", err)
 			return err
 		}
-		log.Debugf("Delay duration is %s", j.delayDuration.RelativeTo(j.clk.Time().Now()))
+		log.Debugf("Delay duration is %s", j.delayDuration.RelativeTo(j.clock().Now()))
 	}
 
 	if j.Epsilon != "" {
@@ -345,10 +342,13 @@ func (j *Job) StartWaiting(cache JobCache, justRan bool) {
 
 	log.Infof("Job %s:%s repeating in %s", j.Name, j.Id, waitDuration)
 
-	j.NextRunAt = j.clk.Time().Now().Add(waitDuration)
+	j.NextRunAt = j.clock().Now().Add(waitDuration)
 
-	jobRun := func() { j.Run(cache) }
-	j.jobTimer = j.clk.Time().AfterFunc(waitDuration, jobRun)
+	// Run the job in its own goroutine: a long job must not block the clock that
+	// fired the timer (the real clock already calls f in its own goroutine; a
+	// fake clock calls it from Advance).
+	jobRun := func() { go j.Run(cache) }
+	j.jobTimer = j.clock().AfterFunc(waitDuration, jobRun)
 
 	if justRan && j.ranChan != nil {
 		j.ranChan <- struct{}{}
@@ -359,7 +359,7 @@ func (j *Job) GetWaitDuration() time.Duration {
 	j.lock.RLock()
 	defer j.lock.RUnlock()
 
-	waitDuration := time.Duration(j.scheduleTime.UnixNano() - j.clk.Time().Now().UnixNano())
+	waitDuration := time.Duration(j.scheduleTime.UnixNano() - j.clock().Now().UnixNano())
 
 	if waitDuration >= 0 {
 		return waitDuration
@@ -382,20 +382,20 @@ func (j *Job) GetWaitDuration() time.Duration {
 		}
 
 		newRunPoint := j.scheduleTime
-		for newRunPoint.Before(j.clk.Time().Now()) {
+		for newRunPoint.Before(j.clock().Now()) {
 			newRunPoint = j.delayDuration.Add(newRunPoint)
 		}
 
-		return newRunPoint.Sub(j.clk.Time().Now())
+		return newRunPoint.Sub(j.clock().Now())
 	}
 
 	if j.Metadata.LastAttemptedRun.IsZero() {
-		waitDuration = j.delayDuration.RelativeTo(j.clk.Time().Now())
+		waitDuration = j.delayDuration.RelativeTo(j.clock().Now())
 	} else {
 		lastRun := j.Metadata.LastAttemptedRun
 		// Needs to be recalculated each time because of Months.
 		lastRun = j.delayDuration.Add(lastRun)
-		waitDuration = lastRun.Sub(j.clk.Time().Now())
+		waitDuration = lastRun.Sub(j.clock().Now())
 	}
 
 	return waitDuration
@@ -593,8 +593,13 @@ func (j *Job) validation() error {
 	return err
 }
 
-func (j *Job) SetClock(clk clock.Clock) {
-	j.clk.SetClock(clk)
+// clock returns the job's clock: the one it got from its cache, or the real
+// clock if it never had one.
+func (j *Job) clock() clock.Clock {
+	if j.clk == nil {
+		return clock.Real{}
+	}
+	return j.clk
 }
 
 // Type alias for the recursive call

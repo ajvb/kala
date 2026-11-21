@@ -6,8 +6,7 @@ package job
 //
 // They are deterministic: they call the decision code directly (Init,
 // InitDelayDuration, GetWaitDuration, ShouldStartWaiting, Enable, retention)
-// and never wait on a real timer, and they never call Timer.Stop (it can hang
-// on current Go because mixer/clock copies a time.Timer by value).
+// and never wait on a real timer.
 // End-to-end timing with the real clock was observed by running a server
 // (R2 ran 3 times; R0 and R-2 ran once; enabling a disabled job after a
 // restart ran 0 times) and is also covered by the existing

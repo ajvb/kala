@@ -37,8 +37,8 @@ func (m *MockDB) Close() error {
 	return nil
 }
 
-func NewMockCache() *LockFreeJobCache {
-	return NewLockFreeJobCache(&MockDB{})
+func NewMockCache(opts ...CacheOption) *LockFreeJobCache {
+	return NewLockFreeJobCache(&MockDB{}, opts...)
 }
 
 func GetMockJob() *Job {

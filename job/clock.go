@@ -1,48 +1,43 @@
 package job
 
-import (
-	"sync"
+import "github.com/ajvb/kala/v2/clock"
 
-	// This library abstracts the time functionality of the OS so that it can be controlled during unit tests.
-	// It was selected over thejerf/abtime because abtime is geared towards precision timing rather than scheduling.
-	// Other libraries were reviewed and rejected due to outstanding bugs.
-	"github.com/mixer/clock"
-)
-
-type Clock struct {
-	clock.Clock
-	lock sync.RWMutex
+// clockProvider is implemented by caches that carry a clock. A job takes the
+// clock of the cache it is added to.
+type clockProvider interface {
+	Clock() clock.Clock
 }
 
-func (clk *Clock) SetClock(in clock.Clock) {
-	clk.lock.Lock()
-	defer clk.lock.Unlock()
-	clk.Clock = in
-}
-
-func (clk *Clock) Time() clock.Clock {
-	clk.lock.RLock()
-	defer clk.lock.RUnlock()
-
-	if clk.Clock == nil {
-		clk.lock.RUnlock()
-		clk.lock.Lock()
-		clk.Clock = clock.C
-		clk.lock.Unlock()
-		clk.lock.RLock()
+// clockOf returns the clock of the cache, or the real clock if the cache does
+// not carry one.
+func clockOf(cache JobCache) clock.Clock {
+	if p, ok := cache.(clockProvider); ok {
+		return p.Clock()
 	}
-
-	return clk.Clock
+	return clock.Real{}
 }
 
-func (clk *Clock) TimeSet() (result bool) {
-	clk.lock.RLock()
-	result = clk.Clock != nil
-	clk.lock.RUnlock()
-	return
+// CacheOption configures a cache when it is created.
+type CacheOption func(*cacheOptions)
+
+type cacheOptions struct {
+	clock clock.Clock
 }
 
-type Clocker interface {
-	Time() clock.Clock
-	TimeSet() bool
+// WithClock makes the cache, and every job added to it, use clk instead of the
+// real clock. Tests pass a clock.Fake. A nil clk is ignored.
+func WithClock(clk clock.Clock) CacheOption {
+	return func(o *cacheOptions) {
+		if clk != nil {
+			o.clock = clk
+		}
+	}
+}
+
+func newCacheOptions(opts []CacheOption) cacheOptions {
+	o := cacheOptions{clock: clock.Real{}}
+	for _, opt := range opts {
+		opt(&o)
+	}
+	return o
 }
