@@ -10,7 +10,6 @@ require github.com/ajvb/kala/v2 v2.0.0-00010101000000-000000000000
 
 require (
 	github.com/gorilla/mux v0.0.0-20150808061613-ffb3f683aad4
-	github.com/mixer/clock v0.0.0-20190507173039-c311c17adb1f
 	github.com/stretchr/testify v1.7.0
 )
 

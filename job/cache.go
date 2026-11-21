@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ajvb/kala/v2/clock"
 	"github.com/cornelk/hashmap"
 	log "github.com/sirupsen/logrus"
 )
@@ -210,15 +211,24 @@ type LockFreeJobCache struct {
 	jobDB           JobDB
 	retentionPeriod time.Duration
 	PersistOnWrite  bool
-	Clock
+	clk             clock.Clock
 }
 
-func NewLockFreeJobCache(jobDB JobDB) *LockFreeJobCache {
+// NewLockFreeJobCache creates a cache. Pass WithClock to use a clock other than
+// the real one.
+func NewLockFreeJobCache(jobDB JobDB, opts ...CacheOption) *LockFreeJobCache {
+	o := newCacheOptions(opts)
 	return &LockFreeJobCache{
 		jobs:            hashmap.New(8), //nolint:gomnd
 		jobDB:           jobDB,
 		retentionPeriod: -1,
+		clk:             o.clock,
 	}
+}
+
+// Clock returns the clock the cache and its jobs use.
+func (c *LockFreeJobCache) Clock() clock.Clock {
+	return c.clk
 }
 
 func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.Duration) {
@@ -236,6 +246,7 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.
 			log.Infof("Job %s:%s skipped.", j.Name, j.Id)
 			continue
 		}
+		j.clk = c.clk
 		if j.ShouldStartWaiting() {
 			j.StartWaiting(c, false)
 		}
@@ -379,7 +390,7 @@ func (c *LockFreeJobCache) PersistEvery(persistWaitTime time.Duration) {
 }
 
 func (c *LockFreeJobCache) locateJobStatsIndexForRetention(stats []*JobStat) (marker int) {
-	now := time.Now()
+	now := c.clk.Now()
 	expiresAt := now.Add(-c.retentionPeriod)
 	pos := -1
 	for i, el := range stats {

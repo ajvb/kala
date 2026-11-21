@@ -76,9 +76,8 @@ func TestInvalidScheduleReturnsErrorAndLeavesCacheUnchanged(t *testing.T) {
 	}
 }
 
-// Timers are not stopped in these tests: Timer.Stop on the mixer/clock timer
-// can hang on current Go (it copies a time.Timer by value). The timers are
-// for times far enough ahead that they never fire during the test run.
+// Timers are not stopped in these tests. They are for times far enough ahead
+// that they never fire during the test run.
 //
 // Valid schedules, including the one-off R0/<start>/ form,
 // must still be accepted (boundary against over-rejecting).
