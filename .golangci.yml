@@ -2,6 +2,10 @@ version: "2"
 
 run:
   modules-download-mode: readonly
+  # Lint the files behind the integration build tag too; they are not compiled
+  # without it.
+  build-tags:
+    - integration
 
 linters:
   enable:

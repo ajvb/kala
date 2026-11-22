@@ -46,13 +46,8 @@ func TestSaveAndGetJob(t *testing.T) {
 				WillReturnRows(sqlmock.NewRows([]string{"job"}).AddRow(j))
 			j2, err := db.Get(genericMockJob.Id)
 			if assert.Nil(t, err) {
-				assert.WithinDuration(t, j2.NextRunAt, genericMockJob.NextRunAt, 400*time.Microsecond)
-				assert.Equal(t, j2.Name, genericMockJob.Name)
-				assert.Equal(t, j2.Id, genericMockJob.Id)
-				assert.Equal(t, j2.Command, genericMockJob.Command)
-				assert.Equal(t, j2.Schedule, genericMockJob.Schedule)
-				assert.Equal(t, j2.Owner, genericMockJob.Owner)
-				assert.Equal(t, j2.Metadata.SuccessCount, genericMockJob.Metadata.SuccessCount)
+				ok, err := genericMockJob.Compare(j2)
+				assert.True(t, ok, err)
 			}
 		}
 	}

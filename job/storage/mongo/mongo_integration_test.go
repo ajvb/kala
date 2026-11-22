@@ -1,18 +1,49 @@
+//go:build integration
+
 package mongo
 
 import (
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/ajvb/kala/v2/internal/containers"
 	"github.com/ajvb/kala/v2/job"
 	mgo "gopkg.in/mgo.v2"
 
 	"github.com/stretchr/testify/assert"
 )
 
+// One MongoDB container for all the tests of this package.
+var mongoContainer = containers.NewShared(containers.Spec{
+	Repository: "mongo",
+	Tag:        "3.4",
+	Port:       "27017/tcp",
+	Ready: func(hostPort string) error {
+		session, err := mgo.DialWithTimeout(hostPort, 2*time.Second)
+		if err != nil {
+			return err
+		}
+		defer session.Close()
+		return session.Ping()
+	},
+})
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+	if err := mongoContainer.Close(); err != nil {
+		fmt.Fprintln(os.Stderr, "could not remove the MongoDB container:", err)
+	}
+	os.Exit(code)
+}
+
+// NewTestDb connects to the shared container (failing the test if there is no
+// Docker daemon) and deletes every job, so each test starts empty.
 func NewTestDb(t *testing.T) *DB {
+	t.Helper()
 	collection = "test"
-	var db = New("", &mgo.Credential{})
+	var db = New(mongoContainer.HostPort(t), &mgo.Credential{})
 
 	jobs, err := db.GetAll()
 	assert.NoError(t, err)
@@ -35,14 +66,10 @@ func TestSaveAndGetJob(t *testing.T) {
 	if assert.NoError(t, err) {
 		j, err := db.Get(genericMockJob.Id)
 		if assert.Nil(t, err) {
-			// TODO WIP
-			assert.WithinDuration(t, j.NextRunAt, genericMockJob.NextRunAt, 5000*time.Microsecond)
-			assert.Equal(t, j.Name, genericMockJob.Name)
-			assert.Equal(t, j.Id, genericMockJob.Id)
-			assert.Equal(t, j.Command, genericMockJob.Command)
-			assert.Equal(t, j.Schedule, genericMockJob.Schedule)
-			assert.Equal(t, j.Owner, genericMockJob.Owner)
-			assert.Equal(t, j.Metadata.SuccessCount, genericMockJob.Metadata.SuccessCount)
+			// MongoDB stores times with millisecond precision.
+			genericMockJob.NextRunAt = genericMockJob.NextRunAt.Truncate(time.Millisecond)
+			ok, err := genericMockJob.Compare(j)
+			assert.True(t, ok, err)
 		}
 	}
 }

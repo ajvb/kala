@@ -12,7 +12,6 @@ require (
 	github.com/gorilla/mux v0.0.0-20150808061613-ffb3f683aad4
 	github.com/hashicorp/consul/api v1.1.0
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/lestrrat-go/test-mysqld v0.0.0-20190527004737-6c91be710371
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-shellwords v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
@@ -57,7 +56,6 @@ require (
 	github.com/hashicorp/serf v0.8.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/lestrrat-go/tcputil v0.0.0-20180223003554-d3c7f98154fb // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635 // indirect

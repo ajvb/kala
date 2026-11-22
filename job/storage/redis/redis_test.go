@@ -81,13 +81,8 @@ func TestGetJob(t *testing.T) {
 	storedJob, err := db.Get(testJob.Job.Id)
 	assert.Nil(t, err)
 
-	assert.WithinDuration(t, storedJob.NextRunAt, testJob.Job.NextRunAt, 100*time.Microsecond)
-	assert.Equal(t, testJob.Job.Name, storedJob.Name)
-	assert.Equal(t, testJob.Job.Id, storedJob.Id)
-	assert.Equal(t, testJob.Job.Command, storedJob.Command)
-	assert.Equal(t, testJob.Job.Schedule, storedJob.Schedule)
-	assert.Equal(t, testJob.Job.Owner, storedJob.Owner)
-	assert.Equal(t, testJob.Job.Metadata.SuccessCount, storedJob.Metadata.SuccessCount)
+	ok, err := testJob.Job.Compare(storedJob)
+	assert.True(t, ok, err)
 
 	// Test error handling
 	conn.Command("HGET", HashKey, testJob.Job.Id).
@@ -130,13 +125,8 @@ func TestGetAllJobs(t *testing.T) {
 	assert.Nil(t, err)
 
 	for i, j := range jobs {
-		assert.WithinDuration(t, testJobs[i].Job.NextRunAt, j.NextRunAt, 100*time.Microsecond)
-		assert.Equal(t, testJobs[i].Job.Name, j.Name)
-		assert.Equal(t, testJobs[i].Job.Id, j.Id)
-		assert.Equal(t, testJobs[i].Job.Command, j.Command)
-		assert.Equal(t, testJobs[i].Job.Schedule, j.Schedule)
-		assert.Equal(t, testJobs[i].Job.Owner, j.Owner)
-		assert.Equal(t, testJobs[i].Job.Metadata.SuccessCount, j.Metadata.SuccessCount)
+		ok, err := testJobs[i].Job.Compare(j)
+		assert.True(t, ok, err)
 	}
 
 	// Test erorr handling
