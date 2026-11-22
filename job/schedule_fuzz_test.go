@@ -1,10 +1,4 @@
-//go:build go1.18
-// +build go1.18
-
 package job
-
-// Fuzzing needs Go 1.18 or later (testing.F). Kala's CI still builds with Go
-// 1.17, so this file is only compiled on newer Go.
 
 import (
 	"strconv"
@@ -12,13 +6,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ajvb/kala/v2/internal/fuzzreport"
 	"github.com/ajvb/kala/v2/utils/iso8601"
-	"github.com/stretchr/testify/assert"
 )
 
 // For any schedule string, Init must not panic or leave the lock held,
 // and must either return an error (cache unchanged) or accept the job (cached
-// with a timer).
+// with a timer). Failures do not print the input (fuzzreport).
 func FuzzInitSchedule(f *testing.F) {
 	for _, seed := range []string{
 		"X/2030-01-01T00:00:00Z/PT1H",
@@ -30,6 +24,8 @@ func FuzzInitSchedule(f *testing.F) {
 	} {
 		f.Add(seed)
 	}
+	fuzzreport.SilenceLogs(f)
+
 	f.Fuzz(func(t *testing.T, schedule string) {
 		if schedule == "" {
 			t.Skip("an empty schedule means run now; not a schedule string")
@@ -41,12 +37,16 @@ func FuzzInitSchedule(f *testing.F) {
 		j := GetMockJob()
 		j.Schedule = schedule
 
-		err := j.Init(cache)
-		if err != nil {
-			assert.Empty(t, cache.GetAll().Jobs, "rejected schedule %q left a job in the cache", schedule)
-		} else {
-			assert.Len(t, cache.GetAll().Jobs, 1)
-			assert.NotNil(t, j.jobTimer, "accepted schedule %q has no timer", schedule)
+		var err error
+		fuzzreport.NoPanic(t, "Init", func() { err = j.Init(cache) })
+		cached := len(cache.GetAll().Jobs)
+		switch {
+		case err != nil && cached != 0:
+			t.Error("a rejected schedule left a job in the cache")
+		case err == nil && cached != 1:
+			t.Error("an accepted schedule did not leave exactly one job in the cache")
+		case err == nil && j.jobTimer == nil:
+			t.Error("an accepted schedule has no timer")
 		}
 		assertLockUsable(t, j)
 	})
