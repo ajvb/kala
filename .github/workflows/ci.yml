@@ -179,12 +179,69 @@ jobs:
             exit 1
           fi
 
+  # Coverage per package, shown on the run's summary page and kept as a
+  # downloadable profile. It only reports: no threshold, and the ci-ok job does
+  # not wait for it. The integration tests need Docker and are left out.
+  coverage:
+    name: coverage
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - name: Run the unit tests with coverage
+        run: |
+          set -o pipefail
+          go test -count=1 -timeout 300s -coverprofile=coverage.out ./... | tee coverage.txt
+      - name: Publish coverage per package
+        if: always()
+        run: |
+          {
+            echo "### Unit test coverage per package"
+            echo
+            echo "| Package | Coverage |"
+            echo "| --- | --- |"
+            # Packages without tests have no "ok" prefix, so match on the tab-separated
+            # fields: the package is the second, the coverage is the last.
+            awk -F'\t' '/coverage:/ { c = $NF; sub(/^coverage: /, "", c); sub(/ of statements.*/, "", c); print "| " $2 " | " c " |" }' coverage.txt
+            echo "| **all packages** | **$(go tool cover -func=coverage.out | awk '/^total:/ { print $3 }')** |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-profile
+          path: coverage.out
+
+  # A short run of every fuzz target (.github/scripts/fuzz.sh). These logs are
+  # public, so a failing target reports only what failed, never the input, and
+  # no input is uploaded: reproduce a failure by running the target locally.
+  fuzz-short:
+    name: fuzz (short)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - run: .github/scripts/fuzz.sh 30s
+
   # One stable name for the branch ruleset to require, so the matrix above can
   # change (for example a new Go version) without editing the ruleset.
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [build, test, integration, smoke, clock-usage, vet, lint]
+    needs: [build, test, integration, smoke, clock-usage, vet, lint, fuzz-short]
     runs-on: ubuntu-latest
     steps:
       - name: All required jobs succeeded

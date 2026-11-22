@@ -5,7 +5,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"runtime"
 	"testing"
 	"time"
 
@@ -21,11 +20,15 @@ func TestIntegrationTest(t *testing.T) {
 	clk := clock.NewFake(time.Now())
 	cache := job.NewLockFreeJobCache(jobDB, job.WithClock(clk))
 
-	addr := newLocalListener(t)
+	// The listener is open before the client's first request, so the request
+	// cannot arrive before the server is ready.
+	listener := newLocalListener(t)
+	addr := listener.Addr().String()
 
 	kalaApi := api.MakeServer(addr, cache, "default@example.com", false)
-	go kalaApi.ListenAndServe()
-	runtime.Gosched()
+	// Serve returns http.ErrServerClosed when the server is closed at the end.
+	go func() { _ = kalaApi.Serve(listener) }()
+	t.Cleanup(func() { _ = kalaApi.Close() })
 	kalaClient := client.New("http://" + addr)
 
 	hit := make(chan struct{})
@@ -92,17 +95,14 @@ func TestIntegrationTest(t *testing.T) {
 
 }
 
-func newLocalListener(t *testing.T) string {
+// newLocalListener opens a listener on a free local port.
+func newLocalListener(t *testing.T) net.Listener {
+	t.Helper()
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		if l, err = net.Listen("tcp6", "[::1]:0"); err != nil {
 			t.Fatalf("failed to listen on a port: %v", err)
 		}
 	}
-	defer func() {
-		if err := l.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	return l.Addr().String()
+	return l
 }

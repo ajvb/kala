@@ -275,15 +275,15 @@ func (j *JobRunner) collectStats(success bool) {
 	j.currentStat.NumberOfRetries = j.job.Retries - j.currentRetries
 }
 
+// checkExpected reports whether statusCode is one of the job's expected
+// response codes, which default to 200. It does not change the job, because
+// runs of the same job can overlap.
 func (j *JobRunner) checkExpected(statusCode int) bool {
-	// j.job.lock.Lock()
-	// defer j.job.lock.Unlock()
-
-	// If no expected response codes passed, add 200 status code as expected
-	if len(j.job.RemoteProperties.ExpectedResponseCodes) == 0 {
-		j.job.RemoteProperties.ExpectedResponseCodes = append(j.job.RemoteProperties.ExpectedResponseCodes, HTTP_CODE_OK)
+	expectedCodes := j.job.RemoteProperties.ExpectedResponseCodes
+	if len(expectedCodes) == 0 {
+		expectedCodes = []int{HTTP_CODE_OK}
 	}
-	for _, expected := range j.job.RemoteProperties.ExpectedResponseCodes {
+	for _, expected := range expectedCodes {
 		if expected == statusCode {
 			return true
 		}
@@ -303,17 +303,17 @@ func (j *JobRunner) responseTimeout() time.Duration {
 	return time.Duration(responseTimeout) * time.Second
 }
 
-// setHeaders sets default and user specific headers to the http request
+// setHeaders gives the request a copy of the job's headers, with Content-Type
+// defaulting to application/json. The job's own headers are never changed:
+// runs of the same job can overlap, and writing a shared map from two of them
+// at once crashes the process.
 func (j *JobRunner) setHeaders(req *http.Request) {
-	// j.job.lock.Lock()
-	// defer j.job.lock.Unlock()
-
-	if j.job.RemoteProperties.Headers == nil {
-		j.job.RemoteProperties.Headers = http.Header{}
+	header := j.job.RemoteProperties.Headers.Clone()
+	if header == nil {
+		header = http.Header{}
 	}
-	// A valid assumption is that the user is sending something in json cause we're past 2017
-	if j.job.RemoteProperties.Headers["Content-Type"] == nil {
-		j.job.RemoteProperties.Headers["Content-Type"] = []string{"application/json"}
+	if header["Content-Type"] == nil {
+		header["Content-Type"] = []string{"application/json"}
 	}
-	req.Header = j.job.RemoteProperties.Headers
+	req.Header = header
 }
