@@ -5,9 +5,7 @@ go 1.26
 require (
 	github.com/DATA-DOG/go-sqlmock v1.3.0
 	github.com/cornelk/hashmap v1.0.1
-	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/garyburd/redigo v1.0.1-0.20170208211623-48545177e92a
-	github.com/go-bindata/go-bindata v3.1.2+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gorilla/mux v0.0.0-20150808061613-ffb3f683aad4
 	github.com/hashicorp/consul/api v1.1.0

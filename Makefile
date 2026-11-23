@@ -12,6 +12,17 @@ bin: clean
 clean:
 	rm -rf bin
 
+# Install the web interface's libraries with npm (versions and integrity
+# hashes from webui/package-lock.json) and copy the files the interface loads
+# into webui/vendor, where they are embedded. Needs npm.
+webui-libs:
+	cd webui && npm ci --ignore-scripts --no-audit --no-fund
+	find webui/vendor -mindepth 1 ! -name README.md -exec rm -rf {} +
+	install -D -m 0644 webui/node_modules/@fortawesome/fontawesome-free/js/all.min.js webui/vendor/fontawesome/all.min.js
+	install -D -m 0644 webui/node_modules/bulma/css/bulma.css webui/vendor/bulma/bulma.css
+	install -D -m 0644 webui/node_modules/reefjs/dist/reef.polyfills.min.js webui/vendor/reef/reef.polyfills.min.js
+	install -D -m 0644 webui/node_modules/reefjs/dist/router.min.js webui/vendor/reef/router.min.js
+
 start: bin/$(APP)
 	./bin/$(APP) serve -v
 
@@ -39,12 +50,4 @@ lint:
 	golangci-lint run
 	cd client && golangci-lint run
 
-gen: tools
-	go-bindata-assetfs -pkg api -o api/webui_bindata.go webui/...
-
-tools:
-	go install github.com/go-bindata/go-bindata/...
-	go install github.com/elazarl/go-bindata-assetfs/...
-
-
-.PHONY: bin/$(APP) bin clean start test test-integration vet lint gen tools
+.PHONY: bin/$(APP) bin clean webui-libs start test test-integration vet lint

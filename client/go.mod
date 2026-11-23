@@ -17,7 +17,6 @@ require (
 	github.com/cornelk/hashmap v1.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dchest/siphash v1.1.0 // indirect
-	github.com/elazarl/go-bindata-assetfs v1.0.1 // indirect
 	github.com/gorilla/context v0.0.0-20141217160251-215affda49ad // indirect
 	github.com/mattn/go-shellwords v1.0.0 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
