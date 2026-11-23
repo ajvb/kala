@@ -87,7 +87,7 @@ jobs:
             docker pull --quiet "$image" &
           done
           wait
-      - run: go test -race -count=1 -timeout 300s -tags integration ./job/storage/... ./internal/...
+      - run: go test -race -count=1 -timeout 300s -tags integration ./job ./job/storage/... ./internal/...
 
   # Ported from the CircleCI configuration: build the binary, start the
   # server on Consul and create a job through the API.

@@ -53,7 +53,7 @@ test: vet lint
 
 # Run only the integration tests.
 test-integration:
-	go test -v -tags integration ./job/storage/... ./internal/...
+	go test -v -tags integration ./job ./job/storage/... ./internal/...
 
 # Run the benchmarks once each.
 bench:

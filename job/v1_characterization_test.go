@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ajvb/kala/v2/internal/fakecommands"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -217,7 +218,7 @@ func TestV1EnableAfterRestartDoesNotArmTrigger(t *testing.T) {
 	j.NextRunAt = stale
 
 	db := &fixedDB{jobs: []*Job{j}}
-	cache := NewLockFreeJobCache(db)
+	cache := NewLockFreeJobCache(db, WithCommandRunner(fakecommands.New()))
 	// Note: Start also registers a signal handler goroutine that lives until
 	// the test process ends (on SIGINT it exits 0). Accepted for this test; it
 	// is the only way to run v1's real load path.

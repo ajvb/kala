@@ -25,33 +25,30 @@ func TestJobStats(t *testing.T) {
 }
 
 func TestKalaStats(t *testing.T) {
-	cache := NewMockCache()
+	clk := newTestClock()
+	cache := NewMockCache(WithClock(clk))
 
 	for i := 0; i < 5; i++ {
-		j := GetMockJobWithGenericSchedule(time.Now())
+		j := GetMockJobWithGenericSchedule(clk.Now())
 		j.Init(cache)
 		j.Run(cache)
 	}
-	now := time.Now()
 	for i := 0; i < 5; i++ {
-		j := GetMockJobWithGenericSchedule(time.Now())
+		j := GetMockJobWithGenericSchedule(clk.Now())
 		j.Init(cache)
 		assert.NoError(t, j.Disable(cache))
 	}
 
-	kalaStat := NewKalaStats(cache)
-	createdAt := time.Now()
-	nextRunAt := time.Now().Add(time.Minute * 5)
-
-	assert.Equal(t, kalaStat.Jobs, 10)
-	assert.Equal(t, kalaStat.ActiveJobs, 5)
-	assert.Equal(t, kalaStat.DisabledJobs, 5)
-	assert.Equal(t, kalaStat.SuccessCount, uint(5))
-	assert.Equal(t, kalaStat.ErrorCount, uint(0))
-	assert.True(t, (nextRunAt.UnixNano()-kalaStat.NextRunAt.UnixNano()) > 0)
-	assert.WithinDuration(t, kalaStat.NextRunAt, nextRunAt, time.Second)
-	assert.WithinDuration(t, kalaStat.LastAttemptedRun, now, time.Millisecond*100)
-	assert.WithinDuration(t, kalaStat.CreatedAt, createdAt, time.Millisecond*100)
+	assert.Equal(t, &KalaStats{
+		Jobs:             10,
+		ActiveJobs:       5,
+		DisabledJobs:     5,
+		SuccessCount:     5,
+		ErrorCount:       0,
+		NextRunAt:        clk.Now().Add(5 * time.Minute),
+		LastAttemptedRun: clk.Now(),
+		CreatedAt:        clk.Now(),
+	}, NewKalaStats(cache))
 }
 
 func TestNextRunAt(t *testing.T) {

@@ -46,13 +46,40 @@ type MemoryJobCache struct {
 	jobs           *JobsMap
 	jobDB          JobDB
 	PersistOnWrite bool
+	clk            clock.Clock
+	cmdRunner      CommandRunner
+
+	// cleanups tracks the goroutines Delete starts to update the deleted job's
+	// parents and children.
+	cleanups sync.WaitGroup
 }
 
-func NewMemoryJobCache(jobDB JobDB) *MemoryJobCache {
+// NewMemoryJobCache creates a cache. Pass WithClock to use a clock other than
+// the real one, and WithCommandRunner to start local jobs' commands some other
+// way than as child processes.
+func NewMemoryJobCache(jobDB JobDB, opts ...CacheOption) *MemoryJobCache {
+	o := newCacheOptions(opts)
 	return &MemoryJobCache{
-		jobs:  NewJobsMap(),
-		jobDB: jobDB,
+		jobs:      NewJobsMap(),
+		jobDB:     jobDB,
+		clk:       o.clock,
+		cmdRunner: o.cmdRunner,
 	}
+}
+
+// Clock returns the clock the cache and its jobs use.
+func (c *MemoryJobCache) Clock() clock.Clock {
+	return c.clk
+}
+
+// CommandRunner returns the CommandRunner the cache's jobs use.
+func (c *MemoryJobCache) CommandRunner() CommandRunner {
+	return c.cmdRunner
+}
+
+// waitForCleanups waits until the goroutines started by Delete have finished.
+func (c *MemoryJobCache) waitForCleanups() {
+	c.cleanups.Wait()
 }
 
 func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
@@ -66,6 +93,8 @@ func (c *MemoryJobCache) Start(persistWaitTime time.Duration) {
 		log.Fatal(err)
 	}
 	for _, j := range allJobs {
+		j.clk = c.clk
+		j.cmdRunner = c.cmdRunner
 		if j.ShouldStartWaiting() {
 			j.StartWaiting(c, false)
 		}
@@ -136,18 +165,20 @@ func (c *MemoryJobCache) Set(j *Job) error {
 	return nil
 }
 
+// Delete removes the job from the cache and the database. It never holds the
+// cache's lock while waiting for the job's lock: a running job holds its own
+// lock while it reads the cache, so the opposite order deadlocks.
 func (c *MemoryJobCache) Delete(id string) error {
-	c.jobs.Lock.Lock()
-	defer c.jobs.Lock.Unlock()
-
+	c.jobs.Lock.RLock()
 	j := c.jobs.Jobs[id]
+	c.jobs.Lock.RUnlock()
 	if j == nil {
 		return ErrJobDoesntExist
 	}
-	j.lock.Lock()
-	defer j.lock.Unlock()
 
+	j.lock.Lock()
 	err := c.jobDB.Delete(id)
+	j.lock.Unlock()
 	if err != nil {
 		err = fmt.Errorf("Error occurred while trying to delete job from db: %s", err)
 		if c.PersistOnWrite {
@@ -155,21 +186,21 @@ func (c *MemoryJobCache) Delete(id string) error {
 		}
 	}
 
-	j.lock.Unlock()
 	j.StopTimer()
-	j.lock.Lock()
 
-	go func() {
+	c.cleanups.Go(func() {
 		log.Errorln(j.DeleteFromParentJobs(c)) // todo: review
-	}()
+	})
 
 	// Remove itself from dependent jobs as a parent job
 	// and possibly delete child jobs if they don't have any other parents.
-	go func() {
+	c.cleanups.Go(func() {
 		log.Errorln(j.DeleteFromDependentJobs(c)) // todo: review
-	}()
+	})
 
+	c.jobs.Lock.Lock()
 	delete(c.jobs.Jobs, id)
+	c.jobs.Lock.Unlock()
 
 	return err
 }
@@ -214,10 +245,16 @@ type LockFreeJobCache struct {
 	retentionPeriod time.Duration
 	PersistOnWrite  bool
 	clk             clock.Clock
+	cmdRunner       CommandRunner
+
+	// cleanups tracks the goroutines Delete starts to update the deleted job's
+	// parents and children.
+	cleanups sync.WaitGroup
 }
 
 // NewLockFreeJobCache creates a cache. Pass WithClock to use a clock other than
-// the real one.
+// the real one, and WithCommandRunner to start local jobs' commands some other
+// way than as child processes.
 func NewLockFreeJobCache(jobDB JobDB, opts ...CacheOption) *LockFreeJobCache {
 	o := newCacheOptions(opts)
 	return &LockFreeJobCache{
@@ -225,12 +262,23 @@ func NewLockFreeJobCache(jobDB JobDB, opts ...CacheOption) *LockFreeJobCache {
 		jobDB:           jobDB,
 		retentionPeriod: -1,
 		clk:             o.clock,
+		cmdRunner:       o.cmdRunner,
 	}
 }
 
 // Clock returns the clock the cache and its jobs use.
 func (c *LockFreeJobCache) Clock() clock.Clock {
 	return c.clk
+}
+
+// CommandRunner returns the CommandRunner the cache's jobs use.
+func (c *LockFreeJobCache) CommandRunner() CommandRunner {
+	return c.cmdRunner
+}
+
+// waitForCleanups waits until the goroutines started by Delete have finished.
+func (c *LockFreeJobCache) waitForCleanups() {
+	c.cleanups.Wait()
 }
 
 func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.Duration) {
@@ -249,6 +297,7 @@ func (c *LockFreeJobCache) Start(persistWaitTime time.Duration, jobstatTtl time.
 			continue
 		}
 		j.clk = c.clk
+		j.cmdRunner = c.cmdRunner
 		if j.ShouldStartWaiting() {
 			j.StartWaiting(c, false)
 		}
@@ -344,14 +393,14 @@ func (c *LockFreeJobCache) Delete(id string) error {
 	j.StopTimer()
 	j.lock.Lock()
 
-	go func() {
+	c.cleanups.Go(func() {
 		log.Errorln(j.DeleteFromParentJobs(c)) // todo: review
-	}()
+	})
 	// Remove itself from dependent jobs as a parent job
 	// and possibly delete child jobs if they don't have any other parents.
-	go func() {
+	c.cleanups.Go(func() {
 		log.Errorln(j.DeleteFromDependentJobs(c)) // todo: review
-	}()
+	})
 	log.Infof("Deleting %s", id)
 	c.jobs.Del(id)
 	return err

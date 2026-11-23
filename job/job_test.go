@@ -1,12 +1,15 @@
 package job
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/ajvb/kala/v2/clock"
+	"github.com/ajvb/kala/v2/internal/fakecommands"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,11 +53,12 @@ func TestBrokenEpsilon(t *testing.T) {
 }
 
 func TestBrokenScheduleTimeHasAlreadyPassed(t *testing.T) {
-	cache := NewMockCache()
+	clk := newTestClock()
+	cache := NewMockCache(WithClock(clk))
 
-	fiveMinutesFromNow := time.Now()
-	time.Sleep(time.Millisecond * 30)
-	mockJob := GetMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
+	start := clk.Now()
+	clk.Advance(30 * time.Millisecond)
+	mockJob := GetMockJobWithSchedule(2, start, "P1DT10M10S")
 
 	err := mockJob.Init(cache)
 
@@ -204,18 +208,19 @@ func TestJobWithRepeatOfZeroThatIsDoneAfterRun(t *testing.T) {
 }
 
 func TestJobRunAndRepeat(t *testing.T) {
-	cache := NewMockCache()
+	clk := newTestClock()
+	cache := NewMockCache(WithClock(clk))
 
-	oneSecondFromNow := time.Now().Add(time.Second)
-	j := GetMockJobWithSchedule(2, oneSecondFromNow, "PT1S")
+	j := GetMockJobWithSchedule(2, clk.Now().Add(time.Second), "PT1S")
+	j.ranChan = make(chan struct{})
 	j.Init(cache)
 
 	for i := 0; i < 3; i++ {
-		time.Sleep(time.Second)
-		now := time.Now()
+		clk.Advance(time.Second)
+		awaitJobRan(t, j, 5*time.Second)
 		j.lock.RLock()
-		assert.WithinDuration(t, j.Metadata.LastSuccess, now, 2*time.Second)
-		assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 2*time.Second)
+		assert.Equal(t, clk.Now(), j.Metadata.LastSuccess, "run %d", i)
+		assert.Equal(t, clk.Now(), j.Metadata.LastAttemptedRun, "run %d", i)
 		j.lock.RUnlock()
 	}
 }
@@ -247,45 +252,57 @@ func TestRecurringJobIsRepeating(t *testing.T) {
 }
 
 func TestTwoTimesRecurringJobIsDoneAfterThirdRun(t *testing.T) {
-	cache := NewMockCache()
+	clk := newTestClock()
+	cache := NewMockCache(WithClock(clk))
 
-	oneSecondFromNow := time.Now().Add(time.Second)
-	j := GetMockJobWithSchedule(2, oneSecondFromNow, "PT1S")
+	j := GetMockJobWithSchedule(2, clk.Now().Add(time.Second), "PT1S")
+	j.ranChan = make(chan struct{})
 	j.Init(cache)
 
 	for i := 0; i < 2; i++ {
-		time.Sleep(time.Second)
+		clk.Advance(time.Second)
+		awaitJobRan(t, j, 5*time.Second)
 		j.lock.RLock()
-		assert.Equal(t, j.IsDone, false)
+		assert.False(t, j.IsDone)
 		j.lock.RUnlock()
 	}
 
-	time.Sleep(time.Second)
+	clk.Advance(time.Second)
+	awaitJobRan(t, j, 5*time.Second)
 
 	j.lock.RLock()
-	assert.Equal(t, j.IsDone, true)
+	assert.True(t, j.IsDone)
 	j.lock.RUnlock()
 }
 
+// A failing job is retried only within its epsilon: with each attempt taking
+// 1.5 seconds and an epsilon of 2 seconds, the second attempt ends after the
+// epsilon, so there is no third.
 func TestJobEpsilon(t *testing.T) {
-	cache := NewMockCache()
+	clk := newTestClock()
+	cmds := fakecommands.New()
+	cmds.Handle("slow-failure", func([]string) (string, error) {
+		clk.Advance(1500 * time.Millisecond)
+		return "", errors.New("exit status 1")
+	})
+	cache := NewMockCache(WithClock(clk), WithCommandRunner(cmds))
 
-	oneSecondFromNow := time.Now().Add(time.Second)
-	j := GetMockJobWithSchedule(0, oneSecondFromNow, "P1DT1S")
+	start := clk.Now().Add(time.Second)
+	j := GetMockJobWithSchedule(0, start, "P1DT1S")
 	j.Epsilon = "PT2S"
-	j.Command = "bash -c 'sleep 1 && cd /etc && touch l'"
+	j.Command = "slow-failure"
 	j.Retries = 200
+	j.ranChan = make(chan struct{})
 	j.Init(cache)
 
-	time.Sleep(time.Second * 4)
-
-	now := time.Now()
+	clk.Advance(time.Second)
+	awaitJobRan(t, j, 5*time.Second)
 
 	j.lock.RLock()
-	assert.Equal(t, j.Metadata.SuccessCount, uint(0))
-	assert.Equal(t, j.Metadata.ErrorCount, uint(2))
-	assert.WithinDuration(t, j.Metadata.LastError, now, 4*time.Second)
-	assert.WithinDuration(t, j.Metadata.LastAttemptedRun, now, 4*time.Second)
+	assert.Equal(t, uint(0), j.Metadata.SuccessCount)
+	assert.Equal(t, uint(2), j.Metadata.ErrorCount)
+	assert.Equal(t, start.Add(3*time.Second), j.Metadata.LastError)
+	assert.Equal(t, start, j.Metadata.LastAttemptedRun)
 	assert.True(t, j.Metadata.LastSuccess.IsZero())
 	j.lock.RUnlock()
 }
@@ -303,9 +320,9 @@ func TestOneOffJobs(t *testing.T) {
 	assert.Equal(t, j.Metadata.LastAttemptedRun, time.Time{})
 	j.lock.RUnlock()
 
+	j.ranChan = make(chan struct{})
 	j.Init(cache)
-	// Find a better way to test a goroutine
-	time.Sleep(time.Second)
+	awaitJobRan(t, j, 5*time.Second)
 	now := time.Now()
 
 	j.lock.RLock()
@@ -344,7 +361,6 @@ func TestDependentJobsSimple(t *testing.T) {
 
 	j.Run(cache)
 	clk.Advance(time.Second * 2)
-	briefPause()
 	n := clk.Now()
 
 	mcj, err := cache.Get(mockChildJob.Id)
@@ -410,7 +426,6 @@ func TestDependentJobsTwoChilds(t *testing.T) {
 
 	j.Run(cache)
 	clk.Advance(time.Second * 2)
-	briefPause()
 	n := clk.Now()
 
 	assert.WithinDuration(t, mockChildJobOne.Metadata.LastAttemptedRun, n, 4*time.Second)
@@ -476,7 +491,6 @@ func TestDependentJobsChildWithTwoChilds(t *testing.T) {
 
 	j.Run(cache)
 	clk.Advance(time.Second * 2)
-	briefPause()
 	n := clk.Now()
 
 	assert.WithinDuration(t, mockChildJob.Metadata.LastAttemptedRun, n, 4*time.Second)
@@ -577,7 +591,6 @@ func TestDependentJobsFiveChain(t *testing.T) {
 
 	j.Run(cache)
 	clk.Advance(time.Second * 2)
-	briefPause()
 	n := clk.Now()
 
 	assert.WithinDuration(t, mockChildJobOne.Metadata.LastAttemptedRun, n, 4*time.Second)
@@ -610,7 +623,7 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 	mockChildJobOne := GetMockJob()
 	mockChildJobOne.Name = "mock_child_one"
 	// ***Where we make it fail***
-	mockChildJobOne.Command = "bash -c 'cd /etc && touch l'"
+	mockChildJobOne.Command = "false"
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
@@ -655,7 +668,6 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 
 	j.Run(cache)
 	clk.Advance(time.Second)
-	briefPause()
 	n := clk.Now()
 
 	assert.WithinDuration(t, mockChildJobOne.Metadata.LastAttemptedRun, n, 2*time.Second)
@@ -670,8 +682,14 @@ func TestDependentJobsChainWithFailingJob(t *testing.T) {
 func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 
 	clk := newSteppingClock(time.Now())
+	cmds := fakecommands.New()
+	cmds.Handle("sleep", func(args []string) (string, error) {
+		seconds, err := strconv.Atoi(args[0])
+		clk.Advance(time.Duration(seconds) * time.Second)
+		return "", err
+	})
 
-	cache := NewMockCache(WithClock(clk))
+	cache := NewMockCache(WithClock(clk), WithCommandRunner(cmds))
 
 	mockJob := GetMockJobWithGenericSchedule(clk.Now())
 	mockJob.Name = "mock_parent_job"
@@ -680,7 +698,7 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 	mockChildJobOne := GetMockJob()
 	mockChildJobOne.Name = "mock_child_one"
 	// ***Where we make it slow***
-	mockChildJobOne.Command = "bash -c 'sleep 2 && date'"
+	mockChildJobOne.Command = "sleep 2"
 	mockChildJobOne.ParentJobs = []string{
 		mockJob.Id,
 	}
@@ -751,7 +769,6 @@ func TestDependentJobsFiveChainWithSlowJob(t *testing.T) {
 
 	j.Run(cache)
 	clk.Advance(time.Second * 3)
-	briefPause()
 	n := clk.Now()
 
 	// TODO use abtime
@@ -813,7 +830,6 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 
 	parentOne.Run(cache)
 	clk.Advance(time.Second)
-	briefPause()
 	n := clk.Now()
 
 	assert.WithinDuration(t, parentOne.Metadata.LastAttemptedRun, n, 3*time.Second)
@@ -824,10 +840,8 @@ func TestDependentJobsTwoParentsSameChild(t *testing.T) {
 	assert.True(t, parentTwo.Metadata.LastSuccess.IsZero())
 
 	clk.Advance(time.Second * 3)
-	briefPause()
 	parentTwo.Run(cache)
 	clk.Advance(time.Second)
-	briefPause()
 	n = clk.Now()
 
 	assert.WithinDuration(t, parentTwo.Metadata.LastAttemptedRun, n, 3*time.Second)
@@ -855,7 +869,7 @@ func TestDependentJobsChildGetsDeleted(t *testing.T) {
 	assert.True(t, len(mockJob.DependentJobs) == 1)
 
 	cache.Delete(mockChildJob.Id)
-	time.Sleep(time.Second)
+	cache.waitForCleanups()
 
 	// Check to make sure its deleted
 	_, err := cache.Get(mockChildJob.Id)
@@ -902,7 +916,6 @@ func TestDependentJobsChildGetsDisabled(t *testing.T) {
 	n := clk.Now()
 	j.Run(cache)
 	clk.Advance(time.Second * 2)
-	briefPause()
 
 	// Child job should not have been run
 	assert.True(t, mockChildJob.Metadata.LastSuccess.IsZero())
@@ -945,7 +958,7 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 	assert.True(t, len(mockJobBackup.DependentJobs) == 1)
 
 	cache.Delete(mockJob.Id)
-	time.Sleep(time.Second)
+	cache.waitForCleanups()
 
 	// Make sure it is deleted
 	_, err := cache.Get(mockJob.Id)
@@ -970,23 +983,24 @@ func TestDependentJobsParentJobGetsDeleted(t *testing.T) {
 // https://github.com/ajvb/kala/issues/237
 func TestDeletedJobsStillRunning(t *testing.T) {
 	mdb2b := NewMemoryDB()
-	cache := NewLockFreeJobCache(mdb2b)
+	clk := newTestClock()
+	cache := NewLockFreeJobCache(mdb2b, WithClock(clk), WithCommandRunner(fakecommands.New()))
 
-	fiveSecondsFromNow := time.Now().Add(5 * time.Second)
+	fiveSecondsFromNow := clk.Now().Add(5 * time.Second)
 
 	mockJobTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
 	mockJobTBD.Name = "mock_job_to_be_deleted"
 	mockJobTBD.Id = "0"
-	mockJobTBD.ranChan = make(chan struct{})
 	mockJobTBD.Init(cache)
 
 	mockJobNTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
 	mockJobNTBD.Name = "mock_job_to_not_be_deleted"
 	mockJobNTBD.Id = "1"
+	mockJobNTBD.ranChan = make(chan struct{})
 	mockJobNTBD.Init(cache)
 
 	cache.Delete(mockJobTBD.Id)
-	time.Sleep(2 * time.Second)
+	cache.waitForCleanups()
 
 	// Make sure it is deleted
 	_, err := cache.Get(mockJobTBD.Id)
@@ -999,33 +1013,36 @@ func TestDeletedJobsStillRunning(t *testing.T) {
 		assert.NotEqual(t, element.Id, "0")
 	}
 
-	select {
-	case <-mockJobTBD.ranChan:
-		assert.Fail(t, "Expected job not run")
-	case <-time.After(time.Second * 5):
-	}
+	// The job that was kept runs; the deleted one does not.
+	clk.Advance(5 * time.Second)
+	awaitJobRan(t, mockJobNTBD, 5*time.Second)
+	assert.Equal(t, 1, clk.Fired(), "only the kept job's timer fired")
+	mockJobTBD.lock.RLock()
+	defer mockJobTBD.lock.RUnlock()
+	assert.Equal(t, uint(0), mockJobTBD.Metadata.NumberOfFinishedRuns, "the deleted job never ran")
 }
 
 func TestDeletedFromApiJobsStillRunning(t *testing.T) {
 	mdb2b := NewMemoryDB()
-	cache := NewLockFreeJobCache(mdb2b)
+	clk := newTestClock()
+	cache := NewLockFreeJobCache(mdb2b, WithClock(clk), WithCommandRunner(fakecommands.New()))
 
-	fiveSecondsFromNow := time.Now().Add(5 * time.Second)
+	fiveSecondsFromNow := clk.Now().Add(5 * time.Second)
 
 	mockJobTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
 	mockJobTBD.Name = "mock_job_to_be_deleted_from_api"
 	mockJobTBD.Id = "0"
-	mockJobTBD.ranChan = make(chan struct{})
 	mockJobTBD.Init(cache)
 
 	mockJobNTBD := GetMockRecurringJobWithSchedule(fiveSecondsFromNow, "PT1S")
 	mockJobNTBD.Name = "mock_job_to_not_be_deleted"
 	mockJobNTBD.Id = "1"
+	mockJobNTBD.ranChan = make(chan struct{})
 	mockJobNTBD.Init(cache)
 
 	findedJobTBD, _ := cache.Get(mockJobTBD.Id)
 	findedJobTBD.Delete(cache)
-	time.Sleep(2 * time.Second)
+	cache.waitForCleanups()
 
 	// Make sure it is deleted
 	_, err := cache.Get(mockJobTBD.Id)
@@ -1038,46 +1055,31 @@ func TestDeletedFromApiJobsStillRunning(t *testing.T) {
 		assert.NotEqual(t, element.Id, "0")
 	}
 
-	select {
-	case <-mockJobTBD.ranChan:
-		assert.Fail(t, "Expected job not run")
-	case <-time.After(time.Second * 3):
-	}
-}
-
-func waitForJob(j *Job) {
-	for {
-		j.lock.RLock()
-		if j.IsDone {
-			j.lock.RUnlock()
-			break
-		}
-		j.lock.RUnlock()
-		time.Sleep(time.Second)
-	}
+	// The job that was kept runs; the deleted one does not.
+	clk.Advance(5 * time.Second)
+	awaitJobRan(t, mockJobNTBD, 5*time.Second)
+	assert.Equal(t, 1, clk.Fired(), "only the kept job's timer fired")
+	mockJobTBD.lock.RLock()
+	defer mockJobTBD.lock.RUnlock()
+	assert.Equal(t, uint(0), mockJobTBD.Metadata.NumberOfFinishedRuns, "the deleted job never ran")
 }
 
 func TestOnFailureJobTriggersOnFailure(t *testing.T) {
 	cache := NewMockCache()
 
 	onFailureJob := GetMockJob()
+	onFailureJob.ranChan = make(chan struct{})
 	onFailureJob.Init(cache)
-	waitForJob(onFailureJob)
+	awaitJobRan(t, onFailureJob, 5*time.Second)
 
 	j := GetMockFailingJob()
 	j.OnFailureJob = onFailureJob.Id
-
+	j.ranChan = make(chan struct{})
 	j.Init(cache)
 
-	for {
-		onFailureJob.lock.RLock()
-		if onFailureJob.Metadata.NumberOfFinishedRuns >= 2 {
-			onFailureJob.lock.RUnlock()
-			break
-		}
-		onFailureJob.lock.RUnlock()
-		time.Sleep(time.Second)
-	}
+	// The failing job starts its on-failure job, then finishes.
+	awaitJobRan(t, onFailureJob, 5*time.Second)
+	awaitJobRan(t, j, 5*time.Second)
 
 	j.lock.RLock()
 	onFailureJob.lock.RLock()
@@ -1093,15 +1095,15 @@ func TestOnFailureJobDoesntTriggerOnSuccess(t *testing.T) {
 	cache := NewMockCache()
 
 	onFailureJob := GetMockJob()
+	onFailureJob.ranChan = make(chan struct{})
 	onFailureJob.Init(cache)
-	waitForJob(onFailureJob)
+	awaitJobRan(t, onFailureJob, 5*time.Second)
 
 	j := GetMockJob()
 	j.OnFailureJob = onFailureJob.Id
-
+	j.ranChan = make(chan struct{})
 	j.Init(cache)
-
-	waitForJob(j)
+	awaitJobRan(t, j, 5*time.Second)
 
 	j.lock.RLock()
 	onFailureJob.lock.RLock()

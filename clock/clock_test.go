@@ -317,3 +317,21 @@ func TestFakeConcurrentAdvanceNeverMovesTimeBackwards(t *testing.T) {
 	want := epoch.Add(time.Second + time.Hour)
 	assert.True(t, f.Now().Equal(want), "got %v, want %v", f.Now(), want)
 }
+
+func TestFakeFiredCountsTimersThatRanAndNotStoppedOnes(t *testing.T) {
+	f := NewFake(epoch)
+	f.AfterFunc(time.Second, func() {})
+	stopped := f.AfterFunc(2*time.Second, func() {})
+	f.AfterFunc(3*time.Second, func() {})
+	assert.Equal(t, 0, f.Fired())
+
+	f.Advance(time.Second)
+	assert.Equal(t, 1, f.Fired(), "the first timer ran during Advance")
+
+	stopped.Stop()
+	f.Advance(time.Second)
+	assert.Equal(t, 1, f.Fired(), "a stopped timer does not count")
+
+	f.Advance(time.Hour)
+	assert.Equal(t, 2, f.Fired())
+}

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"testing"
 	"time"
 
+	"github.com/ajvb/kala/v2/internal/fakecommands"
 	"github.com/ajvb/kala/v2/utils/iso8601"
 )
 
@@ -37,14 +37,19 @@ func (m *MockDB) Close() error {
 	return nil
 }
 
+// NewMockCache returns a cache with no storage whose jobs run their commands
+// with a fakecommands.Runner, so no process is started, for tests in this and
+// other packages. Options given here override that, for example
+// WithCommandRunner with a runner the test configured.
 func NewMockCache(opts ...CacheOption) *LockFreeJobCache {
+	opts = append([]CacheOption{WithCommandRunner(fakecommands.New())}, opts...)
 	return NewLockFreeJobCache(&MockDB{}, opts...)
 }
 
 func GetMockJob() *Job {
 	return &Job{
 		Name:    "mock_job",
-		Command: "bash -c 'date'",
+		Command: "echo mock_job ran",
 		Owner:   "example@example.com",
 		Retries: 2,
 	}
@@ -111,40 +116,6 @@ func GetMockJobStats(oldDate time.Time, count int) []*JobStat {
 func GetMockJobWithGenericSchedule(now time.Time) *Job {
 	fiveMinutesFromNow := now.Add(time.Minute * 5)
 	return GetMockJobWithSchedule(2, fiveMinutesFromNow, "P1DT10M10S")
-}
-
-func parseTime(t *testing.T, value string) time.Time {
-	now, err := time.Parse("2006-Jan-02 15:04", value)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return now
-}
-
-func parseTimeInLocation(t *testing.T, value string, location string) time.Time {
-	loc, err := time.LoadLocation(location)
-	if err != nil {
-		t.Fatal(err)
-	}
-	now, err := time.ParseInLocation("2006-Jan-02 15:04", value, loc)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return now
-}
-
-// Used to hand off execution briefly so that jobs can run and so on.
-func briefPause() {
-	time.Sleep(time.Millisecond * 100)
-}
-
-func awaitJobRan(t *testing.T, j *Job, timeout time.Duration) {
-	t.Helper()
-	select {
-	case <-j.ranChan:
-	case <-time.After(timeout):
-		t.Fatal("Job failed to run")
-	}
 }
 
 var _ JobDB = (*MemoryDB)(nil)
