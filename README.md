@@ -3,7 +3,7 @@
 [![GoDoc](https://godoc.org/github.com/ajvb/kala?status.svg)](https://godoc.org/github.com/ajvb/kala)
 ![golangci-lint](https://github.com/ajvb/kala/workflows/golangci-lint/badge.svg)
 [![Circle CI](https://circleci.com/gh/ajvb/kala.svg?style=svg)](https://circleci.com/gh/ajvb/kala)
-[![Coverage Status](https://coveralls.io/repos/ajvb/kala/badge.svg?branch=master&service=github)](https://coveralls.io/github/ajvb/kala?branch=master)
+[![Coverage Status](https://coveralls.io/repos/ajvb/kala/badge.svg?branch=main&service=github)](https://coveralls.io/github/ajvb/kala?branch=main)
 
 ![Dashboard](assets/job-list.png)
 
@@ -106,7 +106,7 @@ Once it's up in running, you can utilize curl or the official go client to inter
 
 ### Examples of Usage
 
-There are more examples in the [examples directory](https://github.com/ajvb/kala/tree/master/examples) within this repo. Currently its pretty messy. Feel free to submit a new example if you have one.
+There are more examples in the [examples directory](https://github.com/ajvb/kala/tree/main/examples) within this repo. Currently its pretty messy. Feel free to submit a new example if you have one.
 
 # Deployment
 
@@ -136,7 +136,7 @@ All routes have a prefix of `/api/v1`
 ## Client Libraries
 
 #### Official:
-* [Go](https://github.com/ajvb/kala/tree/master/client) - Docs: http://godoc.org/github.com/ajvb/kala/client
+* [Go](https://github.com/ajvb/kala/tree/main/client) - Docs: http://godoc.org/github.com/ajvb/kala/client
     ```bash
     go get github.com/ajvb/kala/client
     ```
@@ -371,7 +371,7 @@ FATA[0000] Command Failed with err: exit status 1
 
 ### How to add a dependent job
 
-Check out this [example for how to add dependent jobs](https://github.com/ajvb/kala/blob/master/examples/python/example_dependent_jobs.py) within a python script.
+Check out this [example for how to add dependent jobs](https://github.com/ajvb/kala/blob/main/examples/python/example_dependent_jobs.py) within a python script.
 
 ### Notes on Dependent Jobs
 
