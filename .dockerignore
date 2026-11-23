@@ -1,0 +1,7 @@
+.git
+bin
+*.db
+*.coverprofile
+webui/node_modules
+webui/vendor/*
+!webui/vendor/README.md

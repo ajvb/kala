@@ -3,6 +3,10 @@
 *.coverprofile
 .vscode/
 kala
-vendor
+/vendor/
 .idea/*
 .DS_Store
+/bin/
+/webui/node_modules/
+/webui/vendor/*
+!/webui/vendor/README.md

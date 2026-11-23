@@ -179,6 +179,58 @@ jobs:
             exit 1
           fi
 
+  # Build the release binary and check "kala version" reports what it was
+  # built with, then build the container image (it is not published) and check
+  # it reports the same version, runs as a non-root user, and serves the API.
+  image:
+    name: release build and image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERSION: v0.0.0-ci
+      BUILD_DATE: "2026-01-01T00:00:00Z"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - name: Release binary reports its version
+        run: make check-version VERSION="$VERSION" COMMIT="$GITHUB_SHA" BUILD_DATE="$BUILD_DATE"
+      - name: Build the image
+        run: |
+          docker build --build-arg VERSION="$VERSION" --build-arg COMMIT="$GITHUB_SHA" \
+            --build-arg BUILD_DATE="$BUILD_DATE" -t kala:ci .
+      - name: The image reports its version and runs as a non-root user
+        run: |
+          docker run --rm kala:ci version | tee version.txt
+          grep -qx "kala $VERSION" version.txt
+          grep -qx "commit:     $GITHUB_SHA" version.txt
+          uid=$(docker run --rm --entrypoint id kala:ci -u)
+          echo "uid: $uid"
+          [ "$uid" != "0" ]
+      - name: The image serves the API
+        run: |
+          docker run -d --name kala -p 8000:8000 kala:ci
+          status=$(curl --silent --output response.json --write-out '%{http_code}' \
+            --retry 15 --retry-delay 1 --retry-connrefused \
+            -X POST -H "Content-Type: application/json" \
+            -d '{"command": "echo cool", "name": "test_job"}' \
+            http://localhost:8000/api/v1/job/)
+          cat response.json; echo
+          docker logs kala
+          [ "$status" = "201" ] || { echo "expected HTTP 201, got $status" >&2; exit 1; }
+      - name: The image serves the web interface with its libraries
+        run: |
+          for path in webui/ webui/vendor/bulma/bulma.css webui/vendor/reef/reef.polyfills.min.js; do
+            status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://localhost:8000/$path")
+            echo "$path: $status"
+            [ "$status" = "200" ] || exit 1
+          done
+
   # Coverage per package, shown on the run's summary page and kept as a
   # downloadable profile. It only reports: no threshold, and the ci-ok job does
   # not wait for it. The integration tests need Docker and are left out.
@@ -241,7 +293,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [build, test, integration, smoke, clock-usage, vet, lint, fuzz-short]
+    needs: [build, test, integration, smoke, clock-usage, vet, lint, fuzz-short, image]
     runs-on: ubuntu-latest
     steps:
       - name: All required jobs succeeded
