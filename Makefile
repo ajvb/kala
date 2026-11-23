@@ -55,6 +55,10 @@ test: vet lint
 test-integration:
 	go test -v -tags integration ./job/storage/... ./internal/...
 
+# Run the benchmarks once each.
+bench:
+	go test -run '^$$' -bench . -benchmem ./...
+
 # Run go vet, including the files behind the integration build tag.
 vet:
 	go vet -tags integration ./...
@@ -65,4 +69,4 @@ lint:
 	golangci-lint run
 	cd client && golangci-lint run
 
-.PHONY: bin/$(APP) bin clean webui-libs check-version start test test-integration vet lint
+.PHONY: bin/$(APP) bin clean webui-libs check-version start test test-integration bench vet lint

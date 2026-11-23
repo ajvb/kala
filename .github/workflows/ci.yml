@@ -288,19 +288,61 @@ jobs:
             client/go.sum
       - run: .github/scripts/fuzz.sh 30s
 
+  # Benchmarks of the pull request against its base branch, on the same
+  # runner (.github/scripts/bench.sh). Fails if a benchmark is more than 20%
+  # slower than the base, again on a re-run. The comparison is on the run's
+  # summary page.
+  bench:
+    name: benchmarks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - name: Check out the base branch
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: git worktree add "$RUNNER_TEMP/base" "$BASE_SHA"
+      - name: Compare the benchmarks
+        run: .github/scripts/bench.sh "$RUNNER_TEMP/base" . "$RUNNER_TEMP/bench"
+      - name: Publish the comparison
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/bench/report.md" ]; then
+            { echo "### Benchmarks (median ns/op, base vs. this pull request)"; echo; cat "$RUNNER_TEMP/bench/report.md"; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   # One stable name for the branch ruleset to require, so the matrix above can
   # change (for example a new Go version) without editing the ruleset.
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [build, test, integration, smoke, clock-usage, vet, lint, fuzz-short, image]
+    needs: [build, test, integration, smoke, clock-usage, vet, lint, fuzz-short, image, bench]
     runs-on: ubuntu-latest
     steps:
+      # The benchmarks run only on pull requests, so they may be skipped; every
+      # other job must succeed. No results at all is a failure.
       - name: All required jobs succeeded
         env:
-          RESULTS: ${{ join(needs.*.result, ' ') }}
+          NEEDS: ${{ toJSON(needs) }}
+        shell: python3 {0}
         run: |
-          echo "results: $RESULTS"
-          for r in $RESULTS; do
-            [ "$r" = "success" ] || { echo "a required job did not succeed" >&2; exit 1; }
-          done
+          import json, os, sys
+          needs = json.loads(os.environ["NEEDS"])
+          ok = bool(needs)
+          for job, info in needs.items():
+              result = info["result"]
+              print(f"{job}: {result}")
+              if result != "success" and not (job == "bench" and result == "skipped"):
+                  ok = False
+          if not ok:
+              sys.exit("a required job did not succeed")
