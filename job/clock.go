@@ -21,7 +21,8 @@ func clockOf(cache JobCache) clock.Clock {
 type CacheOption func(*cacheOptions)
 
 type cacheOptions struct {
-	clock clock.Clock
+	clock     clock.Clock
+	cmdRunner CommandRunner
 }
 
 // WithClock makes the cache, and every job added to it, use clk instead of the
@@ -35,7 +36,7 @@ func WithClock(clk clock.Clock) CacheOption {
 }
 
 func newCacheOptions(opts []CacheOption) cacheOptions {
-	o := cacheOptions{clock: clock.Real{}}
+	o := cacheOptions{clock: clock.Real{}, cmdRunner: ExecRunner{}}
 	for _, opt := range opts {
 		opt(&o)
 	}

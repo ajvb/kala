@@ -1,24 +1,25 @@
 package job
 
+// enable clears the job's Disabled flag and, if the job had a timer, starts a
+// new one before returning.
 func enable(j *Job, cache JobCache, persist bool) error {
 	j.lock.Lock()
-	defer j.lock.Unlock()
-
 	shouldStartWaiting := j.jobTimer != nil && j.Disabled
 	j.Disabled = false
+	j.lock.Unlock()
 
 	if persist {
-		j.lock.Unlock()
 		if err := cache.Set(j); err != nil {
 			j.lock.Lock()
 			j.Disabled = true
+			j.lock.Unlock()
 			return err
 		}
-		j.lock.Lock()
 	}
 
+	// StartWaiting takes the job's lock itself.
 	if shouldStartWaiting {
-		go j.StartWaiting(cache, false)
+		j.StartWaiting(cache, false)
 	}
 
 	return nil

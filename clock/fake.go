@@ -13,6 +13,7 @@ type Fake struct {
 	now    time.Time
 	seq    uint64
 	timers []*fakeTimer // pending timers only
+	fired  int
 }
 
 // NewFake returns a Fake whose current time is start.
@@ -66,6 +67,7 @@ func (f *Fake) Advance(d time.Duration) {
 		}
 		f.removeLocked(next)
 		next.done = true
+		f.fired++
 		if next.due.After(f.now) {
 			f.now = next.due
 		}
@@ -78,6 +80,15 @@ func (f *Fake) Advance(d time.Duration) {
 		f.now = target
 	}
 	f.mu.Unlock()
+}
+
+// Fired returns how many timers have run so far. Because Advance runs due
+// timers before it returns, a test can check right after Advance whether a
+// timer ran, without waiting.
+func (f *Fake) Fired() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.fired
 }
 
 // earliestDueLocked returns the pending timer due first at or before limit, or

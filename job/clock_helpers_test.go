@@ -24,3 +24,10 @@ func newSteppingClock(start time.Time) *steppingClock {
 func (s *steppingClock) Now() time.Time {
 	return s.Fake.Now().Add(time.Duration(s.reads.Add(1)))
 }
+
+// newTestClock returns a fake clock that starts on a whole second. Schedules
+// are written with whole seconds, so a job scheduled a whole number of seconds
+// later becomes due exactly at the time an Advance moves the clock to.
+func newTestClock() *clock.Fake {
+	return clock.NewFake(time.Date(2030, time.January, 1, 0, 0, 0, 0, time.UTC))
+}

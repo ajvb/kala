@@ -138,12 +138,10 @@ func TestRecur(t *testing.T) {
 
 			for i, chk := range checkpoints {
 
+				fired := clk.Fired()
 				clk.Advance(parseTimeInLocation(t, chk, testStruct.Location).Sub(clk.Now()))
-
-				select {
-				case <-j.ranChan:
+				if clk.Fired() != fired {
 					t.Fatalf("Expected job not run on checkpoint %d of test %s.", i, testStruct.Name)
-				case <-time.After(time.Second * 1):
 				}
 
 				j.lock.RLock()
@@ -161,8 +159,6 @@ func TestRecur(t *testing.T) {
 				j.lock.RLock()
 				assert.Equal(t, i+1, int(j.Metadata.SuccessCount), fmt.Sprintf("2nd Test of %s index %d", testStruct.Name, i))
 				j.lock.RUnlock()
-
-				time.Sleep(time.Millisecond * 500)
 			}
 
 		}()

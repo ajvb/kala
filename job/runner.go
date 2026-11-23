@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os/exec"
 	"strings"
 	"text/template"
 	"time"
@@ -203,10 +202,9 @@ func (j *JobRunner) runCmd() (string, error) {
 		return "", ErrCmdIsEmpty
 	}
 
-	cmd := exec.Command(args[0], args[1:]...) //nolint:gosec // That's the job description
-	out, err := cmd.CombinedOutput()
+	out, err := j.job.commandRunner().Run(args[0], args[1:]...)
 	if err != nil {
-		return "", fmt.Errorf("%s: %s", err, strings.TrimSpace(string(out)))
+		return "", fmt.Errorf("%w: %s", err, strings.TrimSpace(string(out)))
 	}
 	return strings.TrimSpace(string(out)), nil
 }

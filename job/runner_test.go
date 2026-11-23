@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ajvb/kala/v2/internal/fakecommands"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,9 +16,10 @@ func TestTemplatize(t *testing.T) {
 
 		t.Run("raw", func(t *testing.T) {
 			j := &Job{
-				Name:    "mock_job",
-				Command: "echo mr.{{$.Owner}}",
-				Owner:   "jedi@master.com",
+				Name:      "mock_job",
+				Command:   "echo mr.{{$.Owner}}",
+				Owner:     "jedi@example.com",
+				cmdRunner: fakecommands.New(),
 			}
 			r := JobRunner{
 				job: j,
@@ -31,15 +33,16 @@ func TestTemplatize(t *testing.T) {
 			j := &Job{
 				Name:               "mock_job",
 				Command:            "echo mr.{{$.Owner}}",
-				Owner:              "jedi@master.com",
+				Owner:              "jedi@example.com",
 				TemplateDelimiters: "{{ }}",
+				cmdRunner:          fakecommands.New(),
 			}
 			r := JobRunner{
 				job: j,
 			}
 			out, err := r.LocalRun()
 			assert.NoError(t, err)
-			assert.Equal(t, "mr.jedi@master.com", out)
+			assert.Equal(t, "mr.jedi@example.com", out)
 		})
 
 	})
@@ -59,7 +62,7 @@ func TestTemplatize(t *testing.T) {
 		t.Run("raw", func(t *testing.T) {
 			j := &Job{
 				Name:  "mock_job",
-				Owner: "jedi@master.com",
+				Owner: "jedi@example.com",
 				RemoteProperties: RemoteProperties{
 					Url: "http://" + srv.Listener.Addr().String() + "/path?val=a_{{$.Name}}",
 				},
@@ -75,7 +78,7 @@ func TestTemplatize(t *testing.T) {
 		t.Run("templated", func(t *testing.T) {
 			j := &Job{
 				Name:  "mock_job",
-				Owner: "jedi@master.com",
+				Owner: "jedi@example.com",
 				RemoteProperties: RemoteProperties{
 					Url: "http://" + srv.Listener.Addr().String() + "/path?val=a_{{$.Name}}",
 				},
@@ -102,7 +105,7 @@ func TestTemplatize(t *testing.T) {
 		t.Run("raw", func(t *testing.T) {
 			j := &Job{
 				Name:  "mock_job",
-				Owner: "jedi@master.com",
+				Owner: "jedi@example.com",
 				RemoteProperties: RemoteProperties{
 					Url:  "http://" + srv.Listener.Addr().String() + "/path",
 					Body: `{"hello": "world", "foo": "young-${$.Owner}"}`,
@@ -119,7 +122,7 @@ func TestTemplatize(t *testing.T) {
 		t.Run("templated", func(t *testing.T) {
 			j := &Job{
 				Name:  "mock_job",
-				Owner: "jedi@master.com",
+				Owner: "jedi@example.com",
 				RemoteProperties: RemoteProperties{
 					Url:  "http://" + srv.Listener.Addr().String() + "/path",
 					Body: `{"hello": "world", "foo": "young-${$.Owner}"}`,
@@ -131,7 +134,7 @@ func TestTemplatize(t *testing.T) {
 			}
 			out, err := r.RemoteRun()
 			assert.NoError(t, err)
-			assert.Equal(t, `{"hello": "world", "foo": "young-jedi@master.com"}`, out)
+			assert.Equal(t, `{"hello": "world", "foo": "young-jedi@example.com"}`, out)
 		})
 
 	})

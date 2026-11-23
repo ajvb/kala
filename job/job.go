@@ -92,6 +92,10 @@ type Job struct {
 	// A job that was never added to a cache uses the real clock.
 	clk clock.Clock
 
+	// cmdRunner starts a local job's command. Like clk, it is set when the job
+	// is added to a cache; a job that was never added to one uses ExecRunner.
+	cmdRunner CommandRunner
+
 	// If the job is disabled (or the system inoperative) and we pass
 	// the scheduled run point, when the job becomes active again,
 	// normally the job will run immediately.
@@ -192,6 +196,7 @@ func (j *Job) Init(cache JobCache) error {
 	defer j.lock.Unlock()
 
 	j.clk = clockOf(cache)
+	j.cmdRunner = commandRunnerOf(cache)
 
 	// validate job type and params
 	err := j.validation()
@@ -592,6 +597,15 @@ func (j *Job) validation() error {
 	}
 	log.Errorf("%s", err)
 	return err
+}
+
+// commandRunner returns the job's CommandRunner: the one it got from its
+// cache, or ExecRunner if it never had one.
+func (j *Job) commandRunner() CommandRunner {
+	if j.cmdRunner == nil {
+		return ExecRunner{}
+	}
+	return j.cmdRunner
 }
 
 // clock returns the job's clock: the one it got from its cache, or the real
