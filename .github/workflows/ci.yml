@@ -179,6 +179,58 @@ jobs:
             exit 1
           fi
 
+  # Build the release binary and check "kala version" reports what it was
+  # built with, then build the container image (it is not published) and check
+  # it reports the same version, runs as a non-root user, and serves the API.
+  image:
+    name: release build and image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERSION: v0.0.0-ci
+      BUILD_DATE: "2026-01-01T00:00:00Z"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - name: Release binary reports its version
+        run: make check-version VERSION="$VERSION" COMMIT="$GITHUB_SHA" BUILD_DATE="$BUILD_DATE"
+      - name: Build the image
+        run: |
+          docker build --build-arg VERSION="$VERSION" --build-arg COMMIT="$GITHUB_SHA" \
+            --build-arg BUILD_DATE="$BUILD_DATE" -t kala:ci .
+      - name: The image reports its version and runs as a non-root user
+        run: |
+          docker run --rm kala:ci version | tee version.txt
+          grep -qx "kala $VERSION" version.txt
+          grep -qx "commit:     $GITHUB_SHA" version.txt
+          uid=$(docker run --rm --entrypoint id kala:ci -u)
+          echo "uid: $uid"
+          [ "$uid" != "0" ]
+      - name: The image serves the API
+        run: |
+          docker run -d --name kala -p 8000:8000 kala:ci
+          status=$(curl --silent --output response.json --write-out '%{http_code}' \
+            --retry 15 --retry-delay 1 --retry-connrefused \
+            -X POST -H "Content-Type: application/json" \
+            -d '{"command": "echo cool", "name": "test_job"}' \
+            http://localhost:8000/api/v1/job/)
+          cat response.json; echo
+          docker logs kala
+          [ "$status" = "201" ] || { echo "expected HTTP 201, got $status" >&2; exit 1; }
+      - name: The image serves the web interface with its libraries
+        run: |
+          for path in webui/ webui/vendor/bulma/bulma.css webui/vendor/reef/reef.polyfills.min.js; do
+            status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://localhost:8000/$path")
+            echo "$path: $status"
+            [ "$status" = "200" ] || exit 1
+          done
+
   # Coverage per package, shown on the run's summary page and kept as a
   # downloadable profile. It only reports: no threshold, and the ci-ok job does
   # not wait for it. The integration tests need Docker and are left out.
@@ -236,19 +288,61 @@ jobs:
             client/go.sum
       - run: .github/scripts/fuzz.sh 30s
 
+  # Benchmarks of the pull request against its base branch, on the same
+  # runner (.github/scripts/bench.sh). Fails if a benchmark is more than 20%
+  # slower than the base, again on a re-run. The comparison is on the run's
+  # summary page.
+  bench:
+    name: benchmarks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            client/go.sum
+      - name: Check out the base branch
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: git worktree add "$RUNNER_TEMP/base" "$BASE_SHA"
+      - name: Compare the benchmarks
+        run: .github/scripts/bench.sh "$RUNNER_TEMP/base" . "$RUNNER_TEMP/bench"
+      - name: Publish the comparison
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/bench/report.md" ]; then
+            { echo "### Benchmarks (median ns/op, base vs. this pull request)"; echo; cat "$RUNNER_TEMP/bench/report.md"; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   # One stable name for the branch ruleset to require, so the matrix above can
   # change (for example a new Go version) without editing the ruleset.
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [build, test, integration, smoke, clock-usage, vet, lint, fuzz-short]
+    needs: [build, test, integration, smoke, clock-usage, vet, lint, fuzz-short, image, bench]
     runs-on: ubuntu-latest
     steps:
+      # The benchmarks run only on pull requests, so they may be skipped; every
+      # other job must succeed. No results at all is a failure.
       - name: All required jobs succeeded
         env:
-          RESULTS: ${{ join(needs.*.result, ' ') }}
+          NEEDS: ${{ toJSON(needs) }}
+        shell: python3 {0}
         run: |
-          echo "results: $RESULTS"
-          for r in $RESULTS; do
-            [ "$r" = "success" ] || { echo "a required job did not succeed" >&2; exit 1; }
-          done
+          import json, os, sys
+          needs = json.loads(os.environ["NEEDS"])
+          ok = bool(needs)
+          for job, info in needs.items():
+              result = info["result"]
+              print(f"{job}: {result}")
+              if result != "success" and not (job == "bench" and result == "skipped"):
+                  ok = False
+          if not ok:
+              sys.exit("a required job did not succeed")

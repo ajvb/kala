@@ -1,0 +1,10 @@
+{
+  "name": "kala-webui",
+  "private": true,
+  "description": "The web interface's third-party libraries. make webui-libs installs them with npm and copies the files the interface loads into vendor/.",
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "5.3.1",
+    "bulma": "0.8.2",
+    "reefjs": "7.3.0"
+  }
+}

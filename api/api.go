@@ -10,6 +10,7 @@ import (
 
 	"github.com/ajvb/kala/v2/api/middleware"
 	"github.com/ajvb/kala/v2/job"
+	"github.com/ajvb/kala/v2/webui"
 
 	"github.com/gorilla/mux"
 	"github.com/phyber/negroni-gzip/gzip"
@@ -336,7 +337,7 @@ func MakeServer(listenAddr string, cache job.JobCache, defaultOwner string, prof
 	// Allows for the use for /job as well as /job/
 	r.StrictSlash(true)
 	SetupApiRoutes(r, cache, defaultOwner)
-	r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", http.FileServer(assetFS())))
+	r.PathPrefix("/webui/").Handler(http.StripPrefix("/webui/", webui.Handler()))
 
 	if profile {
 		runtime.SetMutexProfileFraction(5) //nolint:mnd
